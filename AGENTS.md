@@ -45,7 +45,7 @@ Other commands:
 - `sh extension/build.sh <path to RightClick.app>`: build the Finder extension and install it into that bundle. Run it after `go tool mygo build`. `ARCH=arm64` or `ARCH=x86_64` picks the Mac architecture; by default it is this Mac's.
 - `sh scripts/release-dmg.sh`: build two release disk images under `build/release/`, one for Apple silicon (arm64) and one for Intel (x86_64). Each has the Finder extension inside the app and its SHA-256 beside it.
 
-Do not quit, restart or re-register the app or the Finder extension on your own. If the user asks for that, follow the steps under "Development" in README.md.
+Do not quit, restart or re-register the app or the Finder extension on your own. If the user asks for that: the app registers the extension at every start, so opening it again after a rebuild is enough. If the menu does not appear, the user clicks Turn On on the Finder Extension page, or restarts Finder.
 
 ## Layout
 
@@ -104,7 +104,7 @@ resources/                        app icon used by the README
 - Keep menu behaviour in Swift. Keep file operations in Go. The extension only builds the menu. To run an action it calls the `rightclick-action` script in its Application Scripts folder. The app writes that script at every start, and the script starts the app's executable with `--action`, so no window opens.
 - An action's ID is defined in `MenuActions` (Swift) and `defaultMenuIDs` (Go); see "Menu actions" above.
 - Each menu action needs an icon in `internal/actionicons/icons/` whose meaning matches the action. `extension/tests/main.swift` must check it.
-- After changing the extension, run the Swift tests and `extension/build.sh`. Registration and restart steps are under "Development" in README.md. Do not run them unless asked.
+- After changing the extension, run the Swift tests and `extension/build.sh`. Do not register or restart anything unless asked.
 - The user must turn the extension on in System Settings. Do not assume it is on.
 
 ## Done means
