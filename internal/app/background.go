@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -90,11 +91,25 @@ func chooseFolderWithAppleScript(_ string) (string, error) {
 // confirmDeleteWithAppleScript asks before the items are deleted. Cancel is the
 // default answer, and the function reports whether the user agreed.
 func confirmDeleteWithAppleScript(question, detail string) (bool, error) {
-	out, err := runAppleScript(confirmDeleteScript, question, detail, locales.DeletePermanently(), locales.Cancel())
+	out, err := runAppleScript(confirmDeleteScript, question, detail, locales.DeletePermanently(), locales.Cancel(), appBundlePath())
 	if err != nil {
 		return false, err
 	}
 	return strings.TrimSpace(out) == "delete", nil
+}
+
+// appBundlePath returns the .app bundle that holds the running program, or "" when
+// the program runs outside a bundle. The delete alert shows the icon of that bundle.
+func appBundlePath() string {
+	exe, err := os.Executable()
+	if err != nil {
+		return ""
+	}
+	bundle := filepath.Clean(filepath.Join(filepath.Dir(exe), "..", ".."))
+	if filepath.Ext(bundle) != ".app" {
+		return ""
+	}
+	return bundle
 }
 
 // runAppleScript runs script with args as its argv. The text never enters the source
@@ -131,12 +146,30 @@ const chooseFolderScript = `on run argv
 end run`
 
 // The answer is "delete" only when the user presses the delete button. Cancel is the
-// default button, so Return does nothing.
-const confirmDeleteScript = `on run argv
-	try
-		display dialog ((item 1 of argv) & return & return & (item 2 of argv)) buttons {(item 4 of argv), (item 3 of argv)} default button (item 4 of argv) cancel button (item 4 of argv) with icon caution
-	on error number -128
-		return "cancel"
-	end try
+// first button, so it is the default one and Return keeps the items.
+//
+// The alert is a real NSAlert, built through AppleScriptObjC: AppleScript's own
+// dialogs cannot mark the delete button as destructive, and the red button is how
+// macOS shows an action that cannot be undone. The app's own icon names the app
+// that asks.
+const confirmDeleteScript = `use framework "AppKit"
+use scripting additions
+
+on run argv
+	set shared to current application's NSApplication's sharedApplication()
+	shared's setActivationPolicy:1
+	set alert to current application's NSAlert's alloc()'s init()
+	alert's setMessageText:(item 1 of argv)
+	alert's setInformativeText:(item 2 of argv)
+	alert's setAlertStyle:2
+	alert's addButtonWithTitle:(item 4 of argv)
+	set destructiveButton to alert's addButtonWithTitle:(item 3 of argv)
+	destructiveButton's setHasDestructiveAction:true
+	if (item 5 of argv) is not "" then
+		alert's setIcon:(current application's NSWorkspace's sharedWorkspace()'s iconForFile:(item 5 of argv))
+	end if
+	shared's activateIgnoringOtherApps:true
+	set response to alert's runModal()
+	if response is 1000 then return "cancel"
 	return "delete"
 end run`
