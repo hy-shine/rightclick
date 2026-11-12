@@ -2,6 +2,7 @@ package settings
 
 import (
 	"log"
+	"rightclick/locales"
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
@@ -18,7 +19,7 @@ var (
 // still shows its editor and its preview side by side.
 const (
 	mainWidth  = 980
-	mainHeight = 560
+	mainHeight = 680
 	minWidth   = 940
 	minHeight  = 480
 )
@@ -46,7 +47,7 @@ func Open() {
 		return
 	}
 	m.win = mygo.NewWindow(mygo.WindowOptions{
-		Title:     "右键助手",
+		Title:     locales.AppName(),
 		Width:     mainWidth,
 		Height:    mainHeight,
 		MinWidth:  minWidth,
@@ -64,8 +65,8 @@ func Open() {
 // reportOpenError tells the user why the window did not open. Dialog.Error
 // waits until the dialog is dismissed, so it runs off the main thread.
 func reportOpenError(err error) {
-	log.Printf("设置窗口无法打开：%v", err)
-	go mygo.Dialog.Error("设置窗口无法打开", err.Error())
+	log.Printf("settings window could not open: %v", err)
+	go mygo.Dialog.Error(locales.WindowOpenFailed(), err.Error())
 }
 
 // OpenDiagnostics shows the main window on the diagnostics pane, where the

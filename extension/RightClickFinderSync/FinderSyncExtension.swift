@@ -5,6 +5,9 @@ import FinderSync
 /// each chosen action to the main app as a rightclick:// URL. It does no file work itself.
 final class FinderSyncExtension: FIFinderSync {
     private let mainScheme = "rightclick"
+    /// The rightclick:// URL of each action item in the menu that buildMenu built last.
+    /// Finder copies menu items and drops representedObject, so an item carries its index here in tag.
+    private var actionURLs: [URL] = []
 
     override init() {
         super.init()
@@ -33,68 +36,123 @@ final class FinderSyncExtension: FIFinderSync {
         }
 
         // config.json is read on every menu open, so edits in the main app apply without restarting the extension.
-        return buildMenu(target: target, config: AppConfig.load(), templates: Templates.load())
+        let config = AppConfig.load()
+        Localized.select(language: config?.language)
+        if let config, !config.contains(target) { return nil }
+        return buildMenu(target: target, config: config, templates: Templates.load())
     }
 
     func buildMenu(target: MenuTarget, config: AppConfig?, templates: [TemplateEntry]) -> NSMenu? {
-        let enabled = MenuActions.enabledIDs(from: config?.menuItems)
+        actionURLs = []
+        var enabled = MenuActions.enabledIDs(from: config?.menuItems)
         let fileTypes = FileTypes.resolved(from: config?.fileTypes)
         let editors = config?.editors ?? ["Visual Studio Code", "Cursor"]
         let visibleTemplates = templates.filter { $0.disabled != true }
+        let favorites = (config?.favoriteFolders ?? []).filter { $0.enabled }
         let menu = NSMenu(title: "")
-        let submenu = NSMenu(title: "右键助手")
+        let submenu = NSMenu(title: Localized.text("finder.appName"))
         var nestedFiles: [NSMenuItem] = []
         if let folder = target.newItemFolder {
             let folderPaths = pathParams([folder])
             if enabled.contains("new-file") {
-                for fileType in FileTypes.visible(fileTypes, at: FileTypeLocation.main) {
-                    menu.addItem(fileTypeItem(fileType, title: "新建 \(fileType.label)", folderPaths: folderPaths))
-                }
-                nestedFiles += FileTypes.visible(fileTypes, at: FileTypeLocation.submenu).map {
-                    fileTypeItem($0, title: $0.label, folderPaths: folderPaths)
+                nestedFiles += FileTypes.enabled(fileTypes).map {
+                    fileTypeItem($0, title: $0.displayLabel, folderPaths: folderPaths)
                 }
             }
             if enabled.contains("new-template") {
                 for template in visibleTemplates {
                     let label = template.label ?? template.name
-                    let item = actionItem(title: template.location == FileTypeLocation.main ? "新建 \(label)" : label,
-                                          urlAction: "new-template", params: [("name", template.name)] + folderPaths)
+                    let item = actionItem(title: label, urlAction: "new-template",
+                                          params: [("name", template.name)] + folderPaths)
                     item.image = fileTypeImage(URL(fileURLWithPath: template.name).pathExtension)
-                    if template.location == FileTypeLocation.main { menu.addItem(item) }
-                    else { nestedFiles.append(item) }
+                    nestedFiles.append(item)
                 }
             }
         }
-        for group in MenuActions.groups {
-            var groupItems: [NSMenuItem] = []
-            var groupIDs = enabled.filter { group.contains($0) }
-            if group.contains("new-file"), !groupIDs.contains("new-file"), !nestedFiles.isEmpty { groupIDs.insert("new-file", at:0) }
-            for id in groupIDs where target.allows(id) {
-                if id == "new-template" || id == "open-editor" && editors.isEmpty { continue }
-                let item: NSMenuItem
-                if id == "new-file" {
+        if !enabled.contains("new-file"), !nestedFiles.isEmpty {
+            enabled.insert("new-file", at: enabled.firstIndex(of: "new-template") ?? 0)
+        }
+        for id in enabled {
+            let item: NSMenuItem
+            if id.contains(":") {
+                guard let shortcut = shortcutItem(id, target: target, fileTypes: fileTypes,
+                                                 templates: visibleTemplates, editors: editors, favorites: favorites) else { continue }
+                item = shortcut
+            } else {
+                guard target.allows(id), id != "new-template" else { continue }
+                if id == "open-editor" && editors.isEmpty { continue }
+                switch id {
+                case "new-file":
                     guard !nestedFiles.isEmpty else { continue }
-                    item = submenuItem(title: "新建文件", children: nestedFiles, emptyTitle: "")
+                    item = submenuItem(title: Localized.text("finder.newFile"), children: nestedFiles, emptyTitle: "")
                     item.image = NSImage(systemSymbolName: "doc.badge.plus", accessibilityDescription: nil)
-                } else { item = menuItem(for: id, target: target, editors: editors) }
-                let location = config?.menuItems?.first(where: { $0.id == id })?.location ??
-                    (["new-file", "copy-path", "open-terminal"].contains(id) ? FileTypeLocation.main : FileTypeLocation.submenu)
-                if location == FileTypeLocation.main { menu.addItem(item) }
-                else { groupItems.append(item) }
+                case "favorite-folders":
+                    guard !favorites.isEmpty else { continue }
+                    let paths = pathParams(target.items.map(\.url))
+                    let children = favorites.map { folder in
+                        actionItem(title: folder.label, urlAction: "open-favorite", params: [("favorite", folder.id)] + paths)
+                    }
+                    item = submenuItem(title: Localized.text("finder.favoriteFolders"), children: children, emptyTitle: "")
+                case "copy-to", "move-to":
+                    if favorites.isEmpty {
+                        item = menuItem(for: id, target: target, editors: editors)
+                    } else {
+                        let paths = pathParams(target.items.map(\.url))
+                        var children = favorites.map { folder in
+                            actionItem(title: folder.label, urlAction: id, params: [("favorite", folder.id)] + paths)
+                        }
+                        children.append(.separator())
+                        children.append(actionItem(title: Localized.text("finder.chooseFolder"), urlAction: id, params: paths))
+                        item = submenuItem(title: title(for: id), children: children, emptyTitle: "")
+                    }
+                default:
+                    item = menuItem(for: id, target: target, editors: editors)
+                }
             }
-            guard !groupItems.isEmpty else { continue }
-            if !submenu.items.isEmpty {
-                submenu.addItem(.separator())
+            let setting = config?.menuItems?.first(where: { $0.id == id })
+            if let label = setting?.label, !label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                item.title = label
             }
-            groupItems.forEach { submenu.addItem($0) }
+            let location = setting?.location ??
+                (["new-file", "copy-path", "open-terminal"].contains(id) ? FileTypeLocation.main : FileTypeLocation.submenu)
+            if location == FileTypeLocation.main { menu.addItem(item) }
+            else { submenu.addItem(item) }
         }
         if !submenu.items.isEmpty {
-            let parent = NSMenuItem(title: "右键助手", action: nil, keyEquivalent: "")
+            let parent = NSMenuItem(title: Localized.text("finder.appName"), action: nil, keyEquivalent: "")
             parent.submenu = submenu
             parent.image = NSImage(systemSymbolName: "list.bullet", accessibilityDescription: nil)
             menu.addItem(parent)
         }
         return menu.items.isEmpty ? nil : menu
+    }
+
+    private func shortcutItem(_ id: String, target: MenuTarget, fileTypes: [FileTypeSetting],
+                              templates: [TemplateEntry], editors: [String], favorites: [FavoriteFolderSetting]) -> NSMenuItem? {
+        let parts = id.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
+        guard parts.count == 2 else { return nil }
+        let reference = String(parts[1])
+        switch parts[0] {
+        case "type":
+            guard let folder = target.newItemFolder,
+                  let fileType = FileTypes.enabled(fileTypes).first(where: { $0.id == reference }) else { return nil }
+            return fileTypeItem(fileType, title: Localized.text("finder.newShortcut", fileType.displayLabel), folderPaths: pathParams([folder]))
+        case "template":
+            guard let folder = target.newItemFolder,
+                  let template = templates.first(where: { $0.name == reference }) else { return nil }
+            return actionItem(title: Localized.text("finder.newShortcut", template.label ?? template.name), urlAction: "new-template",
+                              params: [("name", template.name)] + pathParams([folder]))
+        case "app":
+            guard editors.contains(reference) else { return nil }
+            return actionItem(title: Localized.text("finder.openWithApp", reference), urlAction: "open-with",
+                              params: [("app", reference)] + pathParams(target.items.map(\.url)))
+        case "folder":
+            guard let folder = favorites.first(where: { $0.id == reference }) else { return nil }
+            return actionItem(title: folder.label, urlAction: "open-favorite",
+                              params: [("favorite", folder.id)] + pathParams(target.items.map(\.url)))
+        default:
+            return nil
+        }
     }
 
     /// Builds the item for one action ID. Templates and editors get a submenu.
@@ -109,43 +167,44 @@ final class FinderSyncExtension: FIFinderSync {
             let children = Templates.load().map { entry in
                 actionItem(title: entry.name, urlAction: id, params: [("name", entry.name)] + folderPaths)
             }
-            return submenuItem(title: title(for: id), children: children, emptyTitle: "无模板")
+            return submenuItem(title: title(for: id), children: children, emptyTitle: Localized.text("finder.noTemplates"))
         case "open-terminal":
             // Terminal opens folders. A selected file stands for the folder that holds it.
             let folders = target.items.map { $0.isDirectory ? $0.url : $0.url.deletingLastPathComponent() }
             return actionItem(title: title(for: id), urlAction: id, params: pathParams(folders))
         case "open-editor":
             let app = editors.first ?? "Visual Studio Code"
-            return actionItem(title: "用 \(app) 打开", urlAction: id,
+            return actionItem(title: Localized.text("finder.openWithApp", app), urlAction: id,
                               params: [("app", app)] + paths)
         case "open-with":
             let children = editors.map { app in
                 actionItem(title: app, urlAction: id, params: [("app", app)] + paths)
             }
-            return submenuItem(title: title(for: id), children: children, emptyTitle: "无编辑器")
+            return submenuItem(title: title(for: id), children: children, emptyTitle: Localized.text("finder.noEditors"))
         default:
             return actionItem(title: title(for: id), urlAction: id, params: paths)
         }
     }
 
-    /// Menu titles shown in Finder. They stay in Chinese.
+    /// Menu titles shown in Finder, in the language Finder shows.
     private func title(for id: String) -> String {
         switch id {
-        case "new-file": return "新建文件"
-        case "new-folder": return "文件夹"
-        case "new-template": return "用户模板"
-        case "copy-path": return "拷贝路径"
-        case "copy-name": return "拷贝文件名"
-        case "copy-to": return "复制到…"
-        case "move-to": return "移动到…"
-        case "open-terminal": return "在终端打开"
-        case "open-editor": return "用默认编辑器打开"
-        case "open-with": return "用…打开"
-        case "zip": return "压缩为 ZIP"
-        case "unzip": return "解压到此处"
-        case "hash": return "计算哈希"
-        case "compare-hash": return "比较两个文件的哈希"
-        case "toggle-hidden": return "显示/隐藏隐藏文件（⌘⇧.）"
+        case "new-file": return Localized.text("finder.newFile")
+        case "new-folder": return Localized.text("finder.newFolder")
+        case "new-template": return Localized.text("finder.userTemplate")
+        case "copy-path": return Localized.text("finder.copyPath")
+        case "copy-name": return Localized.text("finder.copyName")
+        case "copy-to": return Localized.text("finder.copyTo")
+        case "move-to": return Localized.text("finder.moveTo")
+        case "open-terminal": return Localized.text("finder.openTerminal")
+        case "open-editor": return Localized.text("finder.openEditor")
+        case "open-with": return Localized.text("finder.openWith")
+        case "zip": return Localized.text("finder.zip")
+        case "unzip": return Localized.text("finder.unzip")
+        case "hash": return Localized.text("finder.hash")
+        case "compare-hash": return Localized.text("finder.compareHash")
+        case "toggle-hidden": return Localized.text("finder.toggleHidden")
+        case "delete-permanently": return Localized.text("finder.deletePermanently")
         default: return id
         }
     }
@@ -163,11 +222,11 @@ final class FinderSyncExtension: FIFinderSync {
     private func newFileSubmenu(_ fileTypes: [FileTypeSetting],
                                 folderPaths: [(String, String)]) -> NSMenuItem {
         let item = submenuItem(
-            title: "新建文件",
+            title: Localized.text("finder.newFile"),
             children: fileTypes.map {
-                fileTypeItem($0, title: $0.label, folderPaths: folderPaths)
+                fileTypeItem($0, title: $0.displayLabel, folderPaths: folderPaths)
             },
-            emptyTitle: "无文件类型"
+            emptyTitle: Localized.text("finder.noFileTypes")
         )
         item.image = fileTypeImage("new-file")
         return item
@@ -184,10 +243,17 @@ final class FinderSyncExtension: FIFinderSync {
     }
 
     /// A leaf item. Clicking it opens rightclick://<urlAction>?<params> in the main app.
+    /// The URL goes into actionURLs; the item's tag is its index there. A URL that cannot be
+    /// built gets tag -1, which menuURL(for:) never matches.
     private func actionItem(title: String, urlAction: String, params: [(String, String)]) -> NSMenuItem {
         let item = NSMenuItem(title: title, action: #selector(runAction(_:)), keyEquivalent: "")
         item.target = self
-        item.representedObject = actionURL(urlAction, params)
+        if let url = actionURL(urlAction, params) {
+            item.tag = actionURLs.count
+            actionURLs.append(url)
+        } else {
+            item.tag = -1
+        }
         return item
     }
 
@@ -205,8 +271,13 @@ final class FinderSyncExtension: FIFinderSync {
     }
 
     @objc private func runAction(_ sender: NSMenuItem) {
-        guard let url = sender.representedObject as? URL else { return }
+        guard let url = menuURL(for: sender) else { return }
         NSWorkspace.shared.open(url)
+    }
+
+    /// The URL for an item from the menu built last, found by its tag. Nil for any other item.
+    func menuURL(for item: NSMenuItem) -> URL? {
+        actionURLs.indices.contains(item.tag) ? actionURLs[item.tag] : nil
     }
 
     /// Builds rightclick://<urlAction>?<name=value>&... for the main app.
@@ -270,11 +341,11 @@ struct MenuTarget {
         switch id {
         case "new-file", "new-folder", "new-template":
             return newItemFolder != nil
-        case "copy-path", "copy-name", "copy-to", "move-to":
+        case "copy-path", "copy-name", "copy-to", "move-to", "delete-permanently":
             return !isBlankArea
         case "open-terminal":
             return newItemFolder != nil
-        case "open-editor", "open-with":
+        case "open-editor", "open-with", "favorite-folders":
             return true
         case "zip":
             return !isBlankArea && !files.isEmpty

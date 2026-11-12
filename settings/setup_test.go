@@ -24,7 +24,7 @@ func readyApp(t *testing.T) *app {
 // selectDiagnostics shows the diagnostics pane. It sets the tab directly, because
 // selectPane would start a Finder check, which needs a window.
 func selectDiagnostics(m *app) {
-	for i, p := range paneTabs {
+	for i, p := range paneTabs() {
 		if p.id == paneDiagnostics {
 			m.tab = i
 		}
@@ -77,16 +77,26 @@ func TestSidebarNamesTheMissingStep(t *testing.T) {
 	}
 }
 
-// TestMenuPageLeadsWithTheMissingStep checks that a first run with no folder
-// shows the folder step, with both ways to add one, above the editor.
-func TestMenuPageLeadsWithTheMissingStep(t *testing.T) {
-	m := readyApp(t)
-	m.cfg.WatchFolders = nil
-	texts := ui.NewTester(m.view, mainWidth, mainHeight).Texts()
-	for _, want := range []string{"还没有设置文件夹范围", "添加文件夹…", "使用默认文件夹（桌面、文稿、下载）"} {
-		if !slices.Contains(texts, want) {
-			t.Errorf("menu page does not show %q; texts %q", want, texts)
-		}
+// TestMenuPageOmitsSetupWarnings checks that setup and permission blockers stay
+// out of the menu editor page and are signaled in diagnostics instead.
+func TestMenuPageOmitsSetupWarnings(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		mutate func(*app)
+	}{
+		{"extension off", func(m *app) { m.finder = finderOff }},
+		{"no folder", func(m *app) { m.cfg.WatchFolders = nil }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			m := readyApp(t)
+			tc.mutate(m)
+			texts := ui.NewTester(m.view, mainWidth, mainHeight).Texts()
+			for _, unwanted := range []string{"Finder 扩展还没有启用", "需要开启扩展", "还没有设置文件夹范围", "等待设置文件夹范围"} {
+				if slices.Contains(texts, unwanted) {
+					t.Errorf("menu page still shows setup warning %q; texts %q", unwanted, texts)
+				}
+			}
+		})
 	}
 }
 
@@ -107,11 +117,29 @@ func TestDiagnosticsSaysReadyOnlyWhenEveryStepPasses(t *testing.T) {
 	}
 }
 
-// TestRestartFromMenuPageAsksFirst checks that the restart button on the menu page
-// opens the confirmation dialog, which lives at the window level.
-func TestRestartFromMenuPageAsksFirst(t *testing.T) {
+// TestSidebarMarksDiagnosticsWhenBlocked checks that the sidebar diagnostics
+// item displays an alert indicator only while a setup prerequisite is missing.
+func TestSidebarMarksDiagnosticsWhenBlocked(t *testing.T) {
+	blocked := readyApp(t)
+	blocked.finder = finderOff
+	tt := ui.NewTester(blocked.view, mainWidth, mainHeight)
+	if _, ok := tt.Find("权限与诊断 需要开启扩展"); !ok {
+		t.Fatal("sidebar diagnostics row does not show warning mark when extension is off")
+	}
+
+	ready := readyApp(t)
+	ttReady := ui.NewTester(ready.view, mainWidth, mainHeight)
+	if _, ok := ttReady.Find("权限与诊断 需要开启扩展"); ok {
+		t.Fatal("sidebar diagnostics row still shows warning mark when all steps pass")
+	}
+}
+
+// TestRestartFromDiagnosticsAsksFirst checks that the restart button on the
+// diagnostics pane opens the confirmation dialog, which lives at the window level.
+func TestRestartFromDiagnosticsAsksFirst(t *testing.T) {
 	m := readyApp(t)
 	m.foldersChanged = true
+	selectDiagnostics(m)
 	tt := ui.NewTester(m.view, mainWidth, mainHeight)
 	if err := tt.Click("重新启动"); err != nil {
 		t.Fatal(err)
@@ -145,37 +173,46 @@ func TestUseDefaultFoldersKeepsWatchedOnes(t *testing.T) {
 	}
 }
 
-func TestMenuPageUsesFunctionalSections(t *testing.T) {
+func TestMenuPageOffersFreeOrdering(t *testing.T) {
 	m, err := newApp(testStore(t), testEnv())
 	if err != nil {
 		t.Fatal(err)
 	}
-	texts := ui.NewTester(m.view, 760, 560).Texts()
+	texts := ui.NewTester(m.view, minWidth, minHeight).Texts()
 	for _, label := range []string{"路径与移动", "打开应用"} {
-		if !slices.Contains(texts, label) {
-			t.Errorf("missing functional section %q", label)
+		if slices.Contains(texts, label) {
+			t.Errorf("fixed category still splits the sortable list: %q", label)
 		}
 	}
 }
 
-// TestPreviewSitsBesideTheEditorInAWideWindow checks that at the default window
-// size the preview is on the first screen, to the right of the editor.
+// TestMenuPreviewOpensAndClosesOnDemand checks that preview stays a temporary
+// overlay and follows the selected Finder context while it is open.
 func TestMenuPreviewOpensAndClosesOnDemand(t *testing.T) {
 	m, err := newApp(testStore(t), testEnv())
 	if err != nil {
 		t.Fatal(err)
 	}
 	tt := ui.NewTester(m.view, mainWidth, mainHeight)
+	if slices.Contains(tt.Texts(), "菜单预览") {
+		t.Fatal("menu preview is visible before it is opened")
+	}
 	if err := tt.Click("预览"); err != nil {
 		t.Fatal(err)
 	}
 	if !m.menuPreviewOpen || !slices.Contains(tt.Texts(), "菜单预览") {
-		t.Fatal("preview did not open")
+		t.Fatal("menu preview did not open")
+	}
+	if err := tt.Click("空白处"); err != nil {
+		t.Fatal(err)
+	}
+	if m.previewCtx != ctxBlank {
+		t.Fatalf("preview context = %d, want blank", m.previewCtx)
 	}
 	if err := tt.Click("关闭预览"); err != nil {
 		t.Fatal(err)
 	}
 	if m.menuPreviewOpen || slices.Contains(tt.Texts(), "菜单预览") {
-		t.Fatal("preview did not close")
+		t.Fatal("menu preview did not close")
 	}
 }

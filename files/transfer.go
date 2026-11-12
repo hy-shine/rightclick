@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"rightclick/locales"
 	"strings"
 	"syscall"
 )
@@ -47,7 +48,7 @@ func Move(src, dir string) (string, error) {
 		return "", err
 	}
 	if parent == absDir {
-		return "", errors.New("已经在这个文件夹里")
+		return "", errors.New(locales.AlreadyInFolder())
 	}
 	name := filepath.Base(src)
 	target, err := moveTarget(dir, name, info.IsDir())
@@ -166,7 +167,7 @@ func refuseInside(src, dir string, isDir bool) error {
 		return err
 	}
 	if absDir == absSrc || strings.HasPrefix(absDir, absSrc+string(filepath.Separator)) {
-		return errors.New("不能把文件夹复制或移动到它自己里面")
+		return errors.New(locales.FolderIntoItself())
 	}
 	return nil
 }

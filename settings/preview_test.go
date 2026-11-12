@@ -63,7 +63,7 @@ func TestPreviewHidesDisabledEntries(t *testing.T) {
 	}
 }
 
-func TestPreviewFollowsFileTypeLocations(t *testing.T) {
+func TestPreviewKeepsFileTypesInsideNewFile(t *testing.T) {
 	m, err := newApp(testStore(t), testEnv())
 	if err != nil {
 		t.Fatal(err)
@@ -73,16 +73,16 @@ func TestPreviewFollowsFileTypeLocations(t *testing.T) {
 			m.cfg.FileTypes[i].Location = config.FileTypeMain
 		}
 	}
-	if !previewHas(m, ctxBlank, "新建 JSON") {
-		t.Error("JSON pinned to the main menu is not in the preview")
+	if previewHas(m, ctxBlank, "新建 JSON") {
+		t.Error("JSON leaked to the top level of the preview")
+	}
+	if !previewHas(m, ctxBlank, "新建文件") {
+		t.Error("New File is missing from the preview")
 	}
 	for i := range m.cfg.FileTypes {
 		m.cfg.FileTypes[i].Enabled = false
 	}
 	if previewHas(m, ctxBlank, "新建文件") {
 		t.Error("新建文件 still shows when every file type is hidden")
-	}
-	if previewHas(m, ctxBlank, "新建 JSON") {
-		t.Error("hidden JSON still shows as a pinned entry")
 	}
 }

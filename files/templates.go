@@ -5,11 +5,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"rightclick/locales"
 	"strings"
 	"unicode/utf8"
 
@@ -46,7 +46,7 @@ func LoadTemplates(path string) ([]Template, error) {
 	}
 	var templates []Template
 	if err := json.Unmarshal(data, &templates); err != nil {
-		return nil, fmt.Errorf("模板文件无法读取：%w", err)
+		return nil, errors.New(locales.TemplateReadFailed(err.Error()))
 	}
 	return templates, nil
 }
@@ -75,7 +75,7 @@ func TemplateFromFile(path string) (Template, error) {
 		return Template{}, err
 	}
 	if info.Size() > 16<<20 {
-		return Template{}, fmt.Errorf("模板文件不能超过 16 MB")
+		return Template{}, errors.New(locales.TemplateTooLarge())
 	}
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -89,7 +89,7 @@ func TemplateFromFile(path string) (Template, error) {
 		return Template{Name: filepath.Base(path), Data: base64.StdEncoding.EncodeToString(data)}, nil
 	}
 	if !utf8.Valid(data) || bytes.IndexByte(data, 0) >= 0 {
-		return Template{}, errors.New("不是文本文件，不能做成模板")
+		return Template{}, errors.New(locales.TemplateNotText())
 	}
 	return Template{Name: filepath.Base(path), Content: string(data)}, nil
 }

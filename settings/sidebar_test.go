@@ -14,7 +14,7 @@ func TestSidebarHasOnlyPaneLabels(t *testing.T) {
 	}
 	tester := ui.NewTester(func(context *ui.Context) { context.SetTheme(paperTheme(true)); model.sidebar(context) }, 176, 560)
 	texts := tester.Texts()
-	for _, tab := range paneTabs {
+	for _, tab := range paneTabs() {
 		if !slices.Contains(texts, tab.label) {
 			t.Errorf("missing pane %s", tab.label)
 		}

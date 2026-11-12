@@ -3,8 +3,11 @@
 package settings
 
 import (
+	"errors"
+
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
+	"rightclick/locales"
 
 	"rightclick/config"
 	"rightclick/files"
@@ -19,6 +22,7 @@ const (
 	paneTemplates   = "templates"
 	paneFolders     = "folders"
 	paneOpeners     = "openers"
+	paneFavorites   = "favorites"
 	paneDiagnostics = "diagnostics"
 	paneGeneral     = "general"
 )
@@ -26,14 +30,18 @@ const (
 // paneTab is one pane of the main window: its ID and its name in the sidebar.
 type paneTab struct{ id, label string }
 
-// paneTabs lists the panes in the order of the sidebar.
-var paneTabs = []paneTab{
-	{paneMenu, "右键菜单"},
-	{paneTemplates, "新建"},
-	{paneFolders, "文件夹范围"},
-	{paneOpeners, "打开方式"},
-	{paneDiagnostics, "权限与诊断"},
-	{paneGeneral, "通用"},
+// paneTabs lists the panes in the order of the sidebar. The labels are read on
+// each call so that they follow the current language.
+func paneTabs() []paneTab {
+	return []paneTab{
+		{paneMenu, locales.PaneMenu()},
+		{paneTemplates, locales.PaneNew()},
+		{paneFavorites, locales.FavoriteFolders()},
+		{paneFolders, locales.PaneFolders()},
+		{paneOpeners, locales.PaneOpeners()},
+		{paneDiagnostics, locales.PaneDiagnostics()},
+		{paneGeneral, locales.PaneGeneral()},
+	}
 }
 
 // Store is where the settings window reads and writes its data.
@@ -72,9 +80,18 @@ type app struct {
 	notice     string // error of the last action, shown below the pane
 	newMode    int    // index of the Files or Templates view in the New pane
 
-	navList         ui.ListState
-	menuLists       []ui.ListState // one per group of the Finder menu, in menuGroups order
-	menuPreviewOpen bool
+	navList          ui.ListState
+	menuLists        []ui.ListState // one per group of the Finder menu, in menuGroups order
+	menuSearch       string
+	menuPreviewOpen  bool
+	confirmRestore   bool
+	menuNameOpen     bool
+	menuNameID       string
+	menuName         string
+	favoriteList     ui.ListState
+	favoriteEditID   string
+	favoriteName     string
+	favoriteEditOpen bool
 
 	fileTypeList         ui.ListState
 	fileTypeSel          int
@@ -91,7 +108,8 @@ type app struct {
 	tplSel           int // index of the selected template, -1 for none
 	confirmDeleteTpl bool
 
-	newEditor string
+	newEditor   string
+	editorIcons map[string]*ui.Bitmap // icon of each editor app, read once; nil when it has none
 
 	finder         finderState
 	finderSeq      int // counts the checks, so that an older result is dropped
@@ -142,27 +160,25 @@ func newApp(store Store, e env) (*app, error) {
 	return m, nil
 }
 
-// view builds the window: the pane list on the desk, and the chosen pane on a
-// sheet of paper beside it. The palette is set first, so every widget below
-// takes its colors from it.
+// view builds the sidebar and continuous content surface using the window theme.
 func (m *app) view(c *ui.Context) {
-	c.SetTheme(paperTheme(c.Theme().Dark))
+	c.SetTheme(windowTheme(c))
 	t := c.Theme()
 	ui.Row(c).Fill().AlignItems(ui.Stretch).Children(func() {
 		m.sidebar(c)
-		// The sheet fills the rest of the window and is a flat white panel on the desk.
-		ui.Column(c).Grow(1).Padding(0, 12, 12, 0).Children(func() {
+		ui.Column(c).Width(1).Background(separatorColor(c))
+		ui.Column(c).Grow(1).Background(t.Surface.Mix(t.Background, 0.3)).Children(func() {
 			ui.Row(c).Height(12).DragWindow() // the top edge of the window, which moves it
-			ui.Column(c).Grow(1).Background(t.Surface).Radius(12).Padding(12, 28, 24).Children(func() {
+			ui.Column(c).Grow(1).Padding(16, 28, 24).Children(func() {
 				// The menu pane scrolls its editor and its preview on their own. Every other
 				// pane scrolls as a whole, and its content is at most contentWidth wide, so
 				// long lines stay readable in a wider window.
 				if m.currentPane() == paneMenu {
-					m.menuPage(c)
+					ui.Column(c).Grow(1).Children(func() { m.menuPage(c) })
 					return
 				}
 				if m.currentPane() == paneTemplates {
-					m.newPane(c)
+					ui.Column(c).Grow(1).Children(func() { m.newPane(c) })
 					m.showNotice(c)
 					return
 				}
@@ -176,10 +192,15 @@ func (m *app) view(c *ui.Context) {
 		})
 	})
 	m.creationDialog(c)
+	m.favoriteDialog(c)
+	m.menuNameDialog(c)
 	m.menuPreviewDialog(c)
-	// The restart dialog belongs to the window, not to one pane: the menu page and
-	// the folders pane can ask for a restart too.
-	if ui.AlertDialog(c, &m.confirmRestart, "重新启动访达？", "访达窗口会关闭，然后自动打开。", "取消", "重新启动") == 1 {
+	if ui.AlertDialog(c, &m.confirmRestore, locales.RestoreDefaultsQuestion(), locales.RestoreDefaultsBody(), locales.Cancel(), locales.ConfirmRestore()) == 1 {
+		m.restoreDefaultMenu()
+	}
+	// The restart dialog belongs to the window, not to one pane: the diagnostics
+	// pane and the folders pane can ask for a restart too.
+	if ui.AlertDialog(c, &m.confirmRestart, locales.RestartFinderTitle(), locales.RestartFinderBody(), locales.Cancel(), locales.Restart()) == 1 {
 		m.restartFinder()
 	}
 }
@@ -190,20 +211,20 @@ func (m *app) contentWidth() float32 {
 	if m.currentPane() == paneTemplates {
 		return 800
 	}
-	return 560
+	return 680
 }
 
 // currentPane returns the ID of the chosen pane.
 func (m *app) currentPane() string {
-	if m.tab < 0 || m.tab >= len(paneTabs) {
+	if m.tab < 0 || m.tab >= len(paneTabs()) {
 		return paneMenu
 	}
-	return paneTabs[m.tab].id
+	return paneTabs()[m.tab].id
 }
 
 // selectPane shows the pane with the given ID.
 func (m *app) selectPane(id string) {
-	for i, p := range paneTabs {
+	for i, p := range paneTabs() {
 		if p.id == id {
 			m.tab = i
 		}
@@ -220,6 +241,8 @@ func (m *app) paneContent(c *ui.Context) {
 		m.foldersPane(c)
 	case paneOpeners:
 		m.openersPane(c)
+	case paneFavorites:
+		m.favoritesPane(c)
 	case paneDiagnostics:
 		m.diagnosticsPane(c)
 	case paneGeneral:
@@ -235,14 +258,39 @@ func (m *app) paneChanged() {
 	}
 }
 
-// saveConfig writes the settings file and reports a failure below the pane.
+// saveConfig writes the settings file and reports a failure below the pane. The
+// controls change m.cfg before they save. A failed write loads the file back, so
+// the window shows the values that the Finder extension and the actions read.
 func (m *app) saveConfig() {
-	m.report("保存失败", config.Save(m.store.ConfigPath, m.cfg))
+	err := config.Save(m.store.ConfigPath, m.cfg)
+	if err != nil {
+		saved, loadErr := config.Load(m.store.ConfigPath)
+		if loadErr != nil {
+			err = errors.Join(err, loadErr)
+		} else {
+			m.cfg = saved
+		}
+	}
+	m.report(locales.SaveFailed(), err)
 }
 
 // saveTemplates writes the templates file and reports a failure below the pane.
+// A failed write loads the file back, as saveConfig does.
 func (m *app) saveTemplates() {
-	m.report("保存失败", files.SaveTemplates(m.store.TemplatesPath, m.templates))
+	for i := range m.templates {
+		m.templates[i].Location = config.FileTypeSubmenu
+	}
+	err := files.SaveTemplates(m.store.TemplatesPath, m.templates)
+	if err != nil {
+		saved, loadErr := files.LoadTemplates(m.store.TemplatesPath)
+		if loadErr != nil {
+			err = errors.Join(err, loadErr)
+		} else {
+			m.templates = saved
+			m.tplSel = min(m.tplSel, len(m.templates)-1)
+		}
+	}
+	m.report(locales.SaveFailed(), err)
 }
 
 // report shows what went wrong below the pane, or clears the notice when err is nil.

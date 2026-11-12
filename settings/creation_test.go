@@ -101,7 +101,7 @@ func TestCreationEditorCancelDoesNotChangeSavedContent(t *testing.T) {
 	}
 }
 
-func TestCustomTemplateSwitchPreservesLocation(t *testing.T) {
+func TestCustomTemplateSwitchStaysInsideNewFile(t *testing.T) {
 	store := testStore(t)
 	model, err := newApp(store, testEnv())
 	if err != nil {
@@ -118,8 +118,8 @@ func TestCustomTemplateSwitchPreservesLocation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !templates[0].Disabled || templates[0].Location != config.FileTypeMain {
-		t.Fatalf("disabled state lost template location: %+v", templates[0])
+	if !templates[0].Disabled || templates[0].Location != config.FileTypeSubmenu {
+		t.Fatalf("template did not stay disabled inside New File: %+v", templates[0])
 	}
 }
 

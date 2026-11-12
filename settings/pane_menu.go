@@ -1,7 +1,7 @@
 package settings
 
 import (
-	"fmt"
+	"rightclick/locales"
 	"slices"
 	"strings"
 
@@ -20,28 +20,35 @@ const (
 )
 
 // previewContexts names the places in the order of the preview's switch.
-var previewContexts = []string{"空白处", "文件夹", "文件", "两个文件"}
+func previewContexts() []string {
+	return []string{locales.ContextBlank(), locales.MenuNewFolder(), locales.ContextFile(), locales.ContextTwoFiles()}
+}
 
 // menuEntry is the label of a Finder menu entry and the condition that shows it.
 type menuEntry struct{ label, when string }
 
-// menuEntries describes the entries of config.Default, by ID.
-var menuEntries = map[string]menuEntry{
-	"new-file":      {"新建文件", "空白处、文件夹"},
-	"new-folder":    {"文件夹", "空白处、文件夹"},
-	"new-template":  {"用户模板", "空白处、文件夹"},
-	"copy-path":     {"拷贝路径", "选中项"},
-	"copy-name":     {"拷贝文件名", "选中项"},
-	"copy-to":       {"复制到…", "选中项"},
-	"move-to":       {"移动到…", "选中项"},
-	"open-terminal": {"在终端打开", "空白处、文件夹"},
-	"open-editor":   {"用默认编辑器打开", "任何位置"},
-	"open-with":     {"用…打开", "任何位置"},
-	"zip":           {"压缩为 ZIP", "选中文件"},
-	"unzip":         {"解压到此处", "仅 .zip 文件"},
-	"hash":          {"计算哈希", "仅一个文件"},
-	"compare-hash":  {"比较两个文件的哈希", "仅两个文件"},
-	"toggle-hidden": {"显示/隐藏隐藏文件（⌘⇧.）", "空白处、文件夹"},
+// menuEntries describes the entries of config.Default, by ID. The labels are
+// read on each call so that they follow the current language.
+func menuEntries() map[string]menuEntry {
+	return map[string]menuEntry{
+		"new-file":           {locales.MenuNewFile(), locales.WhereBlankFolder()},
+		"new-folder":         {locales.MenuNewFolder(), locales.WhereBlankFolder()},
+		"new-template":       {locales.MenuNewTemplate(), locales.WhereBlankFolder()},
+		"favorite-folders":   {locales.FavoriteFolders(), locales.WhereAnywhere()},
+		"copy-path":          {locales.MenuCopyPath(), locales.WhereSelection()},
+		"copy-name":          {locales.MenuCopyName(), locales.WhereSelection()},
+		"copy-to":            {locales.MenuCopyTo(), locales.WhereSelection()},
+		"move-to":            {locales.MenuMoveTo(), locales.WhereSelection()},
+		"open-terminal":      {locales.MenuOpenTerminal(), locales.WhereBlankFolder()},
+		"open-editor":        {locales.MenuOpenEditor(), locales.WhereAnywhere()},
+		"open-with":          {locales.MenuOpenWith(), locales.WhereAnywhere()},
+		"zip":                {locales.MenuZip(), locales.WhereSelectedFiles()},
+		"unzip":              {locales.MenuUnzip(), locales.WhereZipOnly()},
+		"hash":               {locales.MenuHash(), locales.WhereOneFile()},
+		"compare-hash":       {locales.MenuCompareHash(), locales.WhereTwoFiles()},
+		"toggle-hidden":      {locales.MenuToggleHidden(), locales.WhereBlankFolder()},
+		"delete-permanently": {locales.DeletePermanently(), locales.WhereSelection()},
+	}
 }
 
 // menuGroups lists the IDs of each group of the Finder submenu, in the order
@@ -54,35 +61,37 @@ var menuGroups = [][]string{
 	{"zip", "unzip", "hash"},
 	{"compare-hash"},
 	{"toggle-hidden"},
+	{"delete-permanently"},
 }
 
 // menuContexts lists, by entry ID, the places where Finder shows the entry. It
 // mirrors allows() in extension/RightClickFinderSync/FinderSyncExtension.swift;
 // change both together.
 var menuContexts = map[string][]int{
-	"new-file":      {ctxBlank, ctxFolder},
-	"new-folder":    {ctxBlank, ctxFolder},
-	"new-template":  {ctxBlank, ctxFolder},
-	"copy-path":     {ctxFolder, ctxFile, ctxTwoFiles},
-	"copy-name":     {ctxFolder, ctxFile, ctxTwoFiles},
-	"copy-to":       {ctxFolder, ctxFile, ctxTwoFiles},
-	"move-to":       {ctxFolder, ctxFile, ctxTwoFiles},
-	"open-terminal": {ctxBlank, ctxFolder},
-	"open-editor":   {ctxBlank, ctxFolder, ctxFile, ctxTwoFiles},
-	"open-with":     {ctxBlank, ctxFolder, ctxFile, ctxTwoFiles},
-	"zip":           {ctxFile, ctxTwoFiles},
-	"unzip":         {ctxFile},
-	"hash":          {ctxFile},
-	"compare-hash":  {ctxTwoFiles},
-	"toggle-hidden": {ctxBlank, ctxFolder},
+	"new-file":           {ctxBlank, ctxFolder},
+	"new-folder":         {ctxBlank, ctxFolder},
+	"new-template":       {ctxBlank, ctxFolder},
+	"copy-path":          {ctxFolder, ctxFile, ctxTwoFiles},
+	"copy-name":          {ctxFolder, ctxFile, ctxTwoFiles},
+	"copy-to":            {ctxFolder, ctxFile, ctxTwoFiles},
+	"move-to":            {ctxFolder, ctxFile, ctxTwoFiles},
+	"open-terminal":      {ctxBlank, ctxFolder},
+	"open-editor":        {ctxBlank, ctxFolder, ctxFile, ctxTwoFiles},
+	"open-with":          {ctxBlank, ctxFolder, ctxFile, ctxTwoFiles},
+	"zip":                {ctxFile, ctxTwoFiles},
+	"unzip":              {ctxFile},
+	"hash":               {ctxFile},
+	"compare-hash":       {ctxTwoFiles},
+	"toggle-hidden":      {ctxBlank, ctxFolder},
+	"delete-permanently": {ctxFolder, ctxFile, ctxTwoFiles},
 }
 
 // menuRowHeight is the height of one row of the menu editor, in points.
-const menuRowHeight = 42
+const menuRowHeight = 46
 
 // menuEntryFor returns the entry for id. An unknown ID is shown as it is.
 func menuEntryFor(id string) menuEntry {
-	if e, ok := menuEntries[id]; ok {
+	if e, ok := menuEntries()[id]; ok {
 		return e
 	}
 	return menuEntry{label: id}
@@ -98,11 +107,26 @@ func appliesTo(id string, ctx int) bool {
 func (m *app) groupRows(g int) []int {
 	var rows []int
 	for i, item := range m.cfg.MenuItems {
-		if slices.Contains(menuGroups[g], item.ID) {
+		if g < 0 || slices.Contains(menuGroups[g], item.ID) {
 			rows = append(rows, i)
 		}
 	}
 	return rows
+}
+
+// menuDisplayRows returns a group's rows that match the current search. The
+// underlying config order stays unchanged while a search is active.
+func (m *app) menuDisplayRows(g int) []int {
+	rows := m.groupRows(g)
+	query := strings.ToLower(strings.TrimSpace(m.menuSearch))
+	if query == "" {
+		return rows
+	}
+	return slices.DeleteFunc(rows, func(i int) bool {
+		entry := m.menuEntry(m.cfg.MenuItems[i])
+		text := strings.ToLower(entry.label + " " + entry.when + " " + m.cfg.MenuItems[i].ID)
+		return !strings.Contains(text, query)
+	})
 }
 
 // reorderGroup moves the entries of group g at rows, which are positions
@@ -123,7 +147,13 @@ func (m *app) reorderGroup(g int, rows []int, to int) {
 
 // restoreDefaultMenu puts back the entries and their order from config.Default.
 func (m *app) restoreDefaultMenu() {
-	m.cfg.MenuItems = config.Default().MenuItems
+	defaults := config.Default().MenuItems
+	for _, item := range m.cfg.MenuItems {
+		if strings.Contains(item.ID, ":") || item.ID == "favorite-folders" {
+			defaults = append(defaults, item)
+		}
+	}
+	m.cfg.MenuItems = defaults
 	m.saveConfig()
 }
 
@@ -134,65 +164,41 @@ type previewItem struct{ id, label string }
 // enabled entries that apply there, one slice per group that has any, in menu
 // order.
 func (m *app) previewGroups(ctx int) [][]previewItem {
-	var groups [][]previewItem
-	for g := range menuGroups {
-		var items []previewItem
-		for _, i := range m.groupRows(g) {
-			item := m.cfg.MenuItems[i]
-			if !item.Enabled || item.Location == config.FileTypeMain || !appliesTo(item.ID, ctx) {
-				continue
-			}
-			if item.ID == "new-template" {
-				continue
-			}
-			if item.ID == "new-file" {
-				if len(m.fileTypesAt(config.FileTypeSubmenu)) > 0 {
-					items = append(items, previewItem{item.ID, menuEntryFor(item.ID).label})
-				}
-				continue
-			}
-			items = append(items, previewItem{item.ID, menuEntryFor(item.ID).label})
+	var items []previewItem
+	for _, item := range m.cfg.MenuItems {
+		if !item.Enabled || item.Location == config.FileTypeMain || !m.menuItemAvailable(item, ctx) {
+			continue
 		}
-		if len(items) > 0 {
-			groups = append(groups, items)
+		if item.ID == "new-template" || item.ID == "open-editor" && len(m.cfg.Editors) == 0 {
+			continue
 		}
+		if item.ID == "new-file" && !m.hasNewFileContents() {
+			continue
+		}
+		items = append(items, previewItem{item.ID, m.menuEntry(item).label})
 	}
-	return groups
-}
-
-// fileTypePreviewID marks the direct file type entries in the menu drawing.
-func fileTypePreviewID(id string) string {
-	return "file-type:" + id
+	if len(items) == 0 {
+		return nil
+	}
+	return [][]previewItem{items}
 }
 
 func (m *app) previewTopItems(ctx int) []previewItem {
 	var items []previewItem
 	for _, item := range m.cfg.MenuItems {
-		if !item.Enabled || item.Location != config.FileTypeMain || !appliesTo(item.ID, ctx) {
+		if !item.Enabled || item.Location != config.FileTypeMain || !m.menuItemAvailable(item, ctx) {
 			continue
 		}
 		if item.ID == "new-template" {
 			continue
 		}
-		if item.ID == "new-file" && len(m.fileTypesAt(config.FileTypeSubmenu)) == 0 {
+		if item.ID == "open-editor" && len(m.cfg.Editors) == 0 {
+			continue // The Finder menu hides this entry when no editor is listed.
+		}
+		if item.ID == "new-file" && !m.hasNewFileContents() {
 			continue
 		}
-		items = append(items, previewItem{item.ID, menuEntryFor(item.ID).label})
-	}
-	if ctx == ctxBlank || ctx == ctxFolder {
-		for _, item := range m.cfg.MenuItems {
-			if item.ID != "new-file" || !item.Enabled {
-				continue
-			}
-			for _, fileType := range m.fileTypesAt(config.FileTypeMain) {
-				items = append(items, previewItem{fileTypePreviewID(fileType.ID), "新建 " + fileType.Label})
-			}
-		}
-		for _, template := range m.templates {
-			if !template.Disabled && template.Location == config.FileTypeMain {
-				items = append(items, previewItem{"new-template", "新建 " + template.Name})
-			}
-		}
+		items = append(items, previewItem{item.ID, m.menuEntry(item).label})
 	}
 	return items
 }
@@ -201,41 +207,43 @@ func (m *app) menuPage(c *ui.Context) {
 	t := c.Theme()
 	ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
 		ui.Column(c).Grow(1).Gap(6).Children(func() {
-			ui.Text(c, "右键菜单").FontSize(22).FontWeight(600)
-			ui.Text(c, "常用操作放在外面，其余收进子菜单。").FontSize(sizeNote).TextColor(t.TextMuted)
+			ui.Text(c, locales.PaneMenu()).FontSize(sizeTitle).FontWeight(600)
+			ui.Text(c, locales.MenuIntro()).FontSize(sizeNote).LineHeight(1.5).TextColor(t.TextMuted)
 		})
-		if ghostButton(c, "恢复默认", false) {
-			m.restoreDefaultMenu()
+		ui.TextInput(c.Key("menu-search"), &m.menuSearch).
+			Label(locales.SearchMenu()).
+			Placeholder(locales.SearchMenuPlaceholder()).
+			Width(170)
+		if ghostButton(c, locales.RestoreDefaults(), false) {
+			m.confirmRestore = true
 		}
-		if quietButton(c, iconEye, "预览") {
+		if quietButtonCentered(c, iconEye, locales.Preview()) {
 			m.menuPreviewOpen = true
 		}
 	})
-	m.setupCard(c)
 	m.showNotice(c)
-	ui.Row(c).Margin(22, 0, 8, 0).Padding(0, 8).AlignItems(ui.Center).Children(func() {
-		ui.Text(c, "动作").FontSize(sizeCaption).TextColor(t.TextMuted).Grow(1)
-		ui.Text(c, "显示位置").FontSize(sizeCaption).TextColor(t.TextMuted).Width(172).Shrink(0)
-		ui.Text(c, "启用").FontSize(sizeCaption).TextColor(t.TextMuted).Width(56).Shrink(0).TextAlign(ui.Center)
+	m.menuEditor(c)
+}
+
+func (m *app) menuEditor(c *ui.Context) {
+	t := c.Theme()
+	ui.Row(c).Margin(20, 0, 8, 0).Padding(0, 8).AlignItems(ui.Center).Children(func() {
+		ui.Text(c, locales.ColActionContext()).FontSize(sizeCaption).TextColor(t.TextMuted).Grow(1)
+		ui.Text(c, locales.ColLocation()).FontSize(sizeCaption).TextColor(t.TextMuted).Width(118).Shrink(0)
+		ui.Text(c, locales.ColEnabled()).FontSize(sizeCaption).TextColor(t.TextMuted).Width(48).Shrink(0).TextAlign(ui.Center)
 	})
-	ui.Divider(c)
+	ui.Divider(c).Background(separatorColor(c))
 	ui.Scroll(c).Grow(1).Children(func() {
 		ui.Column(c).Children(func() {
-			for group := range menuGroups {
-				rows := m.groupRows(group)
-				if len(rows) == 0 {
-					continue
-				}
-				if group < 4 {
-					if group > 0 {
-						ui.Divider(c).Margin(8, 0, 0, 0)
-					}
-					ui.Text(c, []string{"新建", "路径与移动", "打开应用", "文件工具"}[group]).FontSize(sizeCaption).TextColor(t.TextMuted).Padding(14, 8, 5, 8)
-				}
-				m.menuGroup(c, group, rows)
+			rows := m.menuDisplayRows(-1)
+			if len(rows) == 0 {
+				ui.Text(c, locales.NoMenuMatches()).FontSize(sizeNote).TextColor(t.TextMuted).Padding(16, 12)
+			} else {
+				m.menuGroup(c, -1, rows)
 			}
 		})
 	})
+	ui.Text(c, locales.MenuArrangeHint()).FontSize(sizeCaption).TextColor(t.TextMuted).Margin(8, 0, 0)
 }
 
 func (m *app) menuPreviewDialog(c *ui.Context) {
@@ -243,16 +251,21 @@ func (m *app) menuPreviewDialog(c *ui.Context) {
 		t := c.Theme()
 		_, height := c.Size()
 		backdrop.Background(ui.RGBA(0, 0, 0, .3))
-		panel.Width(520).MaxHeight(height-32).Padding(22).Background(t.Surface).Border(1, t.Border).Radius(10).Label("菜单预览")
-		ui.Column(c).Gap(18).Children(func() {
+		panel.Width(520).MaxHeight(height-32).Padding(22).Background(t.Surface).Border(1, t.Border).Radius(10).Label(locales.MenuPreview())
+		hint := locales.PreviewLiveHint()
+		if strings.TrimSpace(m.menuSearch) != "" {
+			hint = locales.PreviewSearchHint()
+		}
+		ui.Column(c).Gap(12).Children(func() {
 			ui.Row(c).AlignItems(ui.Center).Children(func() {
-				ui.Text(c, "菜单预览").FontSize(sizeSection).FontWeight(600)
+				ui.Text(c, locales.MenuPreview()).FontSize(sizeSection).FontWeight(600)
 				ui.Spacer(c)
-				if ghostButton(c, "关闭预览", false) {
+				if ghostButton(c, locales.ClosePreview(), false) {
 					m.menuPreviewOpen = false
 				}
 			})
-			ui.Scroll(c).MaxHeight(height - 130).Children(func() { m.menuStage(c) })
+			ui.Text(c, hint).FontSize(sizeCaption).TextColor(t.TextMuted)
+			ui.Scroll(c).MaxHeight(height - 140).Children(func() { m.menuStage(c) })
 		})
 	})
 }
@@ -268,8 +281,7 @@ const (
 	parentWidth = 112 // the parent menu card
 	subWidth    = 220 // the submenu card
 	stageSubTop = stageAbove * stageRow
-	stageGap    = 6   // space between the parent menu and the submenu
-	stageWidth  = 360 // the preview column: the place switch and the drawing both fit
+	stageGap    = 6 // space between the parent menu and the submenu
 )
 
 // menuStage is the pane's hero: the places to choose from, and a drawing of the
@@ -285,7 +297,7 @@ func (m *app) menuStage(c *ui.Context) {
 		ui.Row(c).AlignItems(ui.Center).Children(func() {
 			m.placeSwitch(c)
 			ui.Spacer(c)
-			ui.Text(c, fmt.Sprintf("显示 %d 项", n)).FontSize(sizeNote).TextColor(t.TextMuted).SingleLine()
+			ui.Text(c, locales.ShowCount(n)).FontSize(sizeNote).TextColor(t.TextMuted).SingleLine()
 		})
 		ui.Row(c).Gap(stageGap).AlignItems(ui.Start).Children(func() {
 			m.parentMenu(c)
@@ -298,8 +310,8 @@ func (m *app) menuStage(c *ui.Context) {
 // chosen place is a white chip in bold, as the chosen pane is in the sidebar.
 func (m *app) placeSwitch(c *ui.Context) {
 	t := c.Theme()
-	ui.Row(c).Gap(2).Padding(3).Radius(t.Radius+4).Background(t.Background).Border(1, t.Border).Role(ui.RoleRadioGroup).Label("右键位置").Children(func() {
-		for i, name := range previewContexts {
+	ui.Row(c).Gap(2).Padding(3).Radius(t.Radius+4).Background(t.Background).Border(1, t.Border).Role(ui.RoleRadioGroup).Label(locales.RightClickLocation()).Children(func() {
+		for i, name := range previewContexts() {
 			selected := i == m.previewCtx
 			var label ui.Element
 			b := ui.ButtonBase(c).Padding(5, 14).Radius(t.Radius).Label(name).Role(ui.RoleRadio).Checked(selected).Children(func() {
@@ -333,7 +345,7 @@ func menuCard(c *ui.Context, e ui.Element, shadow float32) ui.Element {
 // parentMenu draws the menu that holds the app's submenu, with its row lit. The other
 // rows are bars, since what they say does not matter here.
 func (m *app) parentMenu(c *ui.Context) {
-	fill, _, _, text := brandColors(c.Theme())
+	fill, text := c.Theme().Accent, c.Theme().AccentText
 	t := c.Theme()
 	bar := func(w float32) {
 		ui.Row(c).Height(stageRow).Padding(0, 10).AlignItems(ui.Center).Children(func() {
@@ -345,20 +357,12 @@ func (m *app) parentMenu(c *ui.Context) {
 		bar(68)
 		for _, item := range m.previewTopItems(m.previewCtx) {
 			ui.Row(c).Height(stageRow).Gap(5).Padding(0, 6).AlignItems(ui.Center).Children(func() {
-				if fileTypeID, ok := strings.CutPrefix(item.id, "file-type:"); ok {
-					for _, fileType := range m.cfg.FileTypes {
-						if fileType.ID == fileTypeID {
-							creationFileIcon(c, fileType.Extension, 15)
-						}
-					}
-				} else {
-					glyph(c, entryIcon(item.id), 13, t.TextMuted)
-				}
+				glyph(c, entryIcon(item.id), 13, t.TextMuted)
 				ui.Text(c, item.label).FontSize(10).SingleLine()
 			})
 		}
 		ui.Row(c).Height(stageRow).Gap(4).Padding(0, 6, 0, 10).AlignItems(ui.Center).Radius(5).Background(fill).Children(func() {
-			ui.Text(c, "右键助手").FontSize(sizeNote).FontWeight(600).TextColor(text).Grow(1)
+			ui.Text(c, locales.AppName()).FontSize(sizeNote).FontWeight(600).TextColor(text).Grow(1)
 			glyph(c, iconChevron, 11, text)
 		})
 		bar(60)
@@ -370,7 +374,7 @@ func (m *app) parentMenu(c *ui.Context) {
 // submenu draws the app's submenu as Finder shows it in the chosen place, with
 // a line between groups. A row lights up under the pointer, as a menu's rows do.
 func (m *app) submenu(c *ui.Context, groups [][]previewItem) {
-	fill, _, _, text := brandColors(c.Theme())
+	fill, text := c.Theme().Accent, c.Theme().AccentText
 	t := c.Theme()
 	menuCard(c, ui.Column(c).Width(subWidth).Margin(stageSubTop, 0, 0, 0), 12).Children(func() {
 		for g, items := range groups {
@@ -381,7 +385,7 @@ func (m *app) submenu(c *ui.Context, groups [][]previewItem) {
 				var icon, label ui.Element
 				row := ui.Row(c).Height(stageRow).Gap(8).Padding(0, 8).AlignItems(ui.Center).Radius(5).Children(func() {
 					icon = ui.Icon(c, entryIcon(it.id)).Size(15, 15).
-						TextColor(typePreviewColor(c, it.id, t.TextMuted))
+						TextColor(t.TextMuted)
 					label = ui.Text(c, it.label).FontSize(sizeBody).TextColor(t.Text)
 				})
 				if row.Hovered() {
@@ -392,18 +396,9 @@ func (m *app) submenu(c *ui.Context, groups [][]previewItem) {
 			}
 		}
 		if len(groups) == 0 {
-			ui.Text(c, "这里没有可用的项。").FontSize(sizeNote).TextColor(t.TextMuted).Padding(8, 8)
+			ui.Text(c, locales.NoItems()).FontSize(sizeNote).TextColor(t.TextMuted).Padding(8, 8)
 		}
 	})
-}
-
-// typePreviewColor uses the same colors as the file type list when the preview
-// row is a direct file type.
-func typePreviewColor(c *ui.Context, id string, fallback ui.Color) ui.Color {
-	if fileTypeID, ok := strings.CutPrefix(id, "file-type:"); ok {
-		return themedFileTypeColor(c, fileTypeID, fallback)
-	}
-	return fallback
 }
 
 // sharedWhen returns the condition that most of the entries in rows share, when
@@ -426,9 +421,15 @@ func (m *app) sharedWhen(rows []int) string {
 // A row can be dragged only within its group.
 func (m *app) menuGroup(c *ui.Context, g int, rows []int) {
 	t := c.Theme()
-	ui.List(c, &m.menuLists[g], len(rows), func(i int) {
+	list := &m.menuLists[max(0, g)]
+	list.Key = func(i int) any { return m.cfg.MenuItems[rows[i]].ID }
+	list.Reorder = nil
+	if strings.TrimSpace(m.menuSearch) == "" {
+		list.Reorder = func(rows []int, to int) { m.reorderGroup(g, rows, to) }
+	}
+	ui.List(c, list, len(rows), func(i int) {
 		item := &m.cfg.MenuItems[rows[i]]
-		entry := menuEntryFor(item.ID)
+		entry := m.menuEntry(*item)
 		labelColor, iconColor := t.Text, t.TextMuted
 		if !item.Enabled {
 			labelColor, iconColor = t.TextMuted, t.TextMuted.Alpha(0.6)
@@ -436,24 +437,38 @@ func (m *app) menuGroup(c *ui.Context, g int, rows []int) {
 		row := ui.Row(c).Height(menuRowHeight).Padding(0, 8).AlignItems(ui.Center).Radius(5)
 		row.Children(func() {
 			ui.Row(c).Gap(9).Grow(1).MinWidth(0).AlignItems(ui.Center).Children(func() {
-				gripColor := ui.Transparent
-				if row.Hovered() {
-					gripColor = t.TextMuted.Alpha(.45)
+				if strings.TrimSpace(m.menuSearch) == "" {
+					gripColor := ui.Transparent
+					if row.Hovered() {
+						gripColor = t.TextMuted.Alpha(.45)
+					}
+					ui.Icon(c, iconGrip).Size(10, 14).Shrink(0).TextColor(gripColor)
+				} else {
+					ui.Row(c).Size(10, 14).Shrink(0)
 				}
-				ui.Icon(c, iconGrip).Size(10, 14).Shrink(0).TextColor(gripColor)
-				ui.Icon(c, entryIcon(item.ID)).Size(17, 17).Shrink(0).TextColor(iconColor)
-				ui.Text(c, entry.label).FontSize(sizeBody).TextColor(labelColor).SingleLine().MinWidth(0).Grow(1).Tooltip(entry.label + " · " + entry.when)
+				ui.Icon(c, entryIcon(item.ID)).Size(16, 16).Shrink(0).TextColor(iconColor)
+				ui.Column(c).Grow(1).MinWidth(0).Gap(1).Children(func() {
+					ui.Text(c, entry.label).FontSize(sizeBody).TextColor(labelColor).SingleLine()
+					ui.Text(c, entry.when).FontSize(sizeCaption).TextColor(t.TextMuted).SingleLine()
+				})
 			})
-			ui.Row(c).Width(172).Shrink(0).AlignItems(ui.Center).Children(func() {
-				locationSelect(c, &item.Location, "action:"+item.ID, "菜单位置："+entry.label,
-					[]string{config.FileTypeSubmenu, config.FileTypeMain}, []string{"右键助手内", "Finder 顶层"}, item.Enabled, m.saveConfig)
+			ui.Row(c).Width(118).Shrink(0).AlignItems(ui.Center).Children(func() {
+				if item.ID == "new-template" {
+					ui.Text(c, locales.MenuNewFileInside()).FontSize(sizeCaption).TextColor(t.TextMuted)
+				} else {
+					locationSelect(c, &item.Location, "action:"+item.ID, locales.LocationLabel(entry.label),
+						[]string{config.FileTypeSubmenu, config.FileTypeMain}, []string{locales.LocInApp(), locales.LocFinderTopShort()}, item.Enabled, m.saveConfig)
+				}
 			})
-			ui.Row(c).Width(56).Shrink(0).Justify(ui.Center).AlignItems(ui.Center).Children(func() {
-				creationSwitch(c, &item.Enabled, "启用 "+entry.label).OnChange(m.saveConfig)
+			ui.Row(c).Width(48).Shrink(0).Justify(ui.Center).AlignItems(ui.Center).Children(func() {
+				creationSwitch(c, &item.Enabled, locales.EnableLabel(entry.label)).OnChange(m.saveConfig)
 			})
 		})
 		if row.Hovered() {
 			row.Background(t.SurfaceHover)
+		}
+		if row.RowDoubleClicked() {
+			m.menuNameID, m.menuName, m.menuNameOpen = item.ID, item.Label, true
 		}
 	}).Height(float32(len(rows)) * menuRowHeight)
 }

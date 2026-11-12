@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -13,8 +14,9 @@ func TestDefaultMenuIsEnabledInOrder(t *testing.T) {
 		t.Fatalf("got %d menu items, want %d", len(cfg.MenuItems), len(defaultMenuIDs))
 	}
 	for i, id := range defaultMenuIDs {
-		if cfg.MenuItems[i].ID != id || !cfg.MenuItems[i].Enabled {
-			t.Fatalf("item %d = %+v, want enabled %s", i, cfg.MenuItems[i], id)
+		wantEnabled := !defaultOffMenuIDs[id]
+		if cfg.MenuItems[i].ID != id || cfg.MenuItems[i].Enabled != wantEnabled {
+			t.Fatalf("item %d = %+v, want enabled %t", i, cfg.MenuItems[i], wantEnabled)
 		}
 	}
 	if len(cfg.FileTypes) != len(defaultFileTypes) {
@@ -49,7 +51,7 @@ func TestDefaultFileTypesIncludeCodeLanguages(t *testing.T) {
 			continue
 		}
 		got := cfg.FileTypes[index]
-		want := FileType{ID: tt.id, Label: tt.label, Extension: tt.extension, DefaultName: "未命名",
+		want := FileType{ID: tt.id, Label: tt.label, Extension: tt.extension,
 			Content: tt.content, Location: FileTypeSubmenu, Enabled: true}
 		if got != want {
 			t.Errorf("file type %q = %+v, want %+v", tt.id, got, want)
@@ -73,11 +75,69 @@ func TestDefaultFileTypesIncludeWPSFormats(t *testing.T) {
 			continue
 		}
 		got := cfg.FileTypes[index]
-		want := FileType{ID: tt.id, Label: tt.label, Extension: tt.extension, DefaultName: "未命名",
+		// A built-in type stores no name; its label comes from the catalogs.
+		want := FileType{ID: tt.id, Extension: tt.extension,
 			Template: tt.extension, Location: FileTypeSubmenu, Enabled: true}
 		if got != want {
 			t.Errorf("file type %q = %+v, want %+v", tt.id, got, want)
 		}
+		if name := got.DisplayLabel(); name != tt.label {
+			t.Errorf("file type %q DisplayLabel() = %q, want %q", tt.id, name, tt.label)
+		}
+	}
+}
+
+func TestBuiltinNamesFollowTheLanguage(t *testing.T) {
+	word := FileType{ID: "word", Extension: "docx"}
+	for _, tt := range []struct{ tag, label, defaultName string }{
+		{"zh-Hans", "Word 文档", "未命名"},
+		{"en", "Word Document", "Untitled"},
+	} {
+		useLocale(t, tt.tag)
+		if got := word.DisplayLabel(); got != tt.label {
+			t.Errorf("%s: DisplayLabel() = %q, want %q", tt.tag, got, tt.label)
+		}
+		if got := word.DisplayDefaultName(); got != tt.defaultName {
+			t.Errorf("%s: DisplayDefaultName() = %q, want %q", tt.tag, got, tt.defaultName)
+		}
+	}
+}
+
+func TestStoredDropsNamesTheLanguageSupplies(t *testing.T) {
+	useLocale(t, "en")
+	fileType := FileType{ID: "word", Label: "Word Document", Extension: "docx", DefaultName: "Untitled"}
+	if got := fileType.Stored(); got.Label != "" || got.DefaultName != "" {
+		t.Errorf("Stored() = label %q, default %q, want both empty", got.Label, got.DefaultName)
+	}
+	custom := FileType{ID: "custom", Label: "My Notes", Extension: "txt", DefaultName: "notes"}
+	if got := custom.Stored(); got != custom {
+		t.Errorf("Stored() changed a custom type: %+v", got)
+	}
+}
+
+func TestLoadClearsChineseNamesFromOlderFiles(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.json")
+	data := `{"version":3,"fileTypes":[{"id":"word","label":"Word 文档","extension":"docx","defaultName":"未命名","template":"docx","enabled":true}]}`
+	if err := os.WriteFile(path, []byte(data), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	word := cfg.FileTypes[slices.IndexFunc(cfg.FileTypes, func(f FileType) bool { return f.ID == "word" })]
+	if word.Label != "" || word.DefaultName != "" {
+		t.Errorf("legacy names kept: label %q, default %q", word.Label, word.DefaultName)
+	}
+	saved, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(saved), "Word 文档") {
+		t.Error("the saved file still has the Chinese name, so the Finder extension would show it")
+	}
+	if name := word.DisplayLabel(); name != "Word 文档" {
+		t.Errorf("DisplayLabel() = %q, want the Chinese catalog name", name)
 	}
 }
 
@@ -138,7 +198,7 @@ func TestSaveThenLoadRoundTrips(t *testing.T) {
 	if got.MenuItems[0].Enabled {
 		t.Fatal("disabled menu item came back enabled")
 	}
-	if got.FileTypes[1].Location != FileTypeMain || !got.OpenAfterCreate {
+	if got.FileTypes[1].Location != FileTypeSubmenu || !got.OpenAfterCreate {
 		t.Fatalf("round trip lost file type settings: %+v", got)
 	}
 	if len(got.WatchFolders) != 1 || got.WatchFolders[0] != "/tmp/only" || got.Terminal != "iTerm" {
@@ -190,7 +250,7 @@ func TestLoadAppendsMissingFileTypes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.FileTypes[0].Label != "Python 3" || got.FileTypes[0].Location != FileTypeMain {
+	if got.FileTypes[0].Label != "Python 3" || got.FileTypes[0].Location != FileTypeSubmenu {
 		t.Errorf("the configured type changed: %+v", got.FileTypes[0])
 	}
 	if len(got.FileTypes) != len(defaultFileTypes) {

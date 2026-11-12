@@ -7,7 +7,8 @@ only a blank document, workbook or slide and are embedded in the Go application.
 File icons use vscode-icons v12.15.0, Lucide 0.468.0 and Markdown Mark.
 The icons for go, rs, java, c, cpp, sql, ts and sh are vscode-icons 13.0.0,
 copied from the vscode-icons extension bundled with Zed. Replace them with
-v12.15.0 files to keep one version. The original licenses are in `icons/`. Brand marks remain the property of their
-respective owners. `scripts/import-file-icons.mjs` copies the reviewed assets
-from the design proposal. The same SVG files are embedded by Go and copied into
+v12.15.0 files to keep one version. The original licenses are in `icons/`.
+Brand marks remain the property of their respective owners. The SVG files in
+`icons/` are the reviewed assets; the design proposal they were taken from is not
+kept in this repository. The same SVG files are embedded by Go and copied into
 the Finder Sync extension by `extension/build.sh`.

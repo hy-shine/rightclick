@@ -52,38 +52,51 @@ var (
 	iconHash       = icon(`<path d="M5 9h14M5 15h14M10.3 4L8.7 20M15.3 4l-1.6 16"/>`)
 	iconCompare    = icon(`<path d="M4 8.5h13M13.5 5l3.5 3.5-3.5 3.5"/><path d="M20 15.5H7M10.5 12l-3.5 3.5 3.5 3.5"/>`)
 	iconEye        = icon(`<path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12s-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/>`)
+	iconTrash      = icon(`<path d="M4 7h16"/><path d="M9.5 7V4.8h5V7"/><path d="M6.5 7l1 12.2h9l1-12.2"/><path d="M10 11v5M14 11v5"/>`)
 
 	// Marks.
-	iconChevron = icon(`<path d="M9.5 6l6 6-6 6"/>`)
-	iconGrip    = icon(`<path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" stroke-width="2.6"/>`)
-	iconPlus    = icon(`<path d="M12 5v14M5 12h14"/>`)
-	iconCheck   = icon(`<path d="M5 12.5l4.5 4.5L19 7.5"/>`)
-	iconAlert   = icon(`<path d="M12 4l9 15.5H3z"/><path d="M12 10v4.2"/><path d="M12 17h.01"/>`)
-	iconRestart = icon(`<path d="M4.5 12a7.5 7.5 0 1 0 2.4-5.5"/><path d="M4.5 4.5v4h4"/>`)
+	iconChevron     = icon(`<path d="M9.5 6l6 6-6 6"/>`)
+	iconChevronDown = icon(`<path d="M6 9.5l6 6 6-6"/>`)
+	iconGrip        = icon(`<path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" stroke-width="2.6"/>`)
+	iconPlus        = icon(`<path d="M12 5v14M5 12h14"/>`)
+	iconEdit        = icon(`<path d="M4 20h4l10.5-10.5-4-4L4 16z"/><path d="M12.5 7.5l4 4"/>`)
+	iconCheck       = icon(`<path d="M5 12.5l4.5 4.5L19 7.5"/>`)
+	iconAlert       = icon(`<path d="M12 4l9 15.5H3z"/><path d="M12 10v4.2"/><path d="M12 17h.01"/>`)
+	iconRestart     = icon(`<path d="M4.5 12a7.5 7.5 0 1 0 2.4-5.5"/><path d="M4.5 4.5v4h4"/>`)
 )
 
 // entryIcons maps the ID of a menu entry to its icon.
 var entryIcons = map[string]*ui.SVG{
-	"new-file":      iconNew,
-	"new-folder":    iconFolderPlus,
-	"new-template":  iconTemplate,
-	"copy-path":     iconCopy,
-	"copy-name":     iconName,
-	"copy-to":       iconCopyTo,
-	"move-to":       iconMoveTo,
-	"open-terminal": iconTerminal,
-	"open-editor":   iconCode,
-	"open-with":     iconOpen,
-	"zip":           iconZip,
-	"unzip":         iconUnzip,
-	"hash":          iconHash,
-	"compare-hash":  iconCompare,
-	"toggle-hidden": iconEye,
+	"new-file":           iconNew,
+	"new-folder":         iconFolderPlus,
+	"new-template":       iconTemplate,
+	"copy-path":          iconCopy,
+	"copy-name":          iconName,
+	"copy-to":            iconCopyTo,
+	"move-to":            iconMoveTo,
+	"open-terminal":      iconTerminal,
+	"open-editor":        iconCode,
+	"open-with":          iconOpen,
+	"zip":                iconZip,
+	"unzip":              iconUnzip,
+	"hash":               iconHash,
+	"compare-hash":       iconCompare,
+	"toggle-hidden":      iconEye,
+	"delete-permanently": iconTrash,
 }
 
 // entryIcon returns the icon of the menu entry id, or the plain document
 // icon for an entry it does not know.
 func entryIcon(id string) *ui.SVG {
+	if target, ok := strings.CutPrefix(id, "type:"); ok {
+		return fileTypeIcon(target)
+	}
+	if id == "favorite-folders" || strings.HasPrefix(id, "folder:") {
+		return iconDir
+	}
+	if strings.HasPrefix(id, "app:") {
+		return iconOpen
+	}
 	if fileTypeID, ok := strings.CutPrefix(id, "file-type:"); ok {
 		return fileTypeIcon(fileTypeID)
 	}

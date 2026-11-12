@@ -3,6 +3,10 @@ package settings
 import (
 	"slices"
 	"testing"
+
+	"github.com/egoist/mygo/ui"
+
+	"rightclick/config"
 )
 
 func TestTerminalChoicesIncludeCommonAppsAndCurrent(t *testing.T) {
@@ -35,5 +39,25 @@ func TestApplicationName(t *testing.T) {
 		if got != tt.want {
 			t.Errorf("applicationName(%q) = %q, want %q", tt.path, got, tt.want)
 		}
+	}
+}
+
+func TestSetDefaultEditorMovesItToFront(t *testing.T) {
+	store := testStore(t)
+	m, err := newApp(store, testEnv())
+	if err != nil {
+		t.Fatal(err)
+	}
+	m.selectPane(paneOpeners)
+	tt := ui.NewTester(m.view, mainWidth, mainHeight)
+	if err := tt.Click("设为默认"); err != nil {
+		t.Fatal(err)
+	}
+	saved, err := config.Load(store.ConfigPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(saved.Editors) < 2 || saved.Editors[0] != "Cursor" {
+		t.Fatalf("editors = %q, want Cursor first", saved.Editors)
 	}
 }

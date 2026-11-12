@@ -1,0 +1,36 @@
+/* Finder menu text. Keep the keys in step with zh-Hans.lproj/Localizable.strings. */
+
+"finder.appName" = "RightClick";
+"finder.favoriteFolders" = "Favorite Folders";
+"finder.chooseFolder" = "Choose Another Folder…";
+"finder.newShortcut" = "New %@";
+"finder.newFile" = "New File";
+"finder.newFolder" = "Folder";
+"finder.userTemplate" = "User Template";
+"finder.copyPath" = "Copy Path";
+"finder.copyName" = "Copy Name";
+"finder.copyTo" = "Copy To…";
+"finder.moveTo" = "Move To…";
+"finder.openTerminal" = "Open in Terminal";
+"finder.openEditor" = "Open in Default Editor";
+"finder.openWith" = "Open With…";
+"finder.openWithApp" = "Open with %@";
+"finder.zip" = "Compress to ZIP";
+"finder.unzip" = "Extract Here";
+"finder.hash" = "Compute Hash";
+"finder.compareHash" = "Compare File Hashes";
+"finder.toggleHidden" = "Show or Hide Hidden Files (⌘⇧.)";
+"finder.deletePermanently" = "Delete Permanently";
+"finder.noTemplates" = "No Templates";
+"finder.noEditors" = "No Editors";
+"finder.noFileTypes" = "No File Types";
+
+/* Built-in file types. A type with a stored label uses that label instead. */
+"finder.type.word" = "Word Document";
+"finder.type.excel" = "Excel Workbook";
+"finder.type.powerpoint" = "PowerPoint Presentation";
+"finder.type.wpsDocument" = "WPS Writer";
+"finder.type.wpsSpreadsheet" = "WPS Spreadsheet";
+"finder.type.wpsPresentation" = "WPS Presentation";
+"finder.type.rtf" = "Rich Text Document";
+"finder.type.text" = "Plain Text";

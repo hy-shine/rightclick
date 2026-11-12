@@ -2,13 +2,14 @@ package settings
 
 import (
 	"encoding/base64"
-	"fmt"
 	"path/filepath"
+	"rightclick/locales"
 	"slices"
 	"strings"
 
 	"github.com/egoist/mygo"
 
+	"errors"
 	"rightclick/config"
 	"rightclick/files"
 )
@@ -28,7 +29,7 @@ func (m *app) filteredCreationRows() []creationRow {
 			if m.newMode == newModeDocuments && code || m.newMode == newModeCode && !code {
 				continue
 			}
-			if !strings.Contains(strings.ToLower(fileType.Label+" "+fileType.Extension), search) {
+			if !strings.Contains(strings.ToLower(fileType.DisplayLabel()+" "+fileType.Extension), search) {
 				continue
 			}
 			rows = append(rows, creationRow{key: "type:" + fileType.ID, index: index})
@@ -50,7 +51,9 @@ func isCodeExtension(extension string) bool {
 
 func (m *app) creationType(row creationRow) config.FileType {
 	if !row.template {
-		return m.cfg.FileTypes[row.index]
+		fileType := m.cfg.FileTypes[row.index]
+		fileType.Label, fileType.DefaultName = fileType.DisplayLabel(), fileType.DisplayDefaultName()
+		return fileType
 	}
 	template := m.templates[row.index]
 	extension := strings.TrimPrefix(filepath.Ext(template.Name), ".")
@@ -58,17 +61,13 @@ func (m *app) creationType(row creationRow) config.FileType {
 	if template.Data != "" {
 		kind = extension
 	}
-	location := template.Location
-	if location != config.FileTypeMain {
-		location = config.FileTypeSubmenu
-	}
 	label := template.Label
 	if label == "" {
 		label = strings.TrimSuffix(template.Name, filepath.Ext(template.Name))
 	}
 	return config.FileType{ID: row.key, Label: label, Extension: extension,
 		DefaultName: strings.TrimSuffix(template.Name, filepath.Ext(template.Name)), Content: template.Content, Enabled: !template.Disabled,
-		Location: location, Template: kind, TemplateData: template.Data, TemplateName: template.Name}
+		Location: config.FileTypeSubmenu, Template: kind, TemplateData: template.Data, TemplateName: template.Name}
 }
 
 func (m *app) openCreationEditor(row creationRow) {
@@ -81,20 +80,21 @@ func (m *app) saveCreationEditor() {
 	draft := m.editCreation
 	draft.Label, draft.DefaultName = strings.TrimSpace(draft.Label), strings.TrimSpace(draft.DefaultName)
 	if draft.Label == "" || draft.DefaultName == "" || strings.ContainsAny(draft.DefaultName, "/\\\x00") || draft.DefaultName == "." || draft.DefaultName == ".." {
-		m.editCreationNotice = "请输入有效名称，文件名中不能包含路径分隔符。"
+		m.editCreationNotice = locales.InvalidName()
 		return
 	}
 	if m.editCreationTemplate {
 		template := m.templates[m.editCreationIndex]
+		previousName := template.Name
 		template.Name = draft.DefaultName + "." + draft.Extension
 		template.Label = draft.Label
 		for index, existing := range m.templates {
 			if index != m.editCreationIndex && existing.Name == template.Name {
-				m.editCreationNotice = "模板名称已存在"
+				m.editCreationNotice = locales.TemplateNameExists()
 				return
 			}
 		}
-		template.Content, template.Data, template.Disabled, template.Location = draft.Content, draft.TemplateData, !draft.Enabled, draft.Location
+		template.Content, template.Data, template.Disabled, template.Location = draft.Content, draft.TemplateData, !draft.Enabled, config.FileTypeSubmenu
 		updated := slices.Clone(m.templates)
 		updated[m.editCreationIndex] = template
 		if err := files.SaveTemplates(m.store.TemplatesPath, updated); err != nil {
@@ -102,9 +102,18 @@ func (m *app) saveCreationEditor() {
 			return
 		}
 		m.templates = updated
+		if previousName != template.Name {
+			for index := range m.cfg.MenuItems {
+				if m.cfg.MenuItems[index].ID == "template:"+previousName {
+					m.cfg.MenuItems[index].ID = "template:" + template.Name
+				}
+			}
+			m.saveConfig()
+		}
 	} else {
+		draft.Location = config.FileTypeSubmenu
 		updated := slices.Clone(m.cfg.FileTypes)
-		updated[m.editCreationIndex] = draft
+		updated[m.editCreationIndex] = draft.Stored()
 		cfg := m.cfg
 		cfg.FileTypes = updated
 		if err := config.Save(m.store.ConfigPath, cfg); err != nil {
@@ -119,7 +128,7 @@ func (m *app) saveCreationEditor() {
 func (m *app) replaceCreationTemplate() {
 	win, open, extension, index, custom := m.win, m.env.openDialog, m.editCreation.Extension, m.editCreationIndex, m.editCreationTemplate
 	go func() {
-		paths, err := open(mygo.OpenDialogOptions{Parent: win, Title: "更换文档模板", Filters: []mygo.FileFilter{{Name: "文档", Extensions: []string{extension}}}})
+		paths, err := open(mygo.OpenDialogOptions{Parent: win, Title: locales.ReplaceTemplate(), Filters: []mygo.FileFilter{{Name: locales.FilterDocuments(), Extensions: []string{extension}}}})
 		if err == nil && len(paths) == 0 {
 			return
 		}
@@ -127,7 +136,7 @@ func (m *app) replaceCreationTemplate() {
 		if err == nil {
 			template, err = files.TemplateFromFile(paths[0])
 			if err == nil && strings.TrimPrefix(filepath.Ext(template.Name), ".") != extension {
-				err = fmt.Errorf("请选择相同格式的模板")
+				err = errors.New(locales.ChooseSameFormat())
 			}
 		}
 		win.Update(func() {
@@ -198,20 +207,27 @@ func (m *app) reorderFileTypes(rows []int, to int) {
 	m.saveConfig()
 }
 
-func (m *app) fileTypesAt(location string) []config.FileType {
-	var types []config.FileType
-	for _, fileType := range m.cfg.FileTypes {
-		if fileType.Enabled && fileType.Location == location {
-			types = append(types, fileType)
-		}
+// hasNewFileContents reports whether the New File submenu has anything to show.
+func (m *app) hasNewFileContents() bool {
+	if slices.ContainsFunc(m.cfg.FileTypes, func(fileType config.FileType) bool {
+		return fileType.Enabled
+	}) {
+		return true
 	}
-	return types
+	if !slices.ContainsFunc(m.cfg.MenuItems, func(item config.MenuItem) bool {
+		return item.ID == "new-template" && item.Enabled
+	}) {
+		return false
+	}
+	return slices.ContainsFunc(m.templates, func(template files.Template) bool {
+		return !template.Disabled
+	})
 }
 
 func (m *app) pickTemplate() {
 	win, open := m.win, m.env.openDialog
 	go func() {
-		paths, err := open(mygo.OpenDialogOptions{Parent: win, Title: "添加文件模板", Message: "支持文本、Word、Excel、PowerPoint 和 RTF 文档。"})
+		paths, err := open(mygo.OpenDialogOptions{Parent: win, Title: locales.AddFileTemplate(), Message: locales.AddFileTemplateHint()})
 		if err == nil && len(paths) == 0 {
 			return
 		}
@@ -221,7 +237,7 @@ func (m *app) pickTemplate() {
 		}
 		win.Update(func() {
 			if err != nil {
-				m.report("添加失败", err)
+				m.report(locales.AddFailed(), err)
 				return
 			}
 			m.addTemplate(template)
@@ -232,7 +248,7 @@ func (m *app) pickTemplate() {
 
 func (m *app) addTemplate(template files.Template) {
 	if slices.ContainsFunc(m.templates, func(existing files.Template) bool { return existing.Name == template.Name }) {
-		m.notice = "同名模板已存在，请在编辑中更换模板。"
+		m.notice = locales.SameNameExists()
 		return
 	}
 	m.templates = append(m.templates, template)
@@ -244,7 +260,11 @@ func (m *app) deleteTemplate() {
 	if m.tplSel < 0 || m.tplSel >= len(m.templates) {
 		return
 	}
+	name := m.templates[m.tplSel].Name
 	m.templates = slices.Delete(m.templates, m.tplSel, m.tplSel+1)
 	m.tplSel = min(m.tplSel, len(m.templates)-1)
 	m.saveTemplates()
+	if !slices.ContainsFunc(m.templates, func(template files.Template) bool { return template.Name == name }) {
+		m.setShortcut("template:"+name, false)
+	}
 }

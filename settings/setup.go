@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"rightclick/locales"
 	"slices"
 
 	"github.com/egoist/mygo/ui"
@@ -49,53 +50,27 @@ func (s setupStep) blocked() bool {
 func (s setupStep) summary() string {
 	switch s {
 	case stepExtension:
-		return "需要开启扩展"
+		return locales.StatusNeedsExtension()
 	case stepFolder:
-		return "等待设置文件夹范围"
+		return locales.StatusWaitingFolders()
 	case stepItem:
-		return "没有启用的项"
+		return locales.StatusNoItems()
 	case stepRestart:
-		return "需要重新启动访达"
+		return locales.StatusNeedsRestart()
 	case stepReady:
-		return "可以使用"
+		return locales.StatusReady()
 	}
-	return "检查中…"
-}
-
-// setupCard names the one step that is still missing, with the action that
-// completes it, so the first thing on the menu page is what to do next. It shows
-// nothing when the menu can show in Finder, or while the extension is checked.
-func (m *app) setupCard(c *ui.Context) {
-	t := c.Theme()
-	switch m.setupStep() {
-	case stepExtension:
-		if banner(c, t.Warning, iconAlert, "Finder 扩展还没有启用", "启用后，访达的右键菜单里才会出现这些项。", "去启用") {
-			m.openFinderSettings()
-		}
-	case stepFolder:
-		ui.Column(c).Gap(10).Children(func() {
-			banner(c, t.Warning, iconAlert, "还没有设置文件夹范围", "右键助手只会在你添加的文件夹及其子文件夹里出现。", "")
-			m.addFolderActions(c, true)
-		})
-	case stepItem:
-		if banner(c, t.Warning, iconAlert, "没有启用任何菜单项", "打开至少一项，访达的右键菜单才会有内容。", "恢复默认") {
-			m.restoreDefaultMenu()
-		}
-	case stepRestart:
-		if banner(c, t.Warning, iconRestart, "需要重新启动访达", "文件夹范围变更后，要重新启动访达才会读取。", "重新启动") {
-			m.confirmRestart = true
-		}
-	}
+	return locales.StatusChecking()
 }
 
 // addFolderActions offers the ways to add to the folder whitelist: the picker,
 // and with offerDefaults, the Desktop, Documents and Downloads folders at once.
 func (m *app) addFolderActions(c *ui.Context, offerDefaults bool) {
 	ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
-		if primaryButton(c, iconPlus, "添加文件夹…") {
+		if primaryButton(c, iconPlus, locales.AddFolder()) {
 			m.pickFolder()
 		}
-		if offerDefaults && quietButton(c, nil, "使用默认文件夹（桌面、文稿、下载）") {
+		if offerDefaults && quietButton(c, nil, locales.UseDefaultFolders()) {
 			m.useDefaultFolders()
 		}
 	})

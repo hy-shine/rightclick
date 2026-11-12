@@ -19,6 +19,14 @@ struct MenuItemSetting: Decodable {
     let id: String
     let enabled: Bool
     let location: String?
+    var label: String? = nil
+}
+
+struct FavoriteFolderSetting: Decodable {
+    let id: String
+    let path: String
+    let label: String
+    let enabled: Bool
 }
 
 /// One entry of the fileTypes array in config.json.
@@ -28,12 +36,29 @@ struct FileTypeSetting: Decodable {
     let ext: String
     let defaultName: String
     let content: String
-    let location: String
+    let location: String // kept for older config files; the menu ignores it
     var enabled: Bool? = nil
 
     private enum CodingKeys: String, CodingKey {
         case id, label, defaultName, content, location, enabled
         case ext = "extension"
+    }
+
+    /// The name the menu shows. A built-in type stores no label, so its name follows the
+    /// language Finder shows. Any other type without a label shows its extension.
+    var displayLabel: String {
+        if !label.isEmpty { return label }
+        switch id {
+        case "word": return Localized.text("finder.type.word")
+        case "excel": return Localized.text("finder.type.excel")
+        case "powerpoint": return Localized.text("finder.type.powerpoint")
+        case "wps-document": return Localized.text("finder.type.wpsDocument")
+        case "wps-spreadsheet": return Localized.text("finder.type.wpsSpreadsheet")
+        case "wps-presentation": return Localized.text("finder.type.wpsPresentation")
+        case "rtf": return Localized.text("finder.type.rtf")
+        case "text": return Localized.text("finder.type.text")
+        default: return ext
+        }
     }
 }
 
@@ -47,46 +72,46 @@ enum FileTypes {
     /// The built-in text types. Keep this order and these IDs in sync with
     /// config.defaultFileTypes in Go.
     static let defaults: [FileTypeSetting] = [
-        FileTypeSetting(id: "word", label: "Word 文档", ext: "docx", defaultName: "未命名", content: "", location: FileTypeLocation.submenu),
-        FileTypeSetting(id: "excel", label: "Excel 工作簿", ext: "xlsx", defaultName: "未命名", content: "", location: FileTypeLocation.submenu),
-        FileTypeSetting(id: "powerpoint", label: "PowerPoint 演示", ext: "pptx", defaultName: "未命名", content: "", location: FileTypeLocation.submenu),
-        FileTypeSetting(id: "wps-document", label: "WPS 文档", ext: "docx", defaultName: "未命名", content: "", location: FileTypeLocation.submenu),
-        FileTypeSetting(id: "wps-spreadsheet", label: "WPS 表格", ext: "xlsx", defaultName: "未命名", content: "", location: FileTypeLocation.submenu),
-        FileTypeSetting(id: "wps-presentation", label: "WPS 演示", ext: "pptx", defaultName: "未命名", content: "", location: FileTypeLocation.submenu),
-        FileTypeSetting(id: "rtf", label: "富文本文档", ext: "rtf", defaultName: "未命名", content: "", location: FileTypeLocation.submenu),
-        FileTypeSetting(id: "text", label: "文本文件", ext: "txt", defaultName: "未命名",
+        FileTypeSetting(id: "word", label: "", ext: "docx", defaultName: "", content: "", location: FileTypeLocation.submenu),
+        FileTypeSetting(id: "excel", label: "", ext: "xlsx", defaultName: "", content: "", location: FileTypeLocation.submenu),
+        FileTypeSetting(id: "powerpoint", label: "", ext: "pptx", defaultName: "", content: "", location: FileTypeLocation.submenu),
+        FileTypeSetting(id: "wps-document", label: "", ext: "docx", defaultName: "", content: "", location: FileTypeLocation.submenu),
+        FileTypeSetting(id: "wps-spreadsheet", label: "", ext: "xlsx", defaultName: "", content: "", location: FileTypeLocation.submenu),
+        FileTypeSetting(id: "wps-presentation", label: "", ext: "pptx", defaultName: "", content: "", location: FileTypeLocation.submenu),
+        FileTypeSetting(id: "rtf", label: "", ext: "rtf", defaultName: "", content: "", location: FileTypeLocation.submenu),
+        FileTypeSetting(id: "text", label: "", ext: "txt", defaultName: "",
                         content: "", location: FileTypeLocation.submenu),
-        FileTypeSetting(id: "markdown", label: "Markdown", ext: "md", defaultName: "未命名",
-                        content: "# 标题\n\n", location: FileTypeLocation.submenu),
-        FileTypeSetting(id: "json", label: "JSON", ext: "json", defaultName: "未命名",
+        FileTypeSetting(id: "markdown", label: "Markdown", ext: "md", defaultName: "",
+                        content: "# Title\n\n", location: FileTypeLocation.submenu),
+        FileTypeSetting(id: "json", label: "JSON", ext: "json", defaultName: "",
                         content: "{}\n", location: FileTypeLocation.submenu),
-        FileTypeSetting(id: "csv", label: "CSV", ext: "csv", defaultName: "未命名",
+        FileTypeSetting(id: "csv", label: "CSV", ext: "csv", defaultName: "",
                         content: "", location: FileTypeLocation.submenu),
-        FileTypeSetting(id: "html", label: "HTML", ext: "html", defaultName: "未命名",
+        FileTypeSetting(id: "html", label: "HTML", ext: "html", defaultName: "",
                         content: "<!doctype html>\n", location: FileTypeLocation.submenu),
-        FileTypeSetting(id: "css", label: "CSS", ext: "css", defaultName: "未命名",
+        FileTypeSetting(id: "css", label: "CSS", ext: "css", defaultName: "",
                         content: "", location: FileTypeLocation.submenu),
-        FileTypeSetting(id: "javascript", label: "JavaScript", ext: "js", defaultName: "未命名",
+        FileTypeSetting(id: "javascript", label: "JavaScript", ext: "js", defaultName: "",
                         content: "\"use strict\";\n", location: FileTypeLocation.submenu),
-        FileTypeSetting(id: "swift", label: "Swift", ext: "swift", defaultName: "未命名",
+        FileTypeSetting(id: "swift", label: "Swift", ext: "swift", defaultName: "",
                         content: "", location: FileTypeLocation.submenu),
-        FileTypeSetting(id: "python", label: "Python", ext: "py", defaultName: "未命名",
+        FileTypeSetting(id: "python", label: "Python", ext: "py", defaultName: "",
                         content: "#!/usr/bin/env python3\n", location: FileTypeLocation.submenu),
-        FileTypeSetting(id: "go", label: "Go", ext: "go", defaultName: "未命名",
+        FileTypeSetting(id: "go", label: "Go", ext: "go", defaultName: "",
                         content: "package main\n\n", location: FileTypeLocation.submenu),
-        FileTypeSetting(id: "rust", label: "Rust", ext: "rs", defaultName: "未命名",
+        FileTypeSetting(id: "rust", label: "Rust", ext: "rs", defaultName: "",
                         content: "", location: FileTypeLocation.submenu),
-        FileTypeSetting(id: "java", label: "Java", ext: "java", defaultName: "未命名",
+        FileTypeSetting(id: "java", label: "Java", ext: "java", defaultName: "",
                         content: "", location: FileTypeLocation.submenu),
-        FileTypeSetting(id: "c", label: "C", ext: "c", defaultName: "未命名",
+        FileTypeSetting(id: "c", label: "C", ext: "c", defaultName: "",
                         content: "", location: FileTypeLocation.submenu),
-        FileTypeSetting(id: "cpp", label: "C++", ext: "cpp", defaultName: "未命名",
+        FileTypeSetting(id: "cpp", label: "C++", ext: "cpp", defaultName: "",
                         content: "", location: FileTypeLocation.submenu),
-        FileTypeSetting(id: "sql", label: "SQL", ext: "sql", defaultName: "未命名",
+        FileTypeSetting(id: "sql", label: "SQL", ext: "sql", defaultName: "",
                         content: "", location: FileTypeLocation.submenu),
-        FileTypeSetting(id: "typescript", label: "TypeScript", ext: "ts", defaultName: "未命名",
+        FileTypeSetting(id: "typescript", label: "TypeScript", ext: "ts", defaultName: "",
                         content: "", location: FileTypeLocation.submenu),
-        FileTypeSetting(id: "shell", label: "Shell", ext: "sh", defaultName: "未命名",
+        FileTypeSetting(id: "shell", label: "Shell", ext: "sh", defaultName: "",
                         content: "#!/usr/bin/env bash\n", location: FileTypeLocation.submenu),
     ]
 
@@ -106,25 +131,22 @@ enum FileTypes {
         return types
     }
 
-    static func visible(_ types: [FileTypeSetting], at location: String) -> [FileTypeSetting] {
-        types.filter { entry in
-            guard entry.enabled != false && entry.location != FileTypeLocation.hidden else { return false }
-            switch entry.location {
-            case FileTypeLocation.hidden, FileTypeLocation.submenu, FileTypeLocation.main:
-                return entry.location == location
-            default:
-                return location == FileTypeLocation.submenu
-            }
-        }
+    /// The types that belong in the New File submenu. The stored location is
+    /// ignored: file types always live inside that submenu.
+    static func enabled(_ types: [FileTypeSetting]) -> [FileTypeSetting] {
+        types.filter { $0.enabled != false && $0.location != FileTypeLocation.hidden }
     }
 }
 
 /// The parts of config.json that the extension reads. Other keys are ignored.
 struct AppConfig: Decodable {
+    /// "en", "zh-Hans", or nil and empty for the system language.
+    let language: String?
     let menuItems: [MenuItemSetting]?
     let fileTypes: [FileTypeSetting]?
     let watchFolders: [String]?
     let editors: [String]?
+    let favoriteFolders: [FavoriteFolderSetting]?
 
     /// Returns nil when config.json is missing or cannot be decoded.
     static func load() -> AppConfig? {
@@ -134,12 +156,29 @@ struct AppConfig: Decodable {
     }
 }
 
+extension AppConfig {
+    /// Whether every target lies inside the current folder whitelist. Finder can
+    /// keep an old directory list until it restarts; this check makes the menu
+    /// agree with the main app even then.
+    func contains(_ target: MenuTarget) -> Bool {
+        let roots = (watchFolders ?? []).map {
+            URL(fileURLWithPath: $0, isDirectory: true).resolvingSymlinksInPath().standardizedFileURL.path
+        }
+        guard !roots.isEmpty else { return false }
+        return target.items.allSatisfy { item in
+            let folder = item.isDirectory ? item.url : item.url.deletingLastPathComponent()
+            let path = folder.resolvingSymlinksInPath().standardizedFileURL.path
+            return roots.contains { path == $0 || path.hasPrefix($0 + "/") }
+        }
+    }
+}
+
 /// One item of templates.json, which is an array of {"name": ..., "content": ...} objects.
 /// The menu needs only the name. The main app reads the content.
 struct TemplateEntry: Decodable {
     let name: String
     let disabled: Bool?
-    let location: String?
+    let location: String? // kept for older files; templates stay inside New File
     let label: String?
 }
 
@@ -163,10 +202,15 @@ enum MenuActions {
         ["zip", "unzip", "hash"],
         ["compare-hash"],
         ["toggle-hidden"],
+        ["delete-permanently"],
     ]
 
     /// Every ID in default order. It is also the order used when config.json is missing.
     static let defaultOrder: [String] = MenuActions.groups.flatMap { $0 }
+
+    /// Actions that start switched off because they cannot be undone. Like the Go side's
+    /// defaultOffMenuIDs, they stay out of the menu until the user turns them on.
+    static let defaultOff: Set<String> = ["delete-permanently"]
 
     /// The IDs to show, in display order, from the menuItems array. Entries with enabled = false
     /// are dropped. An ID missing from the array (for example, one added in a later version)
@@ -174,13 +218,14 @@ enum MenuActions {
     static func enabledIDs(from settings: [MenuItemSetting]?) -> [String] {
         var listed = Set<String>()
         var ids: [String] = []
-        for setting in settings ?? [] where defaultOrder.contains(setting.id) && !listed.contains(setting.id) {
+        for setting in settings ?? [] where (defaultOrder.contains(setting.id) || setting.id == "favorite-folders" ||
+            ["type:", "template:", "app:", "folder:"].contains(where: { setting.id.hasPrefix($0) })) && !listed.contains(setting.id) {
             listed.insert(setting.id)
             if setting.enabled {
                 ids.append(setting.id)
             }
         }
-        ids += defaultOrder.filter { !listed.contains($0) }
+        ids += defaultOrder.filter { !listed.contains($0) && !defaultOff.contains($0) }
         return ids
     }
 }

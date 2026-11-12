@@ -217,6 +217,13 @@ func TestMenuActionsMatchFinderExtension(t *testing.T) {
 	if len(inMenu) == 0 {
 		t.Fatal("MenuActions.groups lists no actions")
 	}
+	provider, err := os.ReadFile(filepath.Join("extension", "RightClickFinderSync", "FinderSyncExtension.swift"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, match := range regexp.MustCompile(`urlAction: "([a-z-]+)"`).FindAllSubmatch(provider, -1) {
+		inMenu[string(match[1])] = true
+	}
 	handled := actionHandlers()
 	for name := range inMenu {
 		if _, ok := handled[name]; !ok {

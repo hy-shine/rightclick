@@ -5,12 +5,14 @@ package config
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"rightclick/locales"
 	"slices"
 	"strings"
+
+	"github.com/egoist/mygo/i18n"
 )
 
 // Version is the file format version that Save writes.
@@ -29,6 +31,14 @@ type MenuItem struct {
 	ID       string `json:"id"`
 	Enabled  bool   `json:"enabled"`
 	Location string `json:"location"`
+	Label    string `json:"label,omitempty"`
+}
+
+type FavoriteFolder struct {
+	ID      string `json:"id"`
+	Path    string `json:"path"`
+	Label   string `json:"label"`
+	Enabled bool   `json:"enabled"`
 }
 
 // FileType is one file the New File submenu can create.
@@ -38,25 +48,32 @@ type FileType struct {
 	Extension    string `json:"extension"`
 	DefaultName  string `json:"defaultName"`
 	Content      string `json:"content"`
-	Location     string `json:"location"`
+	Location     string `json:"location"` // always FileTypeSubmenu; kept for old files
 	Enabled      bool   `json:"enabled"`
 	Template     string `json:"template,omitempty"`
 	TemplateData string `json:"templateData,omitempty"`
 	TemplateName string `json:"templateName,omitempty"`
 }
 
+// Languages lists the choices of the language setting. "" follows the system;
+// the others are catalog tags.
+var Languages = []string{"", "zh-Hans", "en"}
+
 // Config is the saved settings.
 type Config struct {
+	// Language is the language the app shows, one of Languages.
+	Language  string     `json:"language,omitempty"`
 	Version   int        `json:"version"`
 	MenuItems []MenuItem `json:"menuItems"`
 	FileTypes []FileType `json:"fileTypes"`
 	// WatchFolders is the single folder whitelist. The Finder extension shows
 	// the menu only inside these folders, and URL actions are refused outside
 	// them.
-	WatchFolders    []string `json:"watchFolders"`
-	Terminal        string   `json:"terminal"`
-	Editors         []string `json:"editors"`
-	OpenAfterCreate bool     `json:"openAfterCreate"`
+	WatchFolders    []string         `json:"watchFolders"`
+	Terminal        string           `json:"terminal"`
+	Editors         []string         `json:"editors"`
+	OpenAfterCreate bool             `json:"openAfterCreate"`
+	FavoriteFolders []FavoriteFolder `json:"favoriteFolders,omitempty"`
 }
 
 // defaultMenuIDs lists the menu entries in their default order, as in ui.md section 2.
@@ -65,88 +82,92 @@ var defaultMenuIDs = []string{
 	"copy-path", "copy-name", "copy-to", "move-to",
 	"open-terminal", "open-editor", "open-with",
 	"zip", "unzip", "hash", "compare-hash",
-	"toggle-hidden",
+	"toggle-hidden", "delete-permanently",
 }
+
+// defaultOffMenuIDs lists the menu entries that start switched off. Deleting for good
+// stays out of the menu until the user turns it on.
+var defaultOffMenuIDs = map[string]bool{"delete-permanently": true}
 
 // defaultFileTypes lists the text files the New File submenu creates. Binary
 // document formats need real templates and are deliberately not included.
 var defaultFileTypes = []FileType{
-	{ID: "word", Label: "Word 文档", Extension: "docx", DefaultName: "未命名", Template: "docx", Location: FileTypeSubmenu},
-	{ID: "excel", Label: "Excel 工作簿", Extension: "xlsx", DefaultName: "未命名", Template: "xlsx", Location: FileTypeSubmenu},
-	{ID: "powerpoint", Label: "PowerPoint 演示", Extension: "pptx", DefaultName: "未命名", Template: "pptx", Location: FileTypeSubmenu},
-	{ID: "wps-document", Label: "WPS 文档", Extension: "docx", DefaultName: "未命名", Template: "docx", Location: FileTypeSubmenu},
-	{ID: "wps-spreadsheet", Label: "WPS 表格", Extension: "xlsx", DefaultName: "未命名", Template: "xlsx", Location: FileTypeSubmenu},
-	{ID: "wps-presentation", Label: "WPS 演示", Extension: "pptx", DefaultName: "未命名", Template: "pptx", Location: FileTypeSubmenu},
-	{ID: "rtf", Label: "富文本文档", Extension: "rtf", DefaultName: "未命名", Template: "rtf", Location: FileTypeSubmenu},
+	{ID: "word", Label: "", Extension: "docx", DefaultName: "", Template: "docx", Location: FileTypeSubmenu},
+	{ID: "excel", Label: "", Extension: "xlsx", DefaultName: "", Template: "xlsx", Location: FileTypeSubmenu},
+	{ID: "powerpoint", Label: "", Extension: "pptx", DefaultName: "", Template: "pptx", Location: FileTypeSubmenu},
+	{ID: "wps-document", Label: "", Extension: "docx", DefaultName: "", Template: "docx", Location: FileTypeSubmenu},
+	{ID: "wps-spreadsheet", Label: "", Extension: "xlsx", DefaultName: "", Template: "xlsx", Location: FileTypeSubmenu},
+	{ID: "wps-presentation", Label: "", Extension: "pptx", DefaultName: "", Template: "pptx", Location: FileTypeSubmenu},
+	{ID: "rtf", Label: "", Extension: "rtf", DefaultName: "", Template: "rtf", Location: FileTypeSubmenu},
 	{
-		ID: "text", Label: "文本文件", Extension: "txt", DefaultName: "未命名",
+		ID: "text", Label: "", Extension: "txt", DefaultName: "",
 		Location: FileTypeSubmenu,
 	},
 	{
-		ID: "markdown", Label: "Markdown", Extension: "md", DefaultName: "未命名",
-		Content: "# 标题\n\n", Location: FileTypeSubmenu,
+		ID: "markdown", Label: "Markdown", Extension: "md", DefaultName: "",
+		Content: "# Title\n\n", Location: FileTypeSubmenu,
 	},
 	{
-		ID: "json", Label: "JSON", Extension: "json", DefaultName: "未命名",
+		ID: "json", Label: "JSON", Extension: "json", DefaultName: "",
 		Content: "{}\n", Location: FileTypeSubmenu,
 	},
 	{
-		ID: "csv", Label: "CSV", Extension: "csv", DefaultName: "未命名",
+		ID: "csv", Label: "CSV", Extension: "csv", DefaultName: "",
 		Location: FileTypeSubmenu,
 	},
 	{
-		ID: "html", Label: "HTML", Extension: "html", DefaultName: "未命名",
+		ID: "html", Label: "HTML", Extension: "html", DefaultName: "",
 		Content: "<!doctype html>\n<html lang=\"zh-CN\">\n<head>\n" +
 			"  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n" +
-			"  <title>未命名</title>\n</head>\n<body>\n\n</body>\n</html>\n",
+			"  <title>Untitled</title>\n</head>\n<body>\n\n</body>\n</html>\n",
 		Location: FileTypeSubmenu,
 	},
 	{
-		ID: "css", Label: "CSS", Extension: "css", DefaultName: "未命名",
+		ID: "css", Label: "CSS", Extension: "css", DefaultName: "",
 		Location: FileTypeSubmenu,
 	},
 	{
-		ID: "javascript", Label: "JavaScript", Extension: "js", DefaultName: "未命名",
+		ID: "javascript", Label: "JavaScript", Extension: "js", DefaultName: "",
 		Content: "\"use strict\";\n", Location: FileTypeSubmenu,
 	},
 	{
-		ID: "swift", Label: "Swift", Extension: "swift", DefaultName: "未命名",
+		ID: "swift", Label: "Swift", Extension: "swift", DefaultName: "",
 		Location: FileTypeSubmenu,
 	},
 	{
-		ID: "python", Label: "Python", Extension: "py", DefaultName: "未命名",
+		ID: "python", Label: "Python", Extension: "py", DefaultName: "",
 		Content: "#!/usr/bin/env python3\n", Location: FileTypeSubmenu,
 	},
 	{
-		ID: "go", Label: "Go", Extension: "go", DefaultName: "未命名",
+		ID: "go", Label: "Go", Extension: "go", DefaultName: "",
 		Content: "package main\n\n", Location: FileTypeSubmenu,
 	},
 	{
-		ID: "rust", Label: "Rust", Extension: "rs", DefaultName: "未命名",
+		ID: "rust", Label: "Rust", Extension: "rs", DefaultName: "",
 		Location: FileTypeSubmenu,
 	},
 	{
-		ID: "java", Label: "Java", Extension: "java", DefaultName: "未命名",
+		ID: "java", Label: "Java", Extension: "java", DefaultName: "",
 		Location: FileTypeSubmenu,
 	},
 	{
-		ID: "c", Label: "C", Extension: "c", DefaultName: "未命名",
+		ID: "c", Label: "C", Extension: "c", DefaultName: "",
 		Location: FileTypeSubmenu,
 	},
 	{
-		ID: "cpp", Label: "C++", Extension: "cpp", DefaultName: "未命名",
+		ID: "cpp", Label: "C++", Extension: "cpp", DefaultName: "",
 		Location: FileTypeSubmenu,
 	},
 	{
-		ID: "sql", Label: "SQL", Extension: "sql", DefaultName: "未命名",
+		ID: "sql", Label: "SQL", Extension: "sql", DefaultName: "",
 		Location: FileTypeSubmenu,
 	},
 	{
-		ID: "typescript", Label: "TypeScript", Extension: "ts", DefaultName: "未命名",
+		ID: "typescript", Label: "TypeScript", Extension: "ts", DefaultName: "",
 		Location: FileTypeSubmenu,
 	},
 	{
-		ID: "shell", Label: "Shell", Extension: "sh", DefaultName: "未命名",
+		ID: "shell", Label: "Shell", Extension: "sh", DefaultName: "",
 		Content: "#!/usr/bin/env bash\n", Location: FileTypeSubmenu,
 	},
 }
@@ -155,7 +176,7 @@ var defaultFileTypes = []FileType{
 func Default() Config {
 	items := make([]MenuItem, 0, len(defaultMenuIDs))
 	for _, id := range defaultMenuIDs {
-		items = append(items, MenuItem{ID: id, Enabled: true, Location: DefaultMenuLocation(id)})
+		items = append(items, MenuItem{ID: id, Enabled: !defaultOffMenuIDs[id], Location: DefaultMenuLocation(id)})
 	}
 	var folders []string
 	if home, err := os.UserHomeDir(); err == nil {
@@ -220,10 +241,17 @@ func Load(path string) (Config, error) {
 	}
 	cfg := Config{}
 	if err := json.Unmarshal(data, &cfg); err != nil {
-		return Config{}, fmt.Errorf("设置文件无法读取：%w", err)
+		return Config{}, errors.New(locales.ConfigReadFailed(err.Error()))
 	}
+	legacy := hasLegacyNames(cfg.FileTypes)
 	cfg.normalize()
 	cfg.addMissingMenuItems()
+	if legacy {
+		// The Finder extension reads this file directly, so the cleared names are saved
+		// here. A failed save is not fatal: the names are cleared in memory and the
+		// next load tries again.
+		_ = Save(path, cfg)
+	}
 	return cfg, nil
 }
 
@@ -271,6 +299,9 @@ func (cfg *Config) normalize() {
 			cfg.MenuItems[index].Location = DefaultMenuLocation(cfg.MenuItems[index].ID)
 		}
 	}
+	if !slices.Contains(Languages, cfg.Language) {
+		cfg.Language = ""
+	}
 	cfg.Version = Version
 }
 
@@ -285,18 +316,16 @@ func normalizeFileTypes(types []FileType, legacy bool) []FileType {
 			continue
 		}
 		seen[fileType.ID] = true
+		fileType = migrateLegacyNames(fileType)
 		if legacy {
 			fileType.Enabled = fileType.Location != FileTypeHidden
 		}
 		if fileType.Location == FileTypeHidden {
 			fileType.Enabled = false
-			fileType.Location = FileTypeSubmenu
 		}
-		switch fileType.Location {
-		case FileTypeMain, FileTypeSubmenu:
-		default:
-			fileType.Location = FileTypeSubmenu
-		}
+		// File types always live inside the New File submenu. The field stays
+		// for older config files that still carry a location.
+		fileType.Location = FileTypeSubmenu
 		out = append(out, fileType)
 	}
 	return out
@@ -347,7 +376,7 @@ func (cfg *Config) addMissingMenuItems() {
 	}
 	for _, id := range defaultMenuIDs {
 		if !have[id] {
-			cfg.MenuItems = append(cfg.MenuItems, MenuItem{ID: id, Enabled: true, Location: DefaultMenuLocation(id)})
+			cfg.MenuItems = append(cfg.MenuItems, MenuItem{ID: id, Enabled: !defaultOffMenuIDs[id], Location: DefaultMenuLocation(id)})
 		}
 	}
 }
@@ -358,6 +387,90 @@ func DefaultFileTypes() []FileType {
 		types[index].Enabled = true
 	}
 	return types
+}
+
+// DisplayLabel returns the name that menus and lists show for f. A built-in type
+// stores no label, so its name follows the language the app shows.
+func (f FileType) DisplayLabel() string {
+	if f.Label != "" {
+		return f.Label
+	}
+	if name := builtinLabel(locales.In(i18n.Locale()), f.ID); name != "" {
+		return name
+	}
+	return f.Extension
+}
+
+// DisplayDefaultName returns the file name, without extension, that a new file of
+// type f starts with.
+func (f FileType) DisplayDefaultName() string {
+	if f.DefaultName != "" {
+		return f.DefaultName
+	}
+	return locales.In(i18n.Locale()).DefaultUntitled()
+}
+
+// Stored returns f ready to save. A name that equals the current language's
+// built-in or default name is stored empty, so the saved file keeps following the
+// language. Any other name is kept as typed.
+func (f FileType) Stored() FileType {
+	msgs := locales.In(i18n.Locale())
+	if f.Label == builtinLabel(msgs, f.ID) {
+		f.Label = ""
+	}
+	if f.DefaultName == msgs.DefaultUntitled() {
+		f.DefaultName = ""
+	}
+	return f
+}
+
+// builtinLabel returns the name of a built-in file type in msgs' language, or ""
+// for a type that has no built-in name.
+func builtinLabel(msgs locales.Messages, id string) string {
+	switch id {
+	case "word":
+		return msgs.FileTypeWord()
+	case "excel":
+		return msgs.FileTypeExcel()
+	case "powerpoint":
+		return msgs.FileTypePowerPoint()
+	case "wps-document":
+		return msgs.FileTypeWPSDocument()
+	case "wps-spreadsheet":
+		return msgs.FileTypeWPSSpreadsheet()
+	case "wps-presentation":
+		return msgs.FileTypeWPSPresentation()
+	case "rtf":
+		return msgs.FileTypeRTF()
+	case "text":
+		return msgs.FileTypeText()
+	}
+	return ""
+}
+
+// hasLegacyNames reports whether migrateLegacyNames would change one of types.
+func hasLegacyNames(types []FileType) bool {
+	for _, f := range types {
+		if migrateLegacyNames(f) != f {
+			return true
+		}
+	}
+	return false
+}
+
+// migrateLegacyNames clears the names that format version 3 and earlier wrote into
+// a file type: the Chinese built-in names and locales.DefaultUntitled() as the default name. Those
+// were the Chinese catalog text, so they would stay Chinese after the language
+// changes. An empty name means the current language's name is used.
+func migrateLegacyNames(f FileType) FileType {
+	zh := locales.In("zh-Hans")
+	if f.Label != "" && f.Label == builtinLabel(zh, f.ID) {
+		f.Label = ""
+	}
+	if f.DefaultName == zh.DefaultUntitled() {
+		f.DefaultName = ""
+	}
+	return f
 }
 
 func DefaultMenuLocation(id string) string {
@@ -371,6 +484,9 @@ func DefaultMenuLocation(id string) string {
 // Save writes cfg to path. The previous file stays if the write fails.
 func Save(path string, cfg Config) error {
 	cfg.Version = Version
+	for index := range cfg.FileTypes {
+		cfg.FileTypes[index].Location = FileTypeSubmenu
+	}
 	data, err := json.MarshalIndent(cfg, "", "  ")
 	if err != nil {
 		return err

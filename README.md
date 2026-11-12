@@ -1,11 +1,13 @@
 # 右键助手（RightClick）
 
-macOS 访达（Finder）右键菜单增强工具。主程序的界面（主窗口、托盘）用 [mygo](https://github.com/egoist/mygo) 原生 UI 实现；Finder 里的菜单项由 Swift 写的 Finder Sync 扩展提供。
+macOS 访达（Finder）右键菜单增强工具。主程序的界面（主窗口）用 [mygo](https://github.com/egoist/mygo) 原生 UI 实现；Finder 里的菜单项由 Swift 写的 Finder Sync 扩展提供。
 
 **状态：开发中。** Finder 扩展和主程序的右键动作已经接通；新建文件支持
 Word、Excel、PowerPoint、RTF、WPS 文档、WPS 表格、WPS 演示（与 Office 同格式），以及 Text、Markdown、JSON、CSV、HTML、CSS、
-JavaScript、Swift、Python、Go、Rust、Java、C、C++、SQL、TypeScript 和 Shell。新建页可以直接启用或停用类型，调整 Finder 顶层或
-新建子菜单位置，并在编辑弹窗中修改默认文件名、文本内容或替换文档模板。
+JavaScript、Swift、Python、Go、Rust、Java、C、C++、SQL、TypeScript 和 Shell。新建页可以直接启用或停用类型、调整顺序，
+并在编辑弹窗中修改默认文件名、文本内容或替换文档模板。类型和模板保留在“新建文件”菜单内，也可以勾选“直达”添加独立菜单项。
+常用应用和收藏目录同样支持独立入口，统一在“右键菜单”页拖动排序、双击改名和选择显示位置。
+“常用目录”支持收藏、改名、启停和排序，并作为“复制到 / 移动到”的快捷目标；它与控制菜单显示位置的“文件夹范围”相互独立。
 用户模板支持文本与上述办公文档，导入后保存原始内容；办公文档不会用空文件冒充。
 
 **名称和 Bundle ID 都是占位。** `RightClick` 是模板名，`com.example.rightclick` 是模板默认值。签名或发布前要换成正式值。

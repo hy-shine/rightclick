@@ -5,10 +5,11 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
+	"errors"
 	"hash"
 	"io"
 	"os"
+	"rightclick/locales"
 )
 
 // Algorithm is a hash function offered by the menu.
@@ -32,7 +33,7 @@ func Hash(path string, algo Algorithm) (string, error) {
 		return "", err
 	}
 	if !info.Mode().IsRegular() {
-		return "", fmt.Errorf("只能计算文件的哈希：%s", path)
+		return "", errors.New(locales.HashNeedsFile(path))
 	}
 	f, err := os.Open(path)
 	if err != nil {
@@ -66,5 +67,5 @@ func newHash(algo Algorithm) (hash.Hash, error) {
 	case MD5:
 		return md5.New(), nil
 	}
-	return nil, fmt.Errorf("不支持的哈希算法：%s", algo)
+	return nil, errors.New(locales.UnsupportedHash(string(algo)))
 }

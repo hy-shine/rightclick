@@ -10,6 +10,7 @@ import (
 
 	"rightclick/config"
 	"rightclick/internal/catalog"
+	"rightclick/locales"
 )
 
 func TestPlaceSwitchChangesPreview(t *testing.T) {
@@ -36,6 +37,36 @@ func TestPlaceSwitchChangesPreview(t *testing.T) {
 	}
 }
 
+func TestMenuHeaderActionsShareABaseline(t *testing.T) {
+	m, err := newApp(testStore(t), testEnv())
+	if err != nil {
+		t.Fatal(err)
+	}
+	m.selectPane(paneMenu)
+	tt := ui.NewTester(m.view, mainWidth, mainHeight)
+	search, ok := tt.Find(locales.SearchMenu())
+	if !ok {
+		t.Fatal("menu search field is missing")
+	}
+	restore, ok := tt.Find(locales.RestoreDefaults())
+	if !ok {
+		t.Fatal("restore defaults button is missing")
+	}
+	preview, ok := tt.Find(locales.Preview())
+	if !ok {
+		t.Fatal("preview button is missing")
+	}
+	searchMiddle := search.Y + search.H/2
+	restoreMiddle := restore.Y + restore.H/2
+	previewMiddle := preview.Y + preview.H/2
+	if diff := searchMiddle - restoreMiddle; diff < -0.5 || diff > 0.5 {
+		t.Errorf("search middle = %.1f, restore middle = %.1f, want them level", searchMiddle, restoreMiddle)
+	}
+	if diff := previewMiddle - restoreMiddle; diff < -0.5 || diff > 0.5 {
+		t.Errorf("preview middle = %.1f, restore middle = %.1f, want them level", previewMiddle, restoreMiddle)
+	}
+}
+
 func TestRestoreDefaultsSwitchesEntriesBackOn(t *testing.T) {
 	store := testStore(t)
 	m, err := newApp(store, testEnv())
@@ -51,6 +82,19 @@ func TestRestoreDefaultsSwitchesEntriesBackOn(t *testing.T) {
 		t.Fatal(err)
 	}
 	cfg, err := config.Load(store.ConfigPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.MenuItems[0].Enabled {
+		t.Fatal("restoring the menu happened before confirmation")
+	}
+	if !m.confirmRestore {
+		t.Fatal("restore confirmation did not open")
+	}
+	if err := tt.Click("恢复"); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err = config.Load(store.ConfigPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +129,7 @@ func TestEveryMenuEntryHasAnIcon(t *testing.T) {
 		if _, ok := entryIcons[item.ID]; !ok {
 			t.Errorf("menu entry %q has no icon", item.ID)
 		}
-		if _, ok := menuEntries[item.ID]; !ok {
+		if _, ok := menuEntries()[item.ID]; !ok {
 			t.Errorf("menu entry %q has no label", item.ID)
 		}
 	}
@@ -111,13 +155,52 @@ func TestMenuPageFitsTheMinimumWindow(t *testing.T) {
 	}
 	preview, ok := tt.Find("预览")
 	if !ok {
-		t.Fatal("the preview heading is not on the pane")
+		t.Fatal("the preview button is not on the pane")
 	}
 	if name.Y+name.H > minHeight || preview.Y+preview.H > minHeight {
 		t.Error("the first action or preview button is outside the window")
 	}
 	if slices.Contains(tt.Texts(), "显示 9 项") {
-		t.Error("preview content is visible before opening it")
+		t.Error("preview content is visible before the preview opens")
+	}
+}
+
+func TestMenuSearchFiltersAndKeepsContextVisible(t *testing.T) {
+	m, err := newApp(testStore(t), testEnv())
+	if err != nil {
+		t.Fatal(err)
+	}
+	m.menuSearch = "zip"
+	texts := ui.NewTester(m.view, minWidth, minHeight).Texts()
+	if !slices.Contains(texts, "仅 .zip 文件") {
+		t.Errorf("matching action does not show its context: %q", texts)
+	}
+	if rows := m.menuDisplayRows(3); len(rows) != 2 {
+		t.Errorf("zip search returned %d editable rows, want 2", len(rows))
+	}
+	m.menuSearch = "not-an-action"
+	texts = ui.NewTester(m.view, minWidth, minHeight).Texts()
+	if !slices.Contains(texts, "没有匹配的动作") {
+		t.Errorf("empty search state is missing: %q", texts)
+	}
+	if !slices.Contains(texts, "预览") {
+		t.Error("empty search should keep the preview button visible")
+	}
+}
+
+func TestCreationEditButtonHasAUsefulTarget(t *testing.T) {
+	m, err := newApp(testStore(t), testEnv())
+	if err != nil {
+		t.Fatal(err)
+	}
+	m.selectPane(paneTemplates)
+	tt := ui.NewTester(m.view, mainWidth, mainHeight)
+	bounds, ok := tt.Find("编辑 Word 文档")
+	if !ok {
+		t.Fatal("edit button is missing")
+	}
+	if bounds.W < 30 || bounds.H < 24 {
+		t.Errorf("edit button is too small: %+v", bounds)
 	}
 }
 

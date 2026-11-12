@@ -3,8 +3,9 @@
 package finder
 
 import (
-	"fmt"
+	"errors"
 	"os/exec"
+	"rightclick/locales"
 	"strings"
 )
 
@@ -26,7 +27,7 @@ func HiddenFilesShown() (bool, error) {
 		if strings.Contains(text, "does not exist") {
 			return false, nil
 		}
-		return false, fmt.Errorf("读取访达设置失败：%w：%s", err, text)
+		return false, errors.New(locales.FinderReadFailed(err.Error(), text))
 	}
 	switch text {
 	case "1":
@@ -34,7 +35,7 @@ func HiddenFilesShown() (bool, error) {
 	case "0":
 		return false, nil
 	}
-	return false, fmt.Errorf("访达的隐藏文件设置不是 0 或 1：%q", text)
+	return false, errors.New(locales.FinderValueInvalid(text))
 }
 
 // SetHiddenFilesShown saves whether Finder shows hidden files, then restarts
@@ -46,7 +47,7 @@ func SetHiddenFilesShown(show bool) error {
 	}
 	out, err := runCommand("defaults", "write", "com.apple.finder", hiddenKey, "-bool", value)
 	if err != nil {
-		return fmt.Errorf("写入访达设置失败：%w：%s", err, strings.TrimSpace(string(out)))
+		return errors.New(locales.FinderWriteFailed(err.Error(), strings.TrimSpace(string(out))))
 	}
 	return Restart()
 }
@@ -55,7 +56,7 @@ func SetHiddenFilesShown(show bool) error {
 func Restart() error {
 	out, err := runCommand("killall", "Finder")
 	if err != nil {
-		return fmt.Errorf("重新启动访达失败：%w：%s", err, strings.TrimSpace(string(out)))
+		return errors.New(locales.FinderRestartFailed(err.Error(), strings.TrimSpace(string(out))))
 	}
 	return nil
 }

@@ -3,6 +3,7 @@ package settings
 import (
 	"os"
 	"path/filepath"
+	"rightclick/locales"
 	"slices"
 	"strings"
 
@@ -14,13 +15,13 @@ import (
 // every action share.
 func (m *app) foldersPane(c *ui.Context) {
 	t := c.Theme()
-	paneHeader(c, "文件夹范围", "统一的文件夹白名单：右键助手只在下列文件夹及其子文件夹中出现。")
-	if m.foldersChanged && banner(c, t.Warning, iconRestart, "文件夹范围还没有生效", "重新启动访达后，新的文件夹范围才会生效。", "重新启动") {
+	paneHeader(c, locales.PaneFolders(), locales.FolderScopeIntro())
+	if m.foldersChanged && banner(c, t.Warning, iconRestart, locales.FolderScopePending(), locales.FolderScopePendingBody(), locales.Restart()) {
 		m.confirmRestart = true
 	}
 	remove := -1
 	if len(m.cfg.WatchFolders) == 0 {
-		emptyState(c, iconDir, "还没有设置文件夹范围", "添加文件夹后，右键助手才会出现在其中。")
+		emptyState(c, iconDir, locales.NoFolderScopeTitle(), locales.NoFolderScopeBody())
 	} else {
 		ledger(c, ui.Column(c)).Children(func() {
 			for i, dir := range m.cfg.WatchFolders {
@@ -33,8 +34,8 @@ func (m *app) foldersPane(c *ui.Context) {
 						ui.Text(c, folderName(dir)).FontSize(sizeBody).FontWeight(600).SingleLine()
 						ui.Text(c, tildePath(dir)).FontSize(sizeNote).TextColor(t.TextMuted).SingleLine()
 					})
-					ui.Text(c, "含子文件夹").FontSize(sizeCaption).TextColor(t.TextMuted)
-					if ghostButton(c, "移除", true) {
+					ui.Text(c, locales.IncludesSubfolders()).FontSize(sizeCaption).TextColor(t.TextMuted)
+					if ghostButton(c, locales.Remove(), true) {
 						remove = i
 					}
 				})
@@ -81,13 +82,13 @@ func tildePath(p string) string {
 func (m *app) pickFolder() {
 	win, open := m.win, m.env.openDialog
 	go func() {
-		paths, err := open(mygo.OpenDialogOptions{Parent: win, Title: "选择文件夹", Directory: true})
+		paths, err := open(mygo.OpenDialogOptions{Parent: win, Title: locales.ChooseFolder(), Directory: true})
 		if err == nil && len(paths) == 0 {
 			return // canceled
 		}
 		win.Update(func() {
 			if err != nil {
-				m.report("添加失败", err)
+				m.report(locales.AddFailed(), err)
 				return
 			}
 			for _, p := range paths {

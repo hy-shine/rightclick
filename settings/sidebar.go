@@ -1,7 +1,7 @@
 package settings
 
 import (
-	"fmt"
+	"rightclick/locales"
 
 	"github.com/egoist/mygo/ui"
 
@@ -14,6 +14,7 @@ var paneIcons = map[string]*ui.SVG{
 	paneTemplates:   iconNew,
 	paneFolders:     iconDir,
 	paneOpeners:     iconOpen,
+	paneFavorites:   iconDir,
 	paneDiagnostics: iconShield,
 	paneGeneral:     iconGeneral,
 }
@@ -21,9 +22,7 @@ var paneIcons = map[string]*ui.SVG{
 // sidebarWidth is the width of the pane list, in points.
 const sidebarWidth = 176
 
-// sidebar builds the pane list on the desk, left of the sheet of paper. The
-// chosen pane is the one raised as a white panel. Each row shows the state its
-// pane controls, so the list says what is set up without opening a pane.
+// sidebar builds the pane list with a subtle accent for the selected pane.
 func (m *app) sidebar(c *ui.Context) {
 	// The window has no title bar of its own: the sidebar runs up to the top edge
 	// and leaves room for the window controls, and the strip above the sign
@@ -31,39 +30,57 @@ func (m *app) sidebar(c *ui.Context) {
 	bar := c.TitleBar()
 	ui.Column(c).Width(sidebarWidth).Padding(0, 10, 12).Children(func() {
 		ui.Row(c).Height(max(bar.Height, 22)).DragWindow()
-		ui.Row(c).Gap(9).Padding(0, 10).Margin(0, 0, 22).AlignItems(ui.Center).DragWindow().Children(func() {
-			mark(c, 28)
-			ui.Text(c, "右键助手").FontSize(17).FontWeight(700)
+		ui.Row(c).Gap(8).Padding(6, 10).Margin(0, 0, 20).AlignItems(ui.Center).DragWindow().Children(func() {
+			mark(c, 22)
+			ui.Text(c, locales.AppName()).FontSize(14).FontWeight(600)
 		})
 		ui.Column(c).Grow(1).Gap(3).Children(func() {
-			for index := range paneTabs {
+			for index := range paneTabs() {
 				m.navRow(c, index)
 			}
 		})
 	})
 }
 
-// navRow builds the row of the pane at index i. The chosen pane's row is a white
-// panel on the desk, with its name in bold: the list marks a choice without color.
+// navRow builds the row of the pane at index i. Selection uses a tinted surface
+// and stronger text. When a setup
+// prerequisite is still missing, the diagnostics row carries a warning mark.
 func (m *app) navRow(c *ui.Context, i int) {
 	t := c.Theme()
-	p := paneTabs[i]
+	p := paneTabs()[i]
 	selected := i == m.tab
 	label, glyphColor := t.Text, t.TextMuted
 	bg := ui.Transparent
 	if selected {
-		bg = t.SurfaceHover
-		label, glyphColor = t.Text, t.Text
+		bg = t.Background.Mix(t.Accent, 0.16)
+		glyphColor = t.Accent.Mix(t.Text, 0.35)
+		if c.Preferences().HighContrast {
+			bg = t.Background.Mix(t.Accent, 0.26)
+			glyphColor = t.Text
+		}
 	}
-	ui.ButtonBase(c.Key("nav:"+p.id)).Gap(10).Padding(11, 10).AlignItems(ui.Center).Justify(ui.Start).Radius(t.Radius+2).Background(bg).
-		FocusRing(false).Role(ui.RoleTab).Checked(selected).Label(p.label).
+	step := m.setupStep()
+	alert := p.id == paneDiagnostics && step.blocked()
+	btn := ui.ButtonBase(c.Key("nav:"+p.id)).Gap(9).Padding(8, 10).AlignItems(ui.Center).Justify(ui.Start).Radius(t.Radius).Background(bg).
+		Role(ui.RoleTab).Checked(selected).Label(p.label).
 		OnClick(func() { m.selectPane(p.id) }).
-		OnShortcut(0, ui.KeyDown, func() { m.selectPane(paneTabs[min(i+1, len(paneTabs)-1)].id) }).
-		OnShortcut(0, ui.KeyUp, func() { m.selectPane(paneTabs[max(i-1, 0)].id) }).Children(func() {
-		glyph(c, paneIcons[p.id], 17, glyphColor)
-		name := ui.Text(c, p.label).FontSize(sizeBody).TextColor(label)
+		OnShortcut(0, ui.KeyDown, func() { m.selectPane(paneTabs()[min(i+1, len(paneTabs())-1)].id) }).
+		OnShortcut(0, ui.KeyUp, func() { m.selectPane(paneTabs()[max(i-1, 0)].id) })
+	if !selected {
+		tint(btn, bg, t.SurfaceHover, t.SurfacePressed)
+	}
+	btn.Children(func() {
+		glyph(c, paneIcons[p.id], 16, glyphColor)
+		name := ui.Text(c, p.label).FontSize(sizeBody).TextColor(label).Grow(1)
 		if selected {
-			name.Bold()
+			name.FontWeight(600)
+		}
+		if alert {
+			alertColor := t.Warning
+			if selected {
+				alertColor = label
+			}
+			ui.Icon(c, iconAlert).Size(14, 14).TextColor(alertColor).Label(p.label + " " + step.summary())
 		}
 	})
 }
@@ -77,23 +94,23 @@ func (m *app) navSummary(id string) string {
 		if step := m.setupStep(); step.blocked() {
 			return step.summary()
 		}
-		return fmt.Sprintf("已启用 %d 项", enabledCount(m.cfg.MenuItems))
+		return locales.EnabledItemsCount(enabledCount(m.cfg.MenuItems))
 	case paneTemplates:
-		return fmt.Sprintf("%d 种类型 · %d 个模板", len(m.cfg.FileTypes), len(m.templates))
+		return locales.TypesAndTemplates(len(m.cfg.FileTypes), len(m.templates))
 	case paneFolders:
 		if len(m.cfg.WatchFolders) == 0 {
-			return "未设置文件夹范围"
+			return locales.NoFolderScope()
 		}
-		return fmt.Sprintf("%d 个文件夹", len(m.cfg.WatchFolders))
+		return locales.FolderCount(len(m.cfg.WatchFolders))
 	case paneOpeners:
-		return "终端：" + m.cfg.Terminal
+		return locales.TerminalLine(m.cfg.Terminal)
 	case paneDiagnostics:
 		return m.setupStep().summary()
 	case paneGeneral:
 		if m.openAtLogin {
-			return "开机时启动"
+			return locales.LaunchAtLoginOn()
 		}
-		return "开机时不启动"
+		return locales.LaunchAtLoginOff()
 	}
 	return ""
 }

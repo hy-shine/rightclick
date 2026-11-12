@@ -26,6 +26,7 @@ type env struct {
 	openFinderSettings func() error
 	restartFinder      func() error                                        // may block; called off the main thread
 	openDialog         func(opts mygo.OpenDialogOptions) ([]string, error) // blocks until dismissed
+	setLocale          func(tag string)                                    // "" follows the system
 }
 
 // defaultEnv returns the env that calls mygo and the macOS tools.
@@ -39,6 +40,7 @@ func defaultEnv() env {
 		},
 		restartFinder: finder.Restart,
 		openDialog:    mygo.Dialog.Open,
+		setLocale:     mygo.App.SetLocale,
 	}
 }
 

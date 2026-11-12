@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestDisabledTypeRetainsRootPlacement(t *testing.T) {
+func TestDisabledTypeStaysInsideNewFile(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "config.json")
 	cfg := Default()
 	cfg.FileTypes[0].Enabled, cfg.FileTypes[0].Location = false, FileTypeMain
@@ -17,8 +17,8 @@ func TestDisabledTypeRetainsRootPlacement(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if loaded.FileTypes[0].Enabled || loaded.FileTypes[0].Location != FileTypeMain {
-		t.Fatalf("lost disabled state or placement: %+v", loaded.FileTypes[0])
+	if loaded.FileTypes[0].Enabled || loaded.FileTypes[0].Location != FileTypeSubmenu {
+		t.Fatalf("lost disabled state or left the New File submenu: %+v", loaded.FileTypes[0])
 	}
 }
 

@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"os"
 	"path/filepath"
+	"rightclick/locales"
 	"strings"
 
 	"github.com/egoist/mygo"
@@ -15,27 +17,44 @@ import (
 	"rightclick/finder"
 )
 
-// routeURL handles a rightclick:// URL sent by the Finder extension. It parses the
-// URL, loads the settings, and runs the action. A failure is shown as a
-// notification; an ordinary file action that succeeds shows nothing.
+// routeURL handles a rightclick:// URL sent by the Finder extension. The action
+// runs on a goroutine of its own, so that slow file work does not hold up the
+// main thread that delivers URLs. The goroutine ends when the action returns.
 func routeURL(raw string) {
+	routeURLWith(raw, func(run func()) { go run() })
+}
+
+// routeURLWith parses the URL and checks it against the settings at once, then
+// hands the action to start, which decides when it runs. A failure before that
+// point, or in the action, is shown as a notification; an ordinary file action
+// that succeeds shows nothing.
+func routeURLWith(raw string, start func(run func())) {
 	action, params, paths, err := parseURL(raw)
 	if err != nil {
-		notifyFailure(err)
+		routeFailure(raw, err)
 		return
 	}
 	cfg, err := loadConfig()
 	if err != nil {
-		notifyFailure(err)
+		routeFailure(raw, err)
 		return
 	}
 	if err := requireInWatchFolders(paths, cfg.WatchFolders); err != nil {
-		notifyFailure(err)
+		routeFailure(raw, err)
 		return
 	}
-	if err := runAction(action, params, paths, cfg); err != nil {
-		notifyFailure(err)
-	}
+	start(func() {
+		if err := runAction(action, params, paths, cfg); err != nil {
+			routeFailure(raw, err)
+		}
+	})
+}
+
+// routeFailure logs the URL and error before notifying, so a missing notification
+// still leaves a record in Console for diagnosis.
+func routeFailure(raw string, err error) {
+	log.Printf("rightclick %s: %v", raw, err)
+	notifyFailure(err)
 }
 
 // requireInWatchFolders keeps every action inside the same folder whitelist
@@ -43,7 +62,7 @@ func routeURL(raw string) {
 func requireInWatchFolders(paths, folders []string) error {
 	for _, path := range paths {
 		if !config.InWatchFolders(path, folders) {
-			return fmt.Errorf("不在文件夹范围内：%s", path)
+			return errors.New(locales.OutsideFolders(path))
 		}
 	}
 	return nil
@@ -95,8 +114,15 @@ func actionHandlers() map[string]actionHandler {
 			}
 			return createFromTemplate(templatesPath, params.Get("name"), paths, cfg)
 		},
-		"copy-to":       transferAction("copy-to"),
-		"move-to":       transferAction("move-to"),
+		"copy-to": transferAction("copy-to"),
+		"move-to": transferAction("move-to"),
+		"open-favorite": func(params url.Values, _ []string, cfg config.Config) error {
+			path, err := cfg.FavoritePath(params.Get("favorite"))
+			if err != nil {
+				return err
+			}
+			return files.Open(path)
+		},
 		"open-terminal": openTerminal,
 		"open-editor":   openWithApp,
 		"open-with":     openWithApp,
@@ -113,6 +139,9 @@ func actionHandlers() map[string]actionHandler {
 		"toggle-hidden": func(_ url.Values, _ []string, _ config.Config) error {
 			return toggleHiddenFiles()
 		},
+		"delete-permanently": func(_ url.Values, paths []string, _ config.Config) error {
+			return deletePermanently(paths)
+		},
 	}
 }
 
@@ -120,7 +149,7 @@ func actionHandlers() map[string]actionHandler {
 func runAction(action string, params url.Values, paths []string, cfg config.Config) error {
 	handler, ok := actionHandlers()[action]
 	if !ok {
-		return fmt.Errorf("不认识的操作：%s", action)
+		return errors.New(locales.ErrUnknownAction(action))
 	}
 	return handler(params, paths, cfg)
 }
@@ -131,7 +160,7 @@ func createFolder(paths []string) error {
 	if err != nil {
 		return err
 	}
-	_, err = files.CreateFolder(dir, "新建文件夹")
+	_, err = files.CreateFolder(dir, locales.DefaultNewFolder())
 	return err
 }
 
@@ -144,10 +173,10 @@ func createFileFromType(cfg config.Config, id string, paths []string) error {
 	}
 	fileType, ok := configFileType(cfg, id)
 	if !ok {
-		return fmt.Errorf("找不到文件类型：%s", id)
+		return errors.New(locales.FileTypeNotFound(id))
 	}
 	if !fileType.Enabled || fileType.Location == config.FileTypeHidden {
-		return fmt.Errorf("文件类型已隐藏：%s", fileType.Label)
+		return errors.New(locales.FileTypeHidden(fileType.DisplayLabel()))
 	}
 	name, err := fileTypeFileName(fileType)
 	if err != nil {
@@ -163,7 +192,7 @@ func createFileFromType(cfg config.Config, id string, paths []string) error {
 	}
 	if cfg.OpenAfterCreate {
 		if err := files.Open(path); err != nil {
-			return fmt.Errorf("文件已创建，但无法打开 %s: %w", files.Name(path), err)
+			return errors.New(locales.CreatedButOpenFailed(files.Name(path), err.Error()))
 		}
 	}
 	return nil
@@ -181,16 +210,13 @@ func configFileType(cfg config.Config, id string) (config.FileType, bool) {
 
 // fileTypeFileName returns the default file name, including its extension.
 func fileTypeFileName(fileType config.FileType) (string, error) {
-	base := strings.TrimSpace(fileType.DefaultName)
-	if base == "" {
-		base = "未命名"
-	}
+	base := strings.TrimSpace(fileType.DisplayDefaultName())
 	ext := strings.TrimPrefix(strings.TrimSpace(fileType.Extension), ".")
 	if base == "" || strings.ContainsAny(base, `/\`) {
-		return "", fmt.Errorf("默认文件名无效：%q", fileType.DefaultName)
+		return "", errors.New(locales.InvalidDefaultName(base))
 	}
 	if ext == "" || strings.ContainsAny(ext, `/\`) {
-		return "", fmt.Errorf("扩展名无效：%q", fileType.Extension)
+		return "", errors.New(locales.InvalidExtension(fileType.Extension))
 	}
 	if strings.EqualFold(filepath.Ext(base), "."+ext) {
 		return base, nil
@@ -217,7 +243,7 @@ func createFromTemplate(templatesPath, name string, paths []string, cfg config.C
 		return err
 	}
 	if tpl.Disabled {
-		return fmt.Errorf("模板已停用：%s", tpl.Name)
+		return errors.New(locales.TemplateDisabled(tpl.Name))
 	}
 	content, err := tpl.Bytes()
 	if err != nil {
@@ -229,7 +255,7 @@ func createFromTemplate(templatesPath, name string, paths []string, cfg config.C
 	}
 	if cfg.OpenAfterCreate {
 		if err := files.Open(created); err != nil {
-			return fmt.Errorf("文件已创建，但无法打开 %s: %w", files.Name(created), err)
+			return errors.New(locales.CreatedButOpenFailed(files.Name(created), err.Error()))
 		}
 	}
 	return nil
@@ -243,11 +269,11 @@ func findTemplate(templates []files.Template, name string) (files.Template, erro
 			continue
 		}
 		if t.Name == "" || strings.Contains(t.Name, "/") {
-			return files.Template{}, fmt.Errorf("模板名不能用作文件名：%q", t.Name)
+			return files.Template{}, errors.New(locales.TemplateNameInvalid(t.Name))
 		}
 		return t, nil
 	}
-	return files.Template{}, fmt.Errorf("找不到模板：%s", name)
+	return files.Template{}, errors.New(locales.TemplateNotFound(name))
 }
 
 // transferOp returns the file operation behind copy-to or move-to.
@@ -258,12 +284,23 @@ func transferOp(action string) (func(src, dir string) (string, error), error) {
 	case "move-to":
 		return files.Move, nil
 	}
-	return nil, fmt.Errorf("不认识的操作：%s", action)
+	return nil, errors.New(locales.ErrUnknownAction(action))
 }
 
 // transferAction returns the handler for copy-to or move-to.
 func transferAction(action string) actionHandler {
-	return func(_ url.Values, paths []string, _ config.Config) error {
+	return func(params url.Values, paths []string, cfg config.Config) error {
+		if params.Has("favorite") {
+			destination, err := cfg.FavoritePath(params.Get("favorite"))
+			if err != nil {
+				return err
+			}
+			operation, err := transferOp(action)
+			if err != nil {
+				return err
+			}
+			return transferTo(operation, paths, destination)
+		}
 		return transferItems(action, paths)
 	}
 }
@@ -275,9 +312,9 @@ func transferItems(action string, paths []string) error {
 	if err != nil {
 		return err
 	}
-	title := "复制到"
+	title := locales.CopyToTitle()
 	if action == "move-to" {
-		title = "移动到"
+		title = locales.MoveToTitle()
 	}
 	dir, err := chooseFolder(title)
 	if err != nil {
@@ -295,7 +332,7 @@ func transferTo(op func(src, dir string) (string, error), paths []string, dir st
 	var errs []error
 	for _, p := range paths {
 		if _, err := op(p, dir); err != nil {
-			errs = append(errs, fmt.Errorf("%s：%w", files.Name(p), err))
+			errs = append(errs, fmt.Errorf("%s: %w", files.Name(p), err))
 		}
 	}
 	return errors.Join(errs...)
@@ -306,8 +343,8 @@ func transferTo(op func(src, dir string) (string, error), paths []string, dir st
 func chooseFolder(title string) (string, error) {
 	dirs, err := mygo.Dialog.Open(mygo.OpenDialogOptions{
 		Title:             title,
-		Message:           "选择目标文件夹",
-		ButtonLabel:       "选择",
+		Message:           locales.ChooseDestination(),
+		ButtonLabel:       locales.ChooseButton(),
 		Directory:         true,
 		CreateDirectories: true,
 	})
@@ -330,7 +367,7 @@ func openTerminal(_ url.Values, paths []string, cfg config.Config) error {
 func openWithApp(params url.Values, paths []string, _ config.Config) error {
 	app := params.Get("app")
 	if app == "" {
-		return errors.New("网址里没有应用名")
+		return errors.New(locales.ErrURLNoApp())
 	}
 	return openEach(app, paths)
 }
@@ -347,7 +384,7 @@ func openEachWith(open func(app, path string) error, app string, paths []string)
 	var errs []error
 	for _, p := range paths {
 		if err := open(app, p); err != nil {
-			errs = append(errs, fmt.Errorf("无法用 %s 打开 %s：%w", app, files.Name(p), err))
+			errs = append(errs, errors.New(locales.OpenWithFailed(files.Name(p), app, err.Error())))
 		}
 	}
 	return errors.Join(errs...)
@@ -359,7 +396,7 @@ func archiveName(paths []string) string {
 	if len(paths) == 1 {
 		return files.BaseName(paths[0]) + ".zip"
 	}
-	return "归档.zip"
+	return locales.DefaultArchiveName()
 }
 
 // zipItems archives paths into the folder that holds the first one.
@@ -378,7 +415,7 @@ func unzipItems(paths []string) (int, error) {
 		n, _, err := files.Unzip(p)
 		written += n
 		if err != nil {
-			errs = append(errs, fmt.Errorf("%s：%w", files.Name(p), err))
+			errs = append(errs, fmt.Errorf("%s: %w", files.Name(p), err))
 		}
 	}
 	return written, errors.Join(errs...)
@@ -389,9 +426,9 @@ func unzipItems(paths []string) (int, error) {
 func unzipAction(_ url.Values, paths []string, _ config.Config) error {
 	written, err := unzipItems(paths)
 	if err != nil {
-		return fmt.Errorf("已写入 %d 个文件，%w", written, err)
+		return errors.New(locales.UnzipPartial(written, err.Error()))
 	}
-	notify("解压完成", fmt.Sprintf("写入 %d 个文件", written))
+	notify(locales.NotifyUnzipped(), locales.UnzipWritten(written))
 	return nil
 }
 
@@ -407,11 +444,64 @@ func toggleHiddenFiles() error {
 		return err
 	}
 	if shown {
-		notify("隐藏文件", "已隐藏")
+		notify(locales.NotifyHiddenFiles(), locales.NotifyHidden())
 	} else {
-		notify("隐藏文件", "已显示")
+		notify(locales.NotifyHiddenFiles(), locales.NotifyShown())
 	}
 	return nil
+}
+
+// deletePermanently deletes the items for good once the user confirms. The dialog
+// lists the names and says the deletion cannot be undone. Cancel is the default
+// answer, so Return does nothing. A protected location is refused before the dialog.
+func deletePermanently(paths []string) error {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+	for _, p := range paths {
+		if files.Protected(p, home) {
+			return errors.New(locales.DeleteRefused(p))
+		}
+	}
+	answer, err := mygo.Dialog.Message(mygo.MessageOptions{
+		Type:          mygo.MessageWarning,
+		Message:       locales.DeletePermanentlyQuestion(len(paths)),
+		Detail:        deleteDetail(paths),
+		Buttons:       []string{locales.DeletePermanently(), locales.Cancel()},
+		DefaultButton: 1,
+		CancelButton:  1,
+	})
+	if err != nil {
+		return err
+	}
+	if answer.Button != 0 {
+		return nil
+	}
+	removed, err := files.RemoveAll(paths, home)
+	if removed > 0 {
+		notify(locales.DeletePermanently(), locales.DeletedItems(removed))
+	}
+	return err
+}
+
+// deleteDetailLimit is how many names the delete dialog lists before it says how
+// many more there are.
+const deleteDetailLimit = 5
+
+// deleteDetail returns the text under the delete dialog's question: the names of
+// the items, then a note that the deletion cannot be undone.
+func deleteDetail(paths []string) string {
+	var lines []string
+	for i, p := range paths {
+		if i == deleteDetailLimit {
+			lines = append(lines, locales.DeleteMoreItems(len(paths)-deleteDetailLimit))
+			break
+		}
+		lines = append(lines, files.Name(p))
+	}
+	lines = append(lines, "", locales.DeletePermanentlyDetail())
+	return strings.Join(lines, "\n")
 }
 
 // hashItem computes the digest of the one selected file, copies it to the
@@ -424,7 +514,7 @@ func hashItem(algoName string, paths []string) error {
 	if err := copyText(digest); err != nil {
 		return err
 	}
-	notify(string(algo)+" 已拷贝", files.Name(path)+"\n"+digest)
+	notify(locales.HashCopied(string(algo)), files.Name(path)+"\n"+digest)
 	return nil
 }
 
@@ -464,7 +554,7 @@ func compareFiles(algoName string, paths []string) (title, body string, err erro
 		return "", "", err
 	}
 	if len(paths) != 2 {
-		return "", "", errors.New("比较哈希需要选中两个文件")
+		return "", "", errors.New(locales.CompareNeedsTwo())
 	}
 	same, hashA, hashB, err := files.CompareHashes(paths[0], paths[1], algo)
 	if err != nil {
@@ -477,11 +567,11 @@ func compareFiles(algoName string, paths []string) (title, body string, err erro
 // compareSummary returns the notification title and body for a hash comparison.
 // The title gives the verdict; the body lists both files with their digests.
 func compareSummary(algo files.Algorithm, same bool, pathA, hashA, pathB, hashB string) (title, body string) {
-	verdict := "不同"
+	verdict := locales.VerdictDifferent()
 	if same {
-		verdict = "相同"
+		verdict = locales.VerdictSame()
 	}
-	title = fmt.Sprintf("%s 比较：%s", algo, verdict)
+	title = locales.HashCompareTitle(string(algo), verdict)
 	body = fmt.Sprintf("%s\n%s\n%s\n%s", files.Name(pathA), hashA, files.Name(pathB), hashB)
 	return title, body
 }
@@ -497,13 +587,13 @@ func hashAlgorithm(name string) (files.Algorithm, error) {
 	case string(files.MD5):
 		return files.MD5, nil
 	}
-	return "", fmt.Errorf("不支持的哈希算法：%s", name)
+	return "", errors.New(locales.UnsupportedHash(name))
 }
 
 // requireOne returns the only path. Actions that work on one folder or file use it.
 func requireOne(paths []string) (string, error) {
 	if len(paths) != 1 {
-		return "", errors.New("需要且只能选中一个项目")
+		return "", errors.New(locales.NeedOneItem())
 	}
 	return paths[0], nil
 }
@@ -530,7 +620,7 @@ func copyText(text string) error {
 
 // notifyFailure shows an error in a notification.
 func notifyFailure(err error) {
-	notify("操作失败", err.Error())
+	notify(locales.NotifyFailed(), err.Error())
 }
 
 // notify shows a notification. A failed notification is only logged, because the
@@ -538,6 +628,6 @@ func notifyFailure(err error) {
 func notify(title, body string) {
 	err := mygo.NewNotification(mygo.NotificationOptions{Title: title, Body: body}).Show()
 	if err != nil {
-		log.Printf("通知「%s」失败：%v", title, err)
+		log.Printf("notification %q failed: %v", title, err)
 	}
 }

@@ -9,7 +9,7 @@ import (
 // Type scale, in points: the pane title, a section heading, body text, the
 // line under a title, and the smallest note. Spacing runs 4, 8, 12, 16, 24, 32.
 const (
-	sizeTitle   = 24
+	sizeTitle   = 22
 	sizeSection = 16
 	sizeBody    = 13
 	sizeNote    = 12
@@ -24,20 +24,20 @@ func glyph(c *ui.Context, s *ui.SVG, size float32, color ui.Color) {
 	ui.Icon(c, s).Size(size, size).TextColor(color)
 }
 
-// appMark is the app's icon without its shadow: a menu card, with the row of
-// this app lit, on a yellow square. It matches resources/icon.png.
+// appMark is the app's icon: a menu card, with the row of
+// this app lit, on a blue square. It matches resources/icon.png.
 var appMark = ui.MustParseSVG([]byte(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 824 824">
-<defs><linearGradient id="y" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffdf5e"/><stop offset="1" stop-color="#ffc61a"/></linearGradient></defs>
-<rect width="824" height="824" rx="190" fill="url(#y)"/>
+<defs><linearGradient id="blue" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#60a5fa"/><stop offset="1" stop-color="#2563eb"/></linearGradient></defs>
+<rect width="824" height="824" rx="190" fill="url(#blue)"/>
 <g transform="translate(-100 -100)">
-<rect x="262" y="232" width="500" height="560" rx="44" fill="#fbfbfa"/>
-<rect x="326" y="309" width="200" height="22" rx="11" fill="#d5d9e0"/>
-<rect x="326" y="405" width="268" height="22" rx="11" fill="#d5d9e0"/>
-<rect x="290" y="470" width="444" height="84" rx="24" fill="#1c1f24"/>
-<rect x="326" y="501" width="212" height="22" rx="11" fill="#ffd23f"/>
-<path d="M676 490l26 22-26 22" fill="none" stroke="#ffd23f" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
-<rect x="326" y="597" width="236" height="22" rx="11" fill="#d5d9e0"/>
-<rect x="326" y="693" width="172" height="22" rx="11" fill="#d5d9e0"/>
+<rect x="262" y="232" width="500" height="560" rx="44" fill="#ffffff"/>
+<rect x="326" y="309" width="200" height="22" rx="11" fill="#cbd5e1"/>
+<rect x="326" y="405" width="268" height="22" rx="11" fill="#cbd5e1"/>
+<rect x="290" y="470" width="444" height="84" rx="24" fill="#2563eb"/>
+<rect x="326" y="501" width="212" height="22" rx="11" fill="#ffffff"/>
+<path d="M676 490l26 22-26 22" fill="none" stroke="#ffffff" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="326" y="597" width="236" height="22" rx="11" fill="#cbd5e1"/>
+<rect x="326" y="693" width="172" height="22" rx="11" fill="#cbd5e1"/>
 </g></svg>`))
 
 // mark shows the app's icon, size points square. It heads the sidebar and the
@@ -51,7 +51,7 @@ func mark(c *ui.Context, size float32) {
 func paneHeader(c *ui.Context, title, desc string) {
 	t := c.Theme()
 	ui.Column(c).Gap(6).Children(func() {
-		ui.Text(c, title).FontSize(sizeTitle).FontWeight(700)
+		ui.Text(c, title).FontSize(sizeTitle).FontWeight(600)
 		if desc != "" {
 			ui.Text(c, desc).FontSize(sizeNote).LineHeight(1.5).TextColor(t.TextMuted)
 		}
@@ -68,7 +68,7 @@ func sectionTitle(c *ui.Context, s string) {
 // one.
 func ledger(c *ui.Context, e ui.Element) ui.Element {
 	t := c.Theme()
-	return e.Border(1, t.Border).Radius(t.Radius+4).Dividers(1, t.Border)
+	return e.Background(t.Surface).Border(1, separatorColor(c)).Radius(t.Radius+2).Dividers(1, separatorColor(c))
 }
 
 // tint colors the background of e by what the pointer does to it, fading
@@ -85,11 +85,11 @@ func tint(e ui.Element, rest, hover, pressed ui.Color) {
 }
 
 // primaryButton is the one filled button of a view: the action to take next. It
-// takes the brand yellow, with icon s before the label when s is not nil. It
+// takes the brand blue, with icon s before the label when s is not nil. It
 // reports a click.
 func primaryButton(c *ui.Context, s *ui.SVG, label string) bool {
 	t := c.Theme()
-	fill, hover, pressed, text := brandColors(t)
+	fill, hover, pressed, text := t.Accent, t.AccentHover, t.AccentPressed, t.AccentText
 	b := ui.ButtonBase(c).Gap(6).Padding(7, 14).Radius(t.Radius).AlignSelf(ui.Start).Label(label).Children(func() {
 		if s != nil {
 			glyph(c, s, 14, text)
@@ -103,9 +103,19 @@ func primaryButton(c *ui.Context, s *ui.SVG, label string) bool {
 // quietButton is a button with a border and no fill, for actions that are not
 // the next step. It reports a click.
 func quietButton(c *ui.Context, s *ui.SVG, label string) bool {
+	return quietButtonAligned(c, s, label, ui.Start)
+}
+
+// quietButtonCentered is a quietButton that centers itself in a row, for
+// actions that sit beside a heading instead of at the start of a pane.
+func quietButtonCentered(c *ui.Context, s *ui.SVG, label string) bool {
+	return quietButtonAligned(c, s, label, ui.Center)
+}
+
+func quietButtonAligned(c *ui.Context, s *ui.SVG, label string, align ui.Align) bool {
 	t := c.Theme()
-	b := ui.ButtonBase(c).Gap(6).Padding(6, 12).Radius(t.Radius).AlignSelf(ui.Start).
-		Border(1, t.Border).Label(label).Children(func() {
+	b := ui.ButtonBase(c).Gap(6).Padding(6, 12).Radius(t.Radius).AlignSelf(align).
+		Border(1, separatorColor(c)).Label(label).Children(func() {
 		if s != nil {
 			glyph(c, s, 14, t.TextMuted)
 		}

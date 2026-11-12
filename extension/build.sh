@@ -17,6 +17,10 @@ cp "$here/$name/Info.plist" "$out/Contents/Info.plist"
 mkdir -p "$out/Contents/Resources/FileIcons"
 cp "$here/../internal/catalog/icons/"*.svg "$out/Contents/Resources/FileIcons/"
 cp "$here/../internal/catalog/icons/"*.txt "$out/Contents/Resources/FileIcons/"
+# The menu text: one .lproj folder per language, read through Bundle.main.
+for lproj in en.lproj zh-Hans.lproj; do
+  cp -R "$here/$name/$lproj" "$out/Contents/Resources/"
+done
 
 # -application-extension restricts the code to APIs that extensions may use.
 # _NSExtensionMain is the entry point that the extension host calls.

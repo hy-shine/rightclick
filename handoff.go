@@ -2,9 +2,9 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"net/url"
 	"path/filepath"
+	"rightclick/locales"
 )
 
 // parseURL splits a rightclick://<action>?<params> URL into its action, its query
@@ -18,19 +18,19 @@ func parseURL(raw string) (action string, params url.Values, paths []string, err
 		return "", nil, nil, err
 	}
 	if u.Scheme != "rightclick" {
-		return "", nil, nil, fmt.Errorf("不认识的网址：%s", raw)
+		return "", nil, nil, errors.New(locales.ErrUnknownURL(raw))
 	}
 	if _, ok := actionHandlers()[u.Host]; !ok {
-		return "", nil, nil, fmt.Errorf("不认识的操作：%s", u.Host)
+		return "", nil, nil, errors.New(locales.ErrUnknownAction(u.Host))
 	}
 	params = u.Query()
 	paths = params["path"]
 	if len(paths) == 0 {
-		return "", nil, nil, errors.New("网址里没有路径")
+		return "", nil, nil, errors.New(locales.ErrURLNoPath())
 	}
 	for _, p := range paths {
 		if !filepath.IsAbs(p) {
-			return "", nil, nil, fmt.Errorf("路径必须是绝对路径：%s", p)
+			return "", nil, nil, errors.New(locales.ErrPathNotAbsolute(p))
 		}
 	}
 	return u.Host, params, paths, nil

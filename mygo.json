@@ -3,5 +3,9 @@
   "identifier": "com.example.rightclick",
   "version": "0.1.0",
   "out": "build",
-  "urlSchemes": ["rightclick"]
+  "urlSchemes": ["rightclick"],
+  "i18n": {
+    "dir": "locales",
+    "source": "en"
+  }
 }

@@ -23,6 +23,7 @@ func testEnv() env {
 		openFinderSettings: func() error { return nil },
 		restartFinder:      func() error { return nil },
 		openDialog:         func(mygo.OpenDialogOptions) ([]string, error) { return nil, nil },
+		setLocale:          func(string) {},
 	}
 }
 
@@ -63,7 +64,7 @@ func TestTabOrder(t *testing.T) {
 	}
 	texts := ui.NewTester(m.view, 760, 560).Texts()
 	last := -1
-	for _, p := range paneTabs {
+	for _, p := range paneTabs() {
 		i := slices.Index(texts, p.label)
 		if i <= last {
 			t.Fatalf("tab %q at text %d, want after text %d; texts %q", p.label, i, last, texts)
@@ -128,7 +129,7 @@ func TestAddedTemplateIsSaved(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []files.Template{{Name: "meeting.md", Content: "# 会议\n"}}
+	want := []files.Template{{Name: "meeting.md", Content: "# 会议\n", Location: config.FileTypeSubmenu}}
 	if !slices.Equal(got, want) {
 		t.Errorf("templates read back = %+v, want %+v", got, want)
 	}
@@ -199,30 +200,17 @@ func TestReorderFileTypesKeepsSelection(t *testing.T) {
 	}
 }
 
-func TestFileTypeLocationControlSaves(t *testing.T) {
-	store := testStore(t)
-	m, err := newApp(store, testEnv())
+func TestCreationPaneHasNoMenuLocationControl(t *testing.T) {
+	m, err := newApp(testStore(t), testEnv())
 	if err != nil {
 		t.Fatal(err)
 	}
 	m.selectPane(paneTemplates)
-	m.cfg.FileTypes = []config.FileType{{ID: "text", Label: "文本文件", Extension: "txt", Location: config.FileTypeSubmenu, Enabled: true}}
-	tt := ui.NewTester(m.view, mainWidth, mainHeight)
-	if err := tt.Click("显示位置：文本文件"); err != nil {
-		t.Fatal(err)
-	}
-	if err := tt.Click("Finder 右键顶层"); err != nil {
-		t.Fatal(err)
-	}
-	if got := m.cfg.FileTypes[0].Location; got != config.FileTypeMain {
-		t.Errorf("text location = %q, want %q", got, config.FileTypeMain)
-	}
-	cfg, err := config.Load(store.ConfigPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got := cfg.FileTypes[0].Location; got != config.FileTypeMain {
-		t.Errorf("saved text location = %q, want %q", got, config.FileTypeMain)
+	texts := ui.NewTester(m.view, mainWidth, mainHeight).Texts()
+	for _, unwanted := range []string{"菜单位置", "Finder 右键顶层", "新建文件子菜单"} {
+		if slices.Contains(texts, unwanted) {
+			t.Errorf("creation pane still shows %q", unwanted)
+		}
 	}
 }
 

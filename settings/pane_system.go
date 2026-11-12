@@ -1,7 +1,8 @@
 package settings
 
 import (
-	"fmt"
+	"rightclick/config"
+	"rightclick/locales"
 
 	"github.com/egoist/mygo/ui"
 )
@@ -19,49 +20,54 @@ const (
 // action that completes it. The conclusion is shown only when all four pass.
 func (m *app) diagnosticsPane(c *ui.Context) {
 	t := c.Theme()
-	paneHeader(c, "权限与诊断", "右键菜单要四步都通过，访达里才会显示。")
+	paneHeader(c, locales.PaneDiagnostics(), locales.DiagnosticsIntro())
 	if m.setupStep() == stepReady {
-		banner(c, t.Success, iconCheck, "访达中已经可用", "在文件夹范围内右键，就能看到右键助手的菜单。", "")
+		banner(c, t.Success, iconCheck, locales.ReadyInFinder(), locales.ReadyInFinderBody(), "")
 	}
 	ledger(c, ui.Column(c)).Children(func() {
-		extension, extensionAction := "在系统设置的扩展里打开右键助手。", "去启用"
+		extensionTitle := locales.BannerExtensionOff()
+		extension, extensionAction := locales.ExtensionOpenHint(), locales.GoEnable()
+		extensionIcon, extensionTone := iconAlert, t.Warning
 		switch m.finder {
 		case finderChecking:
-			extension, extensionAction = "正在检查…", ""
+			extensionTitle, extension, extensionAction = locales.FinderExtension(), locales.CheckingItem(), ""
+			extensionIcon, extensionTone = iconInfo, t.TextMuted
 		case finderOn:
-			extension, extensionAction = "已在系统设置里启用。", ""
+			extensionTitle = locales.CheckExtension()
+			extension, extensionAction = locales.ExtensionEnabledHint(), ""
+			extensionIcon, extensionTone = iconCheck, t.Success
 		}
-		if checkRow(c, "Finder 扩展已启用", m.finder == finderOn, extension, extensionAction) {
+		if diagnosticRow(c, extensionTitle, extension, extensionAction, extensionIcon, extensionTone) {
 			m.openFinderSettings()
 		}
 
-		folders, foldersAction := "访达只在文件夹范围内显示菜单。", "添加…"
+		folders, foldersAction := locales.FolderScopeHint(), locales.AddEllipsis()
 		if n := len(m.cfg.WatchFolders); n > 0 {
-			folders, foldersAction = fmt.Sprintf("已添加 %d 个文件夹。", n), ""
+			folders, foldersAction = locales.FoldersAdded(n), ""
 		}
-		if checkRow(c, "已设置文件夹范围", len(m.cfg.WatchFolders) > 0, folders, foldersAction) {
+		if checkRow(c, locales.CheckFolderScope(), len(m.cfg.WatchFolders) > 0, folders, foldersAction) {
 			m.pickFolder()
 		}
 
-		items, itemsAction := "至少打开一项菜单。", "去编辑"
+		items, itemsAction := locales.AtLeastOneItem(), locales.GoEdit()
 		if n := enabledCount(m.cfg.MenuItems); n > 0 {
-			items, itemsAction = fmt.Sprintf("已启用 %d 项。", n), ""
+			items, itemsAction = locales.ItemsEnabled(n), ""
 		}
-		if checkRow(c, "有启用的菜单项", enabledCount(m.cfg.MenuItems) > 0, items, itemsAction) {
+		if checkRow(c, locales.CheckItemsEnabled(), enabledCount(m.cfg.MenuItems) > 0, items, itemsAction) {
 			m.selectPane(paneMenu)
 		}
 
-		restart, restartAction := "文件夹范围变更后，要重新启动访达才会读取。", "重新启动"
+		restart, restartAction := locales.RestartNeededBody(), locales.Restart()
 		if !m.foldersChanged {
-			restart, restartAction = "文件夹范围已生效。", ""
+			restart, restartAction = locales.FolderScopeApplied(), ""
 		}
-		if checkRow(c, "访达已读取最新的文件夹范围", !m.foldersChanged, restart, restartAction) {
+		if checkRow(c, locales.CheckFinderReloaded(), !m.foldersChanged, restart, restartAction) {
 			m.confirmRestart = true
 		}
 	})
 	ledger(c, ui.Column(c)).Children(func() {
-		settingRow(c, "重新启动访达", "关闭访达，然后由系统重新打开。菜单没有出现时可以试试。", func() {
-			if quietButton(c, iconRestart, "重新启动") {
+		settingRow(c, locales.RestartFinder(), locales.RestartFinderHint(), func() {
+			if quietButton(c, iconRestart, locales.Restart()) {
 				m.confirmRestart = true
 			}
 		})
@@ -73,16 +79,23 @@ func (m *app) diagnosticsPane(c *ui.Context) {
 // with that label, which checkRow reports as a click.
 func checkRow(c *ui.Context, title string, pass bool, note, action string) bool {
 	t := c.Theme()
+	statusIcon, statusColor := iconAlert, t.Warning
+	if pass {
+		statusIcon, statusColor = iconCheck, t.Success
+	}
+	return diagnosticRow(c, title, note, action, statusIcon, statusColor)
+}
+
+func diagnosticRow(c *ui.Context, title, note, action string, statusIcon *ui.SVG, statusColor ui.Color) bool {
+	t := c.Theme()
 	clicked := false
 	ui.Row(c).Gap(14).Padding(14, 16).AlignItems(ui.Center).Children(func() {
-		if pass {
-			glyph(c, iconCheck, 17, t.Success)
-		} else {
-			glyph(c, iconAlert, 17, t.Warning)
-		}
+		glyph(c, statusIcon, 17, statusColor)
 		ui.Column(c).Grow(1).Gap(3).Children(func() {
 			ui.Text(c, title).FontSize(sizeBody).FontWeight(600)
-			ui.Text(c, note).FontSize(sizeNote).LineHeight(1.45).TextColor(t.TextMuted)
+			if note != "" {
+				ui.Text(c, note).FontSize(sizeNote).LineHeight(1.45).TextColor(t.TextMuted)
+			}
 		})
 		if action != "" {
 			clicked = quietButton(c, nil, action)
@@ -115,7 +128,7 @@ func (m *app) checkFinder() {
 
 // openFinderSettings opens the System Settings pane for extensions.
 func (m *app) openFinderSettings() {
-	m.report("打开系统设置失败", m.env.openFinderSettings())
+	m.report(locales.OpenSettingsFailed(), m.env.openFinderSettings())
 }
 
 // restartFinder restarts Finder off the main thread. When it works, Finder has
@@ -128,7 +141,7 @@ func (m *app) restartFinder() {
 			if err == nil {
 				m.foldersChanged = false
 			}
-			m.report("重新启动访达失败", err)
+			m.report(locales.RestartFinderFailed(), err)
 		})
 	}()
 }
@@ -137,22 +150,38 @@ func (m *app) restartFinder() {
 // app's name and version, so that the sidebar needs no separate About pane.
 func (m *app) generalPane(c *ui.Context) {
 	t := c.Theme()
-	paneHeader(c, "通用", "")
+	paneHeader(c, locales.PaneGeneral(), "")
 	ledger(c, ui.Column(c)).Children(func() {
-		settingRow(c, "开机启动", "登录 macOS 后自动启动右键助手。", func() {
-			ui.Switch(c, &m.openAtLogin).Label("开机启动").OnChange(m.applyOpenAtLogin)
+		settingRow(c, locales.LanguageSetting(), locales.LanguageHint(), func() {
+			locationSelect(c, &m.cfg.Language, "language", locales.LanguageSetting(), config.Languages, languageLabels(), true, m.applyLanguage)
+		})
+		settingRow(c, locales.LaunchAtLogin(), locales.LaunchAtLoginHint(), func() {
+			ui.Switch(c, &m.openAtLogin).Label(locales.LaunchAtLogin()).OnChange(m.applyOpenAtLogin)
 		})
 	})
-	sectionTitle(c, "关于")
+	sectionTitle(c, locales.About())
 	ui.Row(c).Gap(16).AlignItems(ui.Center).Children(func() {
 		mark(c, 56)
 		ui.Column(c).Gap(4).Children(func() {
-			ui.Text(c, "右键助手").FontSize(22).FontWeight(700)
-			ui.Text(c, "版本 "+version).FontSize(sizeBody).TextColor(t.TextMuted)
+			ui.Text(c, locales.AppName()).FontSize(22).FontWeight(700)
+			ui.Text(c, locales.VersionLine(version)).FontSize(sizeBody).TextColor(t.TextMuted)
 		})
 	})
-	ui.Text(c, "给访达的右键菜单加上新建、拷贝路径、压缩和哈希等常用动作。").
+	ui.Text(c, locales.AboutBlurb()).
 		FontSize(sizeBody).LineHeight(1.6).TextColor(t.TextMuted)
+}
+
+// languageLabels returns the picker text for each tag in config.Languages, in the
+// same order. The picker shows these labels and stores the tag.
+func languageLabels() []string {
+	return []string{locales.LanguageSystem(), locales.LanguageChinese(), locales.LanguageEnglish()}
+}
+
+// applyLanguage saves the language the picker chose and shows the windows in it.
+// The Finder menu reads the same setting from config.json.
+func (m *app) applyLanguage() {
+	m.saveConfig()
+	m.env.setLocale(m.cfg.Language)
 }
 
 // applyOpenAtLogin sets the login item, then shows what the system reports,
@@ -160,5 +189,5 @@ func (m *app) generalPane(c *ui.Context) {
 func (m *app) applyOpenAtLogin() {
 	err := m.env.setOpenAtLogin(m.openAtLogin)
 	m.openAtLogin = m.env.openAtLogin()
-	m.report("设置开机启动失败", err)
+	m.report(locales.SetLoginFailed(), err)
 }
