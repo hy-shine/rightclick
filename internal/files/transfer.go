@@ -3,13 +3,13 @@ package files
 import (
 	"errors"
 	"fmt"
-	"github.com/hy-shine/rightclick/internal/locales"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 	"syscall"
+
+	"github.com/hy-shine/rightclick/internal/locales"
 )
 
 // Copy copies the file, symbolic link or folder at src into dir and returns the
@@ -38,16 +38,8 @@ func Move(src, dir string) (string, error) {
 		return "", err
 	}
 	// Moving an item into the folder it already sits in would rename it to a
-	// numbered name, so it is refused. Both paths are made absolute first.
-	parent, err := filepath.Abs(filepath.Dir(src))
-	if err != nil {
-		return "", err
-	}
-	absDir, err := filepath.Abs(dir)
-	if err != nil {
-		return "", err
-	}
-	if parent == absDir {
+	// numbered name, so it is refused. The folders are compared on disk.
+	if sameFolder(filepath.Dir(src), dir) {
 		return "", errors.New(locales.AlreadyInFolder())
 	}
 	name := filepath.Base(src)
@@ -122,6 +114,10 @@ func copyEntry(src string, info fs.FileInfo, dir, name string) (string, error) {
 				return dst, err
 			}
 		}
+		// The folder keeps its own quarantine, as a downloaded app bundle has it.
+		if err := copyQuarantine(src, dst); err != nil {
+			return dst, err
+		}
 		return dst, nil
 	case info.Mode().IsRegular():
 		return reserve(dir, name, false, copyFileTo(src, info.Mode().Perm()))
@@ -132,6 +128,8 @@ func copyEntry(src string, info fs.FileInfo, dir, name string) (string, error) {
 
 // copyFileTo returns a create function that copies src into a new file at the
 // path it is given. The file is opened with O_EXCL, so it is never overwritten.
+// The copy keeps the quarantine of src, so a downloaded file is still checked
+// by macOS the first time it runs.
 func copyFileTo(src string, perm fs.FileMode) func(path string) error {
 	return func(path string) error {
 		in, err := os.Open(src)
@@ -139,7 +137,9 @@ func copyFileTo(src string, perm fs.FileMode) func(path string) error {
 			return err
 		}
 		defer in.Close()
-		out, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, perm)
+		// The file is created with owner write access, so that its quarantine can be
+		// set after the bytes are written. The permissions of src are restored last.
+		out, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, perm|0o600)
 		if err != nil {
 			return err
 		}
@@ -148,25 +148,37 @@ func copyFileTo(src string, perm fs.FileMode) func(path string) error {
 			os.Remove(path)
 			return err
 		}
-		return out.Close()
+		if err := out.Close(); err != nil {
+			os.Remove(path)
+			return err
+		}
+		if err := copyQuarantine(src, path); err != nil {
+			os.Remove(path)
+			return err
+		}
+		if err := os.Chmod(path, perm); err != nil {
+			os.Remove(path)
+			return err
+		}
+		return nil
 	}
 }
 
-// refuseInside rejects copying or moving a folder into itself, which would
-// never finish.
+// refuseInside rejects copying or moving a folder into itself, which would never
+// finish. The check compares folders on disk, so a link into src counts as src.
 func refuseInside(src, dir string, isDir bool) error {
 	if !isDir {
 		return nil
 	}
-	absSrc, err := filepath.Abs(src)
+	info, err := os.Stat(src)
 	if err != nil {
 		return err
 	}
-	absDir, err := filepath.Abs(dir)
+	inside, err := isInside(dir, info)
 	if err != nil {
 		return err
 	}
-	if absDir == absSrc || strings.HasPrefix(absDir, absSrc+string(filepath.Separator)) {
+	if inside {
 		return errors.New(locales.FolderIntoItself())
 	}
 	return nil

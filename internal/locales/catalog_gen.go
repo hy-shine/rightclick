@@ -2380,6 +2380,66 @@ func (msgs Messages) UnzipWritten(count int) string {
 	return Catalog.Format(msgs.locale, "unzipWritten", map[string]any{"count": count})
 }
 
+// ArchiveStoppedAtLimit says "The archive unpacks to more than 2 GiB, so the extraction stopped there. Files written before that stay."
+// in the language the app shows.
+func ArchiveStoppedAtLimit() string { return In(i18n.Locale()).ArchiveStoppedAtLimit() }
+
+// ArchiveStoppedAtLimit says "The archive unpacks to more than 2 GiB, so the extraction stopped there. Files written before that stay."
+// in the language of msgs.
+func (msgs Messages) ArchiveStoppedAtLimit() string {
+	return Catalog.Format(msgs.locale, "archiveStoppedAtLimit", nil)
+}
+
+// ArchiveTooLarge says "The archive would unpack to more than 2 GiB, so nothing was unpacked."
+// in the language the app shows.
+func ArchiveTooLarge() string { return In(i18n.Locale()).ArchiveTooLarge() }
+
+// ArchiveTooLarge says "The archive would unpack to more than 2 GiB, so nothing was unpacked."
+// in the language of msgs.
+func (msgs Messages) ArchiveTooLarge() string {
+	return Catalog.Format(msgs.locale, "archiveTooLarge", nil)
+}
+
+// ArchiveTooManyItems says "The archive holds more than 10,000 items, so nothing was unpacked."
+// in the language the app shows.
+func ArchiveTooManyItems() string { return In(i18n.Locale()).ArchiveTooManyItems() }
+
+// ArchiveTooManyItems says "The archive holds more than 10,000 items, so nothing was unpacked."
+// in the language of msgs.
+func (msgs Messages) ArchiveTooManyItems() string {
+	return Catalog.Format(msgs.locale, "archiveTooManyItems", nil)
+}
+
+// ArchiveRatioTooHigh says "A file in the archive is far larger unpacked than packed, so nothing was unpacked."
+// in the language the app shows.
+func ArchiveRatioTooHigh() string { return In(i18n.Locale()).ArchiveRatioTooHigh() }
+
+// ArchiveRatioTooHigh says "A file in the archive is far larger unpacked than packed, so nothing was unpacked."
+// in the language of msgs.
+func (msgs Messages) ArchiveRatioTooHigh() string {
+	return Catalog.Format(msgs.locale, "archiveRatioTooHigh", nil)
+}
+
+// ArchiveThroughLink says "The archive would write through the symbolic link {path}, so it stopped there."
+// in the language the app shows.
+func ArchiveThroughLink(path string) string { return In(i18n.Locale()).ArchiveThroughLink(path) }
+
+// ArchiveThroughLink says "The archive would write through the symbolic link {path}, so it stopped there."
+// in the language of msgs.
+func (msgs Messages) ArchiveThroughLink(path string) string {
+	return Catalog.Format(msgs.locale, "archiveThroughLink", map[string]any{"path": path})
+}
+
+// DocumentTooLarge says "The Office document is too large to check safely."
+// in the language the app shows.
+func DocumentTooLarge() string { return In(i18n.Locale()).DocumentTooLarge() }
+
+// DocumentTooLarge says "The Office document is too large to check safely."
+// in the language of msgs.
+func (msgs Messages) DocumentTooLarge() string {
+	return Catalog.Format(msgs.locale, "documentTooLarge", nil)
+}
+
 // VerdictDifferent says "different"
 // in the language the app shows.
 func VerdictDifferent() string { return In(i18n.Locale()).VerdictDifferent() }

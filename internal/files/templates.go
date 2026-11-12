@@ -58,10 +58,10 @@ func SaveTemplates(path string, templates []Template) error {
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return err
 	}
-	return writeAtomic(path, 0o644, func(w io.Writer) error {
+	return writeAtomic(path, 0o600, func(w io.Writer) error {
 		_, err := w.Write(data)
 		return err
 	})

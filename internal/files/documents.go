@@ -34,6 +34,34 @@ func FileTypeContent(fileType config.FileType) ([]byte, error) {
 	return catalog.Document(fileType.Template)
 }
 
+// maxDocumentBytes is the most decompressed XML an Office document may hold in all of
+// its parts together. Each part has its own limit, but without a total, many parts
+// just under that limit could still add up to a very large document. It is a
+// variable so that tests can lower it.
+var maxDocumentBytes int64 = 64 << 20
+
+// errDocumentTooLarge stops the reading of a document once its budget is spent.
+var errDocumentTooLarge = errors.New("office document too large")
+
+// budgetReader reads from r until the budget left is spent. Every part of a document
+// draws on the same budget.
+type budgetReader struct {
+	r    io.Reader
+	left *int64
+}
+
+func (b *budgetReader) Read(p []byte) (int, error) {
+	if *b.left <= 0 {
+		return 0, errDocumentTooLarge
+	}
+	if int64(len(p)) > *b.left {
+		p = p[:*b.left]
+	}
+	n, err := b.r.Read(p)
+	*b.left -= int64(n)
+	return n, err
+}
+
 func ValidateDocument(extension string, data []byte) error {
 	if extension == "rtf" {
 		if !bytes.HasPrefix(bytes.TrimSpace(data), []byte(`{\rtf`)) {
@@ -55,6 +83,7 @@ func ValidateDocument(extension string, data []byte) error {
 		return errors.New(locales.DocumentCorrupt(err.Error()))
 	}
 	found := make(map[string]bool)
+	budget := maxDocumentBytes
 	for _, entry := range archive.File {
 		if !strings.HasSuffix(entry.Name, ".xml") && !strings.HasSuffix(entry.Name, ".rels") {
 			continue
@@ -66,7 +95,7 @@ func ValidateDocument(extension string, data []byte) error {
 		if err != nil {
 			return err
 		}
-		decoder := xml.NewDecoder(io.LimitReader(reader, 16<<20))
+		decoder := xml.NewDecoder(&budgetReader{r: io.LimitReader(reader, 16<<20), left: &budget})
 		for {
 			_, err = decoder.Token()
 			if err != nil {
@@ -74,6 +103,9 @@ func ValidateDocument(extension string, data []byte) error {
 			}
 		}
 		closeErr := reader.Close()
+		if errors.Is(err, errDocumentTooLarge) {
+			return errors.New(locales.DocumentTooLarge())
+		}
 		if err != io.EOF {
 			return errors.New(locales.DocumentPartInvalid(entry.Name, err.Error()))
 		}
