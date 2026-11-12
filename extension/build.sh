@@ -21,6 +21,8 @@ cp "$here/../internal/catalog/icons/"*.txt "$out/Contents/Resources/FileIcons/"
 for lproj in en.lproj zh-Hans.lproj; do
   cp -R "$here/$name/$lproj" "$out/Contents/Resources/"
 done
+# Action icons, collected from the Lucide set (ISC); see ActionIcons/LICENSE.txt.
+cp -R "$here/../internal/actionicons/icons" "$out/Contents/Resources/ActionIcons"
 
 # -application-extension restricts the code to APIs that extensions may use.
 # _NSExtensionMain is the entry point that the extension host calls.

@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -9,41 +10,41 @@ import (
 	"strings"
 	"testing"
 
-	"rightclick/config"
-	"rightclick/files"
+	"github.com/hy-shine/rightclick/config"
+	"github.com/hy-shine/rightclick/files"
 )
 
 func TestCreateFromTemplateWritesContentAndRefusesDisabled(t *testing.T) {
 	templatesPath := filepath.Join(t.TempDir(), "templates.json")
 	if err := files.SaveTemplates(templatesPath, []files.Template{
-		{Name: "周报.md", Content: "# 本周\n"},
-		{Name: "停用.md", Content: "x", Disabled: true},
+		{Name: "weekly.md", Content: "# This week\n"},
+		{Name: "disabled.md", Content: "x", Disabled: true},
 	}); err != nil {
 		t.Fatal(err)
 	}
 	dir := t.TempDir()
 	cfg := config.Default()
 
-	if err := createFromTemplate(templatesPath, "周报.md", []string{dir}, cfg); err != nil {
+	if err := createFromTemplate(templatesPath, "weekly.md", []string{dir}, cfg); err != nil {
 		t.Fatal(err)
 	}
-	data, err := os.ReadFile(filepath.Join(dir, "周报.md"))
+	data, err := os.ReadFile(filepath.Join(dir, "weekly.md"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := string(data), "# 本周\n"; got != want {
+	if got, want := string(data), "# This week\n"; got != want {
 		t.Errorf("created content = %q, want %q", got, want)
 	}
-	if err := createFromTemplate(templatesPath, "停用.md", []string{dir}, cfg); err == nil {
+	if err := createFromTemplate(templatesPath, "disabled.md", []string{dir}, cfg); err == nil {
 		t.Error("disabled template was created")
 	}
-	if err := createFromTemplate(templatesPath, "不存在.md", []string{dir}, cfg); err == nil {
+	if err := createFromTemplate(templatesPath, "missing.md", []string{dir}, cfg); err == nil {
 		t.Error("missing template was created")
 	}
-	if err := createFromTemplate(templatesPath, "周报.md", []string{dir, dir}, cfg); err == nil {
+	if err := createFromTemplate(templatesPath, "weekly.md", []string{dir, dir}, cfg); err == nil {
 		t.Error("two folders were accepted as the destination")
 	}
-	if _, err := os.Stat(filepath.Join(dir, "停用.md")); err == nil {
+	if _, err := os.Stat(filepath.Join(dir, "disabled.md")); err == nil {
 		t.Error("disabled template left a file behind")
 	}
 }
@@ -151,7 +152,7 @@ func TestCompareFilesReportsVerdict(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if title != "SHA-256 比较：相同" {
+	if title != "SHA-256 comparison: same" {
 		t.Errorf("title = %q, want the same verdict", title)
 	}
 	if !strings.Contains(body, "a.txt") || !strings.Contains(body, "b.txt") {
@@ -160,7 +161,7 @@ func TestCompareFilesReportsVerdict(t *testing.T) {
 	if title, _, err = compareFiles("", []string{a, c}); err != nil {
 		t.Fatal(err)
 	}
-	if title != "SHA-256 比较：不同" {
+	if title != "SHA-256 comparison: different" {
 		t.Errorf("title = %q, want the different verdict", title)
 	}
 	if _, _, err := compareFiles("", []string{a}); err == nil {
@@ -191,9 +192,54 @@ func TestOpenEachWithTriesEveryPath(t *testing.T) {
 	}
 }
 
+func TestOpenWithSendsTerminalProgramsTheFolder(t *testing.T) {
+	old := openWith
+	t.Cleanup(func() { openWith = old })
+	var opened []string
+	openWith = func(app, path string) error {
+		opened = append(opened, app+"|"+path)
+		return nil
+	}
+	dir := t.TempDir()
+	file := filepath.Join(dir, "a.txt")
+	if err := os.WriteFile(file, []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := openWithApp(url.Values{"app": {"Warp"}}, []string{file}, config.Default()); err != nil {
+		t.Fatal(err)
+	}
+	if err := openWithApp(url.Values{"app": {"Cursor"}}, []string{file}, config.Default()); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"Warp|" + dir, "Cursor|" + file}
+	if !reflect.DeepEqual(opened, want) {
+		t.Fatalf("opened = %q, want %q", opened, want)
+	}
+}
+
+func TestOpenEditorUsesTheSystemDefault(t *testing.T) {
+	oldDefault := openDefault
+	t.Cleanup(func() { openDefault = oldDefault })
+	var opened []string
+	openDefault = func(path string) error {
+		opened = append(opened, path)
+		return nil
+	}
+	file := filepath.Join(t.TempDir(), "a.txt")
+	if err := os.WriteFile(file, []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := openEditor(nil, []string{file}, config.Default()); err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{file}; !reflect.DeepEqual(opened, want) {
+		t.Fatalf("opened = %q, want %q", opened, want)
+	}
+}
+
 func TestRunActionRejectsUnknownAction(t *testing.T) {
 	err := runAction("bogus", nil, []string{"/tmp"}, config.Default())
-	if err == nil || !strings.Contains(err.Error(), "不认识的操作") {
+	if err == nil || !strings.Contains(err.Error(), "Unknown action") {
 		t.Fatalf("runAction(bogus) error = %v, want an unknown-action error", err)
 	}
 }
@@ -230,7 +276,9 @@ func TestMenuActionsMatchFinderExtension(t *testing.T) {
 			t.Errorf("Finder menu lists %q, which the app does not handle", name)
 		}
 	}
-	legacy := map[string]bool{"new-text": true, "new-markdown": true}
+	// "open-with" remains the route behind app shortcut entries; only its
+	// menu submenu was removed.
+	legacy := map[string]bool{"new-text": true, "new-markdown": true, "open-with": true}
 	for name := range handled {
 		if !legacy[name] && !inMenu[name] {
 			t.Errorf("app handles %q, which the Finder menu does not list", name)

@@ -5,10 +5,10 @@ package config
 import (
 	"encoding/json"
 	"errors"
+	"github.com/hy-shine/rightclick/locales"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"rightclick/locales"
 	"slices"
 	"strings"
 
@@ -69,9 +69,12 @@ type Config struct {
 	// WatchFolders is the single folder whitelist. The Finder extension shows
 	// the menu only inside these folders, and URL actions are refused outside
 	// them.
-	WatchFolders    []string         `json:"watchFolders"`
-	Terminal        string           `json:"terminal"`
-	Editors         []string         `json:"editors"`
+	WatchFolders []string `json:"watchFolders"`
+	Programs     []string `json:"programs"`
+	// Legacy lists, read once during migration and dropped on the next save.
+	Terminal        string           `json:"terminal,omitempty"`
+	Terminals       []string         `json:"terminals,omitempty"`
+	Editors         []string         `json:"editors,omitempty"`
 	OpenAfterCreate bool             `json:"openAfterCreate"`
 	FavoriteFolders []FavoriteFolder `json:"favoriteFolders,omitempty"`
 }
@@ -79,10 +82,11 @@ type Config struct {
 // defaultMenuIDs lists the menu entries in their default order, as in ui.md section 2.
 var defaultMenuIDs = []string{
 	"new-file", "new-folder", "new-template",
-	"copy-path", "copy-name", "copy-to", "move-to",
-	"open-terminal", "open-editor", "open-with",
+	"copy-path", "copy-name", "copy-basename", "copy-extension", "copy-to", "move-to",
+	"open-terminal", "open-editor",
 	"zip", "unzip", "hash", "compare-hash",
 	"toggle-hidden", "delete-permanently",
+	"add-template",
 }
 
 // defaultOffMenuIDs lists the menu entries that start switched off. Deleting for good
@@ -191,8 +195,7 @@ func Default() Config {
 		MenuItems:    items,
 		FileTypes:    DefaultFileTypes(),
 		WatchFolders: folders,
-		Terminal:     "Terminal",
-		Editors:      []string{"Visual Studio Code", "Cursor"},
+		Programs:     []string{"Visual Studio Code", "Cursor", "Terminal"},
 	}
 }
 
@@ -234,7 +237,9 @@ func InWatchFolders(path string, folders []string) bool {
 func Load(path string) (Config, error) {
 	data, err := os.ReadFile(path)
 	if errors.Is(err, fs.ErrNotExist) {
-		return Default(), nil
+		cfg := Default()
+		cfg.GroupMenuByLocation()
+		return cfg, nil
 	}
 	if err != nil {
 		return Config{}, err
@@ -258,6 +263,7 @@ func Load(path string) (Config, error) {
 // normalize fills newer file type settings and migrates the two creation
 // entries used by format version 1.
 func (cfg *Config) normalize() {
+	cfg.normalizePrograms()
 	hadFileTypes := len(cfg.FileTypes) > 0
 	legacyMenu := slices.Clone(cfg.MenuItems)
 
@@ -279,6 +285,10 @@ func (cfg *Config) normalize() {
 				insertNewFile = len(migrated)
 			}
 			legacyEnabled = legacyEnabled || item.Enabled
+		case "open-with":
+			// The Open With submenu is gone; app shortcut entries still use the
+			// URL action, so only the menu entry is dropped.
+			continue
 		case "new-file":
 			insertNewFile = -1
 			migrated = append(migrated, item)
@@ -303,6 +313,26 @@ func (cfg *Config) normalize() {
 		cfg.Language = ""
 	}
 	cfg.Version = Version
+	cfg.GroupMenuByLocation()
+}
+
+// GroupMenuByLocation puts the main-menu entries before the submenu entries and
+// keeps the order inside each part. Finder reads each part in order, so it shows
+// the same menu afterwards. The settings pane depends on the split: it draws a
+// rule between the parts, and a drag cannot move an entry across it.
+func (cfg *Config) GroupMenuByLocation() {
+	grouped := make([]MenuItem, 0, len(cfg.MenuItems))
+	for _, item := range cfg.MenuItems {
+		if item.Location == FileTypeMain {
+			grouped = append(grouped, item)
+		}
+	}
+	for _, item := range cfg.MenuItems {
+		if item.Location != FileTypeMain {
+			grouped = append(grouped, item)
+		}
+	}
+	cfg.MenuItems = grouped
 }
 
 // normalizeFileTypes keeps valid unique entries and canonicalizes each
@@ -481,9 +511,48 @@ func DefaultMenuLocation(id string) string {
 	return FileTypeSubmenu
 }
 
+// normalizePrograms fills the program list from the old separate editor and
+// terminal lists. An empty but present list is a deliberate choice and stays
+// empty.
+func (cfg *Config) normalizePrograms() {
+	if cfg.Programs == nil {
+		legacy := append(slices.Clone(cfg.Editors), cfg.Terminals...)
+		if len(legacy) == 0 && cfg.Terminal != "" {
+			legacy = []string{cfg.Terminal}
+		}
+		if len(legacy) == 0 && cfg.Editors == nil && cfg.Terminals == nil && cfg.Terminal == "" {
+			legacy = []string{"Visual Studio Code", "Cursor", "Terminal"}
+		}
+		cfg.Programs = legacy
+	}
+	programs := make([]string, 0, len(cfg.Programs))
+	seen := map[string]bool{}
+	for _, name := range cfg.Programs {
+		name = strings.TrimSpace(name)
+		if name == "" || seen[name] {
+			continue
+		}
+		seen[name] = true
+		programs = append(programs, name)
+	}
+	cfg.Programs = programs
+}
+
+// terminalApps are the programs that open a folder instead of a file. The list
+// is a heuristic: any other app gets the selection itself.
+var terminalApps = map[string]bool{
+	"Terminal": true, "iTerm": true, "iTerm2": true, "Warp": true,
+	"Ghostty": true, "kitty": true, "Alacritty": true, "WezTerm": true,
+	"Hyper": true, "Tabby": true,
+}
+
+// IsTerminalApp reports whether app opens a folder rather than a file.
+func IsTerminalApp(app string) bool { return terminalApps[app] }
+
 // Save writes cfg to path. The previous file stays if the write fails.
 func Save(path string, cfg Config) error {
 	cfg.Version = Version
+	cfg.normalizePrograms()
 	for index := range cfg.FileTypes {
 		cfg.FileTypes[index].Location = FileTypeSubmenu
 	}

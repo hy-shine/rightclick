@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"rightclick/config"
-	"rightclick/locales"
+	"github.com/hy-shine/rightclick/config"
+	"github.com/hy-shine/rightclick/locales"
 )
 
 // TestRouteStartsTheActionAfterTheChecks checks that a valid URL is checked at

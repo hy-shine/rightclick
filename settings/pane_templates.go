@@ -1,12 +1,13 @@
 package settings
 
 import (
-	"rightclick/locales"
+	"github.com/hy-shine/rightclick/locales"
 	"slices"
+	"strings"
 
 	"github.com/egoist/mygo/ui"
 
-	"rightclick/internal/catalog"
+	"github.com/hy-shine/rightclick/internal/catalog"
 )
 
 const (
@@ -18,11 +19,13 @@ const (
 
 func (m *app) newPane(c *ui.Context) {
 	t := c.Theme()
-	ui.Row(c).AlignItems(ui.Center).Children(func() {
-		paneHeader(c, locales.PaneNew(), locales.NewIntro())
-		ui.Spacer(c)
-		if primaryButton(c, iconPlus, locales.AddTemplate()) {
+	ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
+		ui.Column(c).Grow(1).MinWidth(0).Children(func() { paneHeader(c, locales.PaneNew(), locales.NewIntro()) })
+		if quietButtonCentered(c, nil, locales.AddTemplate()) {
 			m.pickTemplate()
+		}
+		if primaryButtonCentered(c, iconPlus, locales.AddFileType()) {
+			m.newFileType()
 		}
 	})
 	ui.Row(c).Gap(12).Margin(20, 0, 12, 0).AlignItems(ui.Center).Children(func() {
@@ -176,12 +179,19 @@ func (m *app) creationDialog(c *ui.Context) {
 		t := c.Theme()
 		backdrop.Background(ui.RGBA(0, 0, 0, .32))
 		_, height := c.Size()
+		title := m.editCreation.Label
+		if m.editCreationNew {
+			title = locales.AddFileType()
+			if m.editCreationTemplate {
+				title = locales.AddFileTemplate()
+			}
+		}
 		panel.Width(440).MaxHeight(height-32).Padding(22).Background(t.Surface).Border(1, t.Border).Radius(12).Label(locales.EditFileType())
 		ui.Column(c).Gap(14).Children(func() {
 			ui.Row(c).Gap(10).AlignItems(ui.Center).Children(func() {
 				creationFileIcon(c, m.editCreation.Extension, 32)
 				ui.Column(c).Gap(3).Grow(1).Children(func() {
-					ui.Text(c, m.editCreation.Label).FontSize(sizeSection).FontWeight(600)
+					ui.Text(c, title).FontSize(sizeSection).FontWeight(600)
 					ui.Text(c, "."+m.editCreation.Extension).FontSize(sizeCaption).TextColor(t.TextMuted)
 				})
 				if ghostButton(c, locales.Close(), false) {
@@ -192,6 +202,16 @@ func (m *app) creationDialog(c *ui.Context) {
 				ui.Column(c).Gap(9).Children(func() {
 					ui.Text(c, locales.EditMenuName()).FontSize(sizeCaption).FontWeight(600)
 					ui.TextInput(c.Key("creation-name"), &m.editCreation.Label).Label(locales.EditMenuName())
+					if !m.editCreationTemplate && strings.HasPrefix(m.editCreation.ID, "custom-") && m.editCreation.TemplateData == "" {
+						ui.Text(c, locales.FileExtension()).FontSize(sizeCaption).FontWeight(600).Margin(7, 0, 0)
+						ui.TextInput(c.Key("creation-extension"), &m.editCreation.Extension).Label(locales.FileExtension()).Placeholder("yaml").OnChange(func() {
+							extension := strings.TrimPrefix(strings.TrimSpace(m.editCreation.Extension), ".")
+							m.editCreation.Template = ""
+							if catalog.IsDocument(extension) {
+								m.editCreation.Template = extension
+							}
+						})
+					}
 					ui.Text(c, locales.EditDefaultName()).FontSize(sizeCaption).FontWeight(600).Margin(7, 0, 0)
 					ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
 						ui.TextInput(c.Key("creation-filename"), &m.editCreation.DefaultName).Label(locales.EditDefaultName()).Grow(1)
@@ -228,10 +248,16 @@ func (m *app) creationDialog(c *ui.Context) {
 					}
 				})
 			})
-			ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
-				if m.editCreationTemplate && ghostButton(c, locales.DeleteTemplate(), true) {
+			ui.Row(c).Wrap().Gap(8).AlignItems(ui.Center).Children(func() {
+				if m.editCreationTemplate && !m.editCreationNew && ghostButton(c, locales.DeleteTemplate(), true) {
 					m.tplSel = m.editCreationIndex
 					m.confirmDeleteTpl = true
+				}
+				if m.editCreationTemplate && !m.editCreationNew && ghostButton(c, locales.DuplicateTemplate(), false) {
+					m.duplicateTemplate()
+				}
+				if !m.editCreationTemplate && !m.editCreationNew && strings.HasPrefix(m.editCreation.ID, "custom-") && ghostButton(c, locales.DeleteFileType(), true) {
+					m.confirmDeleteType = true
 				}
 				ui.Spacer(c)
 				if quietButton(c, nil, locales.Cancel()) {
@@ -246,5 +272,8 @@ func (m *app) creationDialog(c *ui.Context) {
 	if ui.AlertDialog(c, &m.confirmDeleteTpl, locales.DeleteTemplateQuestion(), locales.DeleteTemplateBody(), locales.Cancel(), locales.Delete()) == 1 {
 		m.deleteTemplate()
 		m.editCreationOpen = false
+	}
+	if ui.AlertDialog(c, &m.confirmDeleteType, locales.DeleteFileTypeQuestion(), locales.DeleteFileTypeBody(), locales.Cancel(), locales.Delete()) == 1 {
+		m.deleteCustomType()
 	}
 }

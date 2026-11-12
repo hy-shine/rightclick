@@ -1,8 +1,8 @@
 package settings
 
 import (
-	"rightclick/config"
-	"rightclick/locales"
+	"github.com/hy-shine/rightclick/config"
+	"github.com/hy-shine/rightclick/locales"
 
 	"github.com/egoist/mygo/ui"
 )
@@ -16,8 +16,9 @@ const (
 	finderOff
 )
 
-// diagnosticsPane lists the four steps that the Finder menu needs, each with the
-// action that completes it. The conclusion is shown only when all four pass.
+// diagnosticsPane lists the steps that the Finder menu needs, each with the
+// action that completes it, and the Full Disk Access state after them. The
+// conclusion is shown only when the four menu steps pass.
 func (m *app) diagnosticsPane(c *ui.Context) {
 	t := c.Theme()
 	paneHeader(c, locales.PaneDiagnostics(), locales.DiagnosticsIntro())
@@ -63,6 +64,17 @@ func (m *app) diagnosticsPane(c *ui.Context) {
 		}
 		if checkRow(c, locales.CheckFinderReloaded(), !m.foldersChanged, restart, restartAction) {
 			m.confirmRestart = true
+		}
+
+		// Full Disk Access is not one of the steps that keep the menu from
+		// showing, so it does not change the conclusion above. Actions that read
+		// protected locations need it.
+		diskNote, diskAction := locales.DiskAccessGranted(), ""
+		if !m.diskAccess {
+			diskNote, diskAction = locales.DiskAccessMissing(), locales.GrantAccess()
+		}
+		if checkRow(c, locales.CheckDiskAccess(), m.diskAccess, diskNote, diskAction) {
+			m.openPrivacySettings(privacyAllFiles)
 		}
 	})
 	ledger(c, ui.Column(c)).Children(func() {
@@ -129,6 +141,11 @@ func (m *app) checkFinder() {
 // openFinderSettings opens the System Settings pane for extensions.
 func (m *app) openFinderSettings() {
 	m.report(locales.OpenSettingsFailed(), m.env.openFinderSettings())
+}
+
+// openPrivacySettings opens one of the Privacy panes in System Settings.
+func (m *app) openPrivacySettings(anchor string) {
+	m.report(locales.OpenSettingsFailed(), m.env.openPrivacy(anchor))
 }
 
 // restartFinder restarts Finder off the main thread. When it works, Finder has

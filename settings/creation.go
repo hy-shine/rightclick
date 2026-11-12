@@ -1,17 +1,20 @@
 package settings
 
 import (
+	"crypto/rand"
 	"encoding/base64"
+	"github.com/hy-shine/rightclick/locales"
 	"path/filepath"
-	"rightclick/locales"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/egoist/mygo"
 
 	"errors"
-	"rightclick/config"
-	"rightclick/files"
+	"github.com/hy-shine/rightclick/config"
+	"github.com/hy-shine/rightclick/files"
+	"github.com/hy-shine/rightclick/internal/catalog"
 )
 
 type creationRow struct {
@@ -55,23 +58,31 @@ func (m *app) creationType(row creationRow) config.FileType {
 		fileType.Label, fileType.DefaultName = fileType.DisplayLabel(), fileType.DisplayDefaultName()
 		return fileType
 	}
-	template := m.templates[row.index]
+	return templateFileType(m.templates[row.index])
+}
+
+func templateFileType(template files.Template) config.FileType {
 	extension := strings.TrimPrefix(filepath.Ext(template.Name), ".")
+	base := strings.TrimSuffix(template.Name, filepath.Ext(template.Name))
+	if base == "" {
+		base, extension = template.Name, ""
+	}
 	kind := ""
 	if template.Data != "" {
 		kind = extension
 	}
 	label := template.Label
 	if label == "" {
-		label = strings.TrimSuffix(template.Name, filepath.Ext(template.Name))
+		label = base
 	}
-	return config.FileType{ID: row.key, Label: label, Extension: extension,
-		DefaultName: strings.TrimSuffix(template.Name, filepath.Ext(template.Name)), Content: template.Content, Enabled: !template.Disabled,
+	return config.FileType{ID: "template:" + template.Name, Label: label, Extension: extension,
+		DefaultName: base, Content: template.Content, Enabled: !template.Disabled,
 		Location: config.FileTypeSubmenu, Template: kind, TemplateData: template.Data, TemplateName: template.Name}
 }
 
 func (m *app) openCreationEditor(row creationRow) {
 	m.editCreation = m.creationType(row)
+	m.editCreationNew = false
 	m.editCreationIndex, m.editCreationTemplate = row.index, row.template
 	m.editCreationNotice, m.editCreationOpen = "", true
 }
@@ -83,26 +94,50 @@ func (m *app) saveCreationEditor() {
 		m.editCreationNotice = locales.InvalidName()
 		return
 	}
+	if !m.editCreationTemplate {
+		draft.Extension = strings.TrimPrefix(strings.TrimSpace(draft.Extension), ".")
+		if !validFileExtension(draft.Extension) {
+			m.editCreationNotice = locales.InvalidExtension(draft.Extension)
+			return
+		}
+		if catalog.IsDocument(draft.Extension) && draft.Template == "" {
+			draft.Template = draft.Extension
+		}
+		if _, err := files.FileTypeContent(draft); err != nil {
+			m.editCreationNotice = err.Error()
+			return
+		}
+	}
 	if m.editCreationTemplate {
-		template := m.templates[m.editCreationIndex]
+		var template files.Template
+		if !m.editCreationNew {
+			template = m.templates[m.editCreationIndex]
+		}
 		previousName := template.Name
-		template.Name = draft.DefaultName + "." + draft.Extension
+		template.Name = draft.DefaultName
+		if draft.Extension != "" {
+			template.Name += "." + draft.Extension
+		}
 		template.Label = draft.Label
 		for index, existing := range m.templates {
-			if index != m.editCreationIndex && existing.Name == template.Name {
+			if (m.editCreationNew || index != m.editCreationIndex) && strings.EqualFold(existing.Name, template.Name) {
 				m.editCreationNotice = locales.TemplateNameExists()
 				return
 			}
 		}
 		template.Content, template.Data, template.Disabled, template.Location = draft.Content, draft.TemplateData, !draft.Enabled, config.FileTypeSubmenu
 		updated := slices.Clone(m.templates)
-		updated[m.editCreationIndex] = template
+		if m.editCreationNew {
+			updated = append(updated, template)
+		} else {
+			updated[m.editCreationIndex] = template
+		}
 		if err := files.SaveTemplates(m.store.TemplatesPath, updated); err != nil {
 			m.editCreationNotice = err.Error()
 			return
 		}
 		m.templates = updated
-		if previousName != template.Name {
+		if !m.editCreationNew && previousName != template.Name {
 			for index := range m.cfg.MenuItems {
 				if m.cfg.MenuItems[index].ID == "template:"+previousName {
 					m.cfg.MenuItems[index].ID = "template:" + template.Name
@@ -113,7 +148,11 @@ func (m *app) saveCreationEditor() {
 	} else {
 		draft.Location = config.FileTypeSubmenu
 		updated := slices.Clone(m.cfg.FileTypes)
-		updated[m.editCreationIndex] = draft.Stored()
+		if m.editCreationNew {
+			updated = append(updated, draft.Stored())
+		} else {
+			updated[m.editCreationIndex] = draft.Stored()
+		}
 		cfg := m.cfg
 		cfg.FileTypes = updated
 		if err := config.Save(m.store.ConfigPath, cfg); err != nil {
@@ -122,6 +161,79 @@ func (m *app) saveCreationEditor() {
 		}
 		m.cfg = cfg
 	}
+	if m.editCreationNew {
+		m.creationSearch = ""
+		m.newMode = newModeFileTypes
+		if m.editCreationTemplate {
+			m.newMode = newModeTemplates
+			m.creationSel = len(m.templates) - 1
+		} else {
+			m.creationSel = len(m.cfg.FileTypes) - 1
+		}
+	}
+	m.editCreationOpen = false
+}
+
+func validFileExtension(extension string) bool {
+	if extension == "" || strings.HasSuffix(extension, ".") || strings.Contains(extension, "..") {
+		return false
+	}
+	for _, char := range extension {
+		if char >= 'a' && char <= 'z' || char >= 'A' && char <= 'Z' || char >= '0' && char <= '9' || char == '_' || char == '-' || char == '.' {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+func (m *app) newFileType() {
+	m.editCreation = config.FileType{
+		ID: "custom-" + rand.Text(), Extension: "txt", DefaultName: locales.DefaultUntitled(),
+		Enabled: true, Location: config.FileTypeSubmenu,
+	}
+	m.editCreationIndex, m.editCreationTemplate, m.editCreationNew = -1, false, true
+	m.editCreationNotice, m.editCreationOpen = "", true
+}
+
+func (m *app) beginTemplate(template files.Template) error {
+	if m.editCreationOpen {
+		return errors.New(locales.FinishEditingFirst())
+	}
+	m.editCreation = templateFileType(template)
+	base := m.editCreation.DefaultName
+	for suffix := 2; slices.ContainsFunc(m.templates, func(existing files.Template) bool {
+		name := m.editCreation.DefaultName
+		if m.editCreation.Extension != "" {
+			name += "." + m.editCreation.Extension
+		}
+		return strings.EqualFold(existing.Name, name)
+	}); suffix++ {
+		m.editCreation.DefaultName = base + " " + strconv.Itoa(suffix)
+	}
+	m.editCreationIndex, m.editCreationTemplate, m.editCreationNew = -1, true, true
+	m.editCreation.Enabled = true
+	m.editCreationNotice, m.editCreationOpen = "", true
+	m.selectPane(paneTemplates)
+	return nil
+}
+
+func (m *app) duplicateTemplate() {
+	template := m.templates[m.editCreationIndex]
+	m.editCreationOpen = false
+	m.report(locales.AddFailed(), m.beginTemplate(template))
+}
+
+func (m *app) deleteCustomType() {
+	index := m.editCreationIndex
+	if index < 0 || index >= len(m.cfg.FileTypes) || !strings.HasPrefix(m.cfg.FileTypes[index].ID, "custom-") {
+		return
+	}
+	id := m.cfg.FileTypes[index].ID
+	m.cfg.FileTypes = slices.Delete(m.cfg.FileTypes, index, index+1)
+	m.cfg.MenuItems = slices.DeleteFunc(m.cfg.MenuItems, func(item config.MenuItem) bool { return item.ID == "type:"+id })
+	m.creationSel = 0
+	m.saveConfig()
 	m.editCreationOpen = false
 }
 
@@ -240,8 +352,7 @@ func (m *app) pickTemplate() {
 				m.report(locales.AddFailed(), err)
 				return
 			}
-			m.addTemplate(template)
-			m.newMode = newModeTemplates
+			m.report(locales.AddFailed(), m.beginTemplate(template))
 		})
 	}()
 }

@@ -6,7 +6,8 @@ import (
 
 	"github.com/egoist/mygo"
 
-	"rightclick/finder"
+	"github.com/hy-shine/rightclick/files"
+	"github.com/hy-shine/rightclick/finder"
 )
 
 // finderExtensionID is the bundle identifier of the Finder Sync extension
@@ -16,6 +17,12 @@ const finderExtensionID = "com.example.rightclick.FinderSync"
 // finderSettingsURL opens the System Settings pane for extensions. Not
 // verified on this machine.
 const finderSettingsURL = "x-apple.systempreferences:com.apple.ExtensionsPreferences?FinderSync"
+
+// Anchors of the Privacy panes in System Settings. Not verified on this machine.
+const (
+	privacyFilesAndFolders = "Privacy_FilesAndFolders"
+	privacyAllFiles        = "Privacy_AllFiles"
+)
 
 // env holds the calls to the system. The window uses the real ones; tests
 // replace them.
@@ -27,6 +34,9 @@ type env struct {
 	restartFinder      func() error                                        // may block; called off the main thread
 	openDialog         func(opts mygo.OpenDialogOptions) ([]string, error) // blocks until dismissed
 	setLocale          func(tag string)                                    // "" follows the system
+	folderAccess       func(dir string) files.Access                       // may block on a network volume
+	fullDiskAccess     func() bool
+	openPrivacy        func(anchor string) error
 }
 
 // defaultEnv returns the env that calls mygo and the macOS tools.
@@ -38,9 +48,14 @@ func defaultEnv() env {
 		openFinderSettings: func() error {
 			return mygo.Shell.OpenExternal(finderSettingsURL)
 		},
-		restartFinder: finder.Restart,
-		openDialog:    mygo.Dialog.Open,
-		setLocale:     mygo.App.SetLocale,
+		restartFinder:  finder.Restart,
+		openDialog:     mygo.Dialog.Open,
+		setLocale:      mygo.App.SetLocale,
+		folderAccess:   files.FolderAccess,
+		fullDiskAccess: finder.FullDiskAccess,
+		openPrivacy: func(anchor string) error {
+			return mygo.Shell.OpenExternal("x-apple.systempreferences:com.apple.preference.security?" + anchor)
+		},
 	}
 }
 

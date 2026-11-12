@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"rightclick/config"
+	"github.com/hy-shine/rightclick/config"
 )
 
 func TestOfficeTemplatesCreateAndRoundTripUnchanged(t *testing.T) {

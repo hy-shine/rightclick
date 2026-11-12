@@ -10,15 +10,21 @@ import (
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
-	"rightclick/config"
-	"rightclick/locales"
+	"github.com/hy-shine/rightclick/config"
+	"github.com/hy-shine/rightclick/locales"
 )
+
+// favoriteRowHeight keeps the list dense: a folder needs a name and its path,
+// but an archive of twenty of them should still fit on one screen.
+const favoriteRowHeight = 48
 
 func (m *app) favoritesPane(c *ui.Context) {
 	paneHeader(c, locales.FavoriteFolders(), locales.FavoriteFoldersHint())
+	ui.Text(c, locales.FavoriteArrangeHint()).FontSize(sizeNote).TextColor(c.Theme().TextMuted)
 	if len(m.cfg.FavoriteFolders) == 0 {
 		emptyState(c, iconDir, locales.NoFavoriteFolders(), locales.AddFavoriteHint())
 	} else {
+		removeID := ""
 		m.favoriteList.Key = func(index int) any { return m.cfg.FavoriteFolders[index].ID }
 		m.favoriteList.Reorder = func(rows []int, target int) {
 			m.cfg.FavoriteFolders = moveRows(m.cfg.FavoriteFolders, rows, target)
@@ -26,24 +32,27 @@ func (m *app) favoritesPane(c *ui.Context) {
 		}
 		ui.List(c, &m.favoriteList, len(m.cfg.FavoriteFolders), func(index int) {
 			folder := &m.cfg.FavoriteFolders[index]
-			ui.Row(c).Height(64).Gap(10).Padding(8, 12).AlignItems(ui.Center).Children(func() {
+			ui.Row(c).Height(favoriteRowHeight).Gap(10).Padding(6, 12).AlignItems(ui.Center).Children(func() {
 				glyph(c, iconGrip, 10, c.Theme().TextMuted)
 				glyph(c, iconDir, 18, c.Theme().TextMuted)
 				ui.Column(c).Grow(1).MinWidth(0).Gap(3).Children(func() {
 					ui.Text(c, folder.Label).FontSize(sizeBody).SingleLine()
 					ui.Text(c, tildePath(folder.Path)).FontSize(sizeNote).TextColor(c.Theme().TextMuted).SingleLine()
 				})
-				m.shortcutToggle(c, "folder:"+folder.ID, folder.Label)
+				m.shortcutToggleLabeled(c, "folder:"+folder.ID, folder.Label, locales.QuickAccess())
 				ui.Switch(c.Key("favorite-enabled:"+folder.ID), &folder.Enabled).Label(locales.EnableLabel(folder.Label)).OnChange(m.saveConfig)
 				if ghostButton(c, locales.EditMenuName(), false) {
 					m.favoriteEditID, m.favoriteName, m.favoriteEditOpen = folder.ID, folder.Label, true
 				}
-				ui.ButtonBase(c.Key("remove-favorite:"+folder.ID)).Padding(5, 8).Label(locales.Remove()).Children(func() {
-					ui.Text(c, locales.Remove()).FontSize(sizeNote).TextColor(c.Theme().TextMuted)
-				}).OnClick(func() { m.removeFavorite(folder.ID) })
+				if iconButton(c.Key("remove-favorite:"+folder.ID), iconTrash, locales.Remove(), true) {
+					removeID = folder.ID
+				}
 			})
-		}).Height(float32(len(m.cfg.FavoriteFolders))*64).Border(1, separatorColor(c)).Radius(8)
-		ui.Text(c, locales.FavoriteArrangeHint()).FontSize(sizeNote).TextColor(c.Theme().TextMuted)
+		}).Height(float32(len(m.cfg.FavoriteFolders))*favoriteRowHeight).Border(1, separatorColor(c)).Radius(8)
+		// Removing waits until the list has been built, as in the other panes.
+		if removeID != "" {
+			m.removeFavorite(removeID)
+		}
 	}
 	if primaryButton(c, iconPlus, locales.AddFavorite()) {
 		m.pickFavorite()

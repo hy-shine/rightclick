@@ -5,13 +5,13 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/xml"
+	"github.com/hy-shine/rightclick/locales"
 	"io"
-	"rightclick/locales"
 	"strings"
 
 	"errors"
-	"rightclick/config"
-	"rightclick/internal/catalog"
+	"github.com/hy-shine/rightclick/config"
+	"github.com/hy-shine/rightclick/internal/catalog"
 )
 
 func FileTypeContent(fileType config.FileType) ([]byte, error) {

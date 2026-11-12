@@ -7,10 +7,10 @@ import (
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
-	"rightclick/locales"
+	"github.com/hy-shine/rightclick/locales"
 
-	"rightclick/config"
-	"rightclick/files"
+	"github.com/hy-shine/rightclick/config"
+	"github.com/hy-shine/rightclick/files"
 )
 
 // version is the app version that the general pane shows.
@@ -100,6 +100,8 @@ type app struct {
 	creationSearch       string
 	editCreationOpen     bool
 	editCreationTemplate bool
+	editCreationNew      bool
+	confirmDeleteType    bool
 	editCreationIndex    int
 	editCreation         config.FileType
 	editCreationNotice   string
@@ -108,13 +110,16 @@ type app struct {
 	tplSel           int // index of the selected template, -1 for none
 	confirmDeleteTpl bool
 
-	newEditor   string
-	editorIcons map[string]*ui.Bitmap // icon of each editor app, read once; nil when it has none
+	programSearch string
+	editorIcons   map[string]*ui.Bitmap // icon of each editor app, read once; nil when it has none
 
 	finder         finderState
 	finderSeq      int // counts the checks, so that an older result is dropped
 	confirmRestart bool
 	foldersChanged bool // a watched folder changed since Finder last restarted, in this session
+
+	folderAccess map[string]files.Access // what each watched folder probe found; read in paneChanged
+	diskAccess   bool                    // whether Full Disk Access locations can be read
 
 	openAtLogin bool
 }
@@ -139,6 +144,7 @@ func newApp(store Store, e env) (*app, error) {
 		fileTypeSel: 0,
 		tplSel:      -1,
 		openAtLogin: e.openAtLogin(),
+		diskAccess:  e.fullDiskAccess(),
 	}
 	if len(templates) > 0 {
 		m.tplSel = 0
@@ -251,10 +257,16 @@ func (m *app) paneContent(c *ui.Context) {
 }
 
 // paneChanged runs when a pane is chosen. The diagnostics pane checks the Finder
-// extension each time it is shown.
+// extension, and the folders pane reads the access of its folders, each time it
+// is shown.
 func (m *app) paneChanged() {
-	if m.currentPane() == paneDiagnostics {
+	switch m.currentPane() {
+	case paneDiagnostics:
 		m.checkFinder()
+	case paneFolders:
+		// The user may have granted access in System Settings since the pane was
+		// last shown, so every visit reads the folders again.
+		m.refreshFolderAccess()
 	}
 }
 
@@ -262,6 +274,7 @@ func (m *app) paneChanged() {
 // controls change m.cfg before they save. A failed write loads the file back, so
 // the window shows the values that the Finder extension and the actions read.
 func (m *app) saveConfig() {
+	m.cfg.GroupMenuByLocation()
 	err := config.Save(m.store.ConfigPath, m.cfg)
 	if err != nil {
 		saved, loadErr := config.Load(m.store.ConfigPath)

@@ -6,7 +6,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
-	"rightclick/config"
+	"github.com/hy-shine/rightclick/config"
 )
 
 // readyApp returns an app whose four steps all pass: the extension is on, a
@@ -64,15 +64,15 @@ func TestSetupStepNamesTheFirstMissingStep(t *testing.T) {
 func TestSidebarNamesTheMissingStep(t *testing.T) {
 	m := readyApp(t)
 	m.finder = finderOff
-	if got, want := m.navSummary(paneMenu), "需要开启扩展"; got != want {
+	if got, want := m.navSummary(paneMenu), "The extension must be turned on"; got != want {
 		t.Errorf("menu line with the extension off = %q, want %q", got, want)
 	}
-	if got, want := m.navSummary(paneDiagnostics), "需要开启扩展"; got != want {
+	if got, want := m.navSummary(paneDiagnostics), "The extension must be turned on"; got != want {
 		t.Errorf("diagnostics line with the extension off = %q, want %q", got, want)
 	}
 	m.finder = finderOn
 	m.cfg.WatchFolders = nil
-	if got, want := m.navSummary(paneMenu), "等待设置文件夹范围"; got != want {
+	if got, want := m.navSummary(paneMenu), "Waiting for a folder scope"; got != want {
 		t.Errorf("menu line with no folder = %q, want %q", got, want)
 	}
 }
@@ -91,7 +91,7 @@ func TestMenuPageOmitsSetupWarnings(t *testing.T) {
 			m := readyApp(t)
 			tc.mutate(m)
 			texts := ui.NewTester(m.view, mainWidth, mainHeight).Texts()
-			for _, unwanted := range []string{"Finder 扩展还没有启用", "需要开启扩展", "还没有设置文件夹范围", "等待设置文件夹范围"} {
+			for _, unwanted := range []string{"The Finder extension is not on yet", "The extension must be turned on", "No folder scope is set", "Waiting for a folder scope"} {
 				if slices.Contains(texts, unwanted) {
 					t.Errorf("menu page still shows setup warning %q; texts %q", unwanted, texts)
 				}
@@ -105,14 +105,14 @@ func TestMenuPageOmitsSetupWarnings(t *testing.T) {
 func TestDiagnosticsSaysReadyOnlyWhenEveryStepPasses(t *testing.T) {
 	m := readyApp(t)
 	selectDiagnostics(m)
-	if !slices.Contains(ui.NewTester(m.view, mainWidth, mainHeight).Texts(), "访达中已经可用") {
+	if !slices.Contains(ui.NewTester(m.view, mainWidth, mainHeight).Texts(), "Available in Finder") {
 		t.Error("all four steps pass, but the diagnostics pane does not say the menu is usable")
 	}
 
 	changed := readyApp(t)
 	changed.foldersChanged = true
 	selectDiagnostics(changed)
-	if slices.Contains(ui.NewTester(changed.view, mainWidth, mainHeight).Texts(), "访达中已经可用") {
+	if slices.Contains(ui.NewTester(changed.view, mainWidth, mainHeight).Texts(), "Available in Finder") {
 		t.Error("a folder changed and Finder has not restarted, but the pane says the menu is usable")
 	}
 }
@@ -123,13 +123,13 @@ func TestSidebarMarksDiagnosticsWhenBlocked(t *testing.T) {
 	blocked := readyApp(t)
 	blocked.finder = finderOff
 	tt := ui.NewTester(blocked.view, mainWidth, mainHeight)
-	if _, ok := tt.Find("权限与诊断 需要开启扩展"); !ok {
+	if _, ok := tt.Find("Permissions The extension must be turned on"); !ok {
 		t.Fatal("sidebar diagnostics row does not show warning mark when extension is off")
 	}
 
 	ready := readyApp(t)
 	ttReady := ui.NewTester(ready.view, mainWidth, mainHeight)
-	if _, ok := ttReady.Find("权限与诊断 需要开启扩展"); ok {
+	if _, ok := ttReady.Find("Permissions The extension must be turned on"); ok {
 		t.Fatal("sidebar diagnostics row still shows warning mark when all steps pass")
 	}
 }
@@ -141,13 +141,13 @@ func TestRestartFromDiagnosticsAsksFirst(t *testing.T) {
 	m.foldersChanged = true
 	selectDiagnostics(m)
 	tt := ui.NewTester(m.view, mainWidth, mainHeight)
-	if err := tt.Click("重新启动"); err != nil {
+	if err := tt.Click("Restart"); err != nil {
 		t.Fatal(err)
 	}
 	if !m.confirmRestart {
 		t.Fatal("the restart button did not ask for confirmation")
 	}
-	if !slices.Contains(tt.Texts(), "重新启动访达？") {
+	if !slices.Contains(tt.Texts(), "Restart Finder?") {
 		t.Errorf("the confirmation dialog is not shown; texts %q", tt.Texts())
 	}
 }
@@ -179,7 +179,9 @@ func TestMenuPageOffersFreeOrdering(t *testing.T) {
 		t.Fatal(err)
 	}
 	texts := ui.NewTester(m.view, minWidth, minHeight).Texts()
-	for _, label := range []string{"路径与移动", "打开应用"} {
+	// Open With also names the openers pane, so it cannot tell a group header
+	// from the sidebar; File Tools names only the old group.
+	for _, label := range []string{"Paths and Move", "File Tools"} {
 		if slices.Contains(texts, label) {
 			t.Errorf("fixed category still splits the sortable list: %q", label)
 		}
@@ -194,25 +196,25 @@ func TestMenuPreviewOpensAndClosesOnDemand(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt := ui.NewTester(m.view, mainWidth, mainHeight)
-	if slices.Contains(tt.Texts(), "菜单预览") {
+	if slices.Contains(tt.Texts(), "Menu Preview") {
 		t.Fatal("menu preview is visible before it is opened")
 	}
-	if err := tt.Click("预览"); err != nil {
+	if err := tt.Click("Preview"); err != nil {
 		t.Fatal(err)
 	}
-	if !m.menuPreviewOpen || !slices.Contains(tt.Texts(), "菜单预览") {
+	if !m.menuPreviewOpen || !slices.Contains(tt.Texts(), "Menu Preview") {
 		t.Fatal("menu preview did not open")
 	}
-	if err := tt.Click("空白处"); err != nil {
+	if err := tt.Click("Blank Space"); err != nil {
 		t.Fatal(err)
 	}
 	if m.previewCtx != ctxBlank {
 		t.Fatalf("preview context = %d, want blank", m.previewCtx)
 	}
-	if err := tt.Click("关闭预览"); err != nil {
+	if err := tt.Click("Close Preview"); err != nil {
 		t.Fatal(err)
 	}
-	if m.menuPreviewOpen || slices.Contains(tt.Texts(), "菜单预览") {
+	if m.menuPreviewOpen || slices.Contains(tt.Texts(), "Menu Preview") {
 		t.Fatal("menu preview did not close")
 	}
 }

@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"rightclick/config"
+	"github.com/hy-shine/rightclick/config"
 )
 
 // previewHas reports whether the preview shows label in place ctx.
@@ -32,15 +32,15 @@ func TestPreviewFollowsContext(t *testing.T) {
 		label string
 		want  bool
 	}{
-		{ctxBlank, "新建文件", true},
-		{ctxBlank, "拷贝路径", false},
-		{ctxFolder, "在终端打开", true},
-		{ctxFolder, "压缩为 ZIP", false}, // zip needs files, not only a folder
-		{ctxFile, "计算哈希", true},
-		{ctxFile, "比较两个文件的哈希", false},
-		{ctxFile, "解压到此处", true},
-		{ctxTwoFiles, "比较两个文件的哈希", true},
-		{ctxTwoFiles, "计算哈希", false},
+		{ctxBlank, "New File", true},
+		{ctxBlank, "Copy Path", false},
+		{ctxFolder, "Open in Terminal", true},
+		{ctxFolder, "Compress to ZIP", false}, // zip needs files, not only a folder
+		{ctxFile, "Compute Hash", true},
+		{ctxFile, "Compare File Hashes", false},
+		{ctxFile, "Extract Here", true},
+		{ctxTwoFiles, "Compare File Hashes", true},
+		{ctxTwoFiles, "Compute Hash", false},
 	}
 	for _, tc := range cases {
 		if got := previewHas(m, tc.ctx, tc.label); got != tc.want {
@@ -54,12 +54,12 @@ func TestPreviewHidesDisabledEntries(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !previewHas(m, ctxBlank, "新建文件") {
-		t.Fatal("新建文件 should show on blank space before it is switched off")
+	if !previewHas(m, ctxBlank, "New File") {
+		t.Fatal("New File should show on blank space before it is switched off")
 	}
 	m.cfg.MenuItems[0].Enabled = false // new-file is the first entry of config.Default
-	if previewHas(m, ctxBlank, "新建文件") {
-		t.Error("新建文件 still shows after it is switched off")
+	if previewHas(m, ctxBlank, "New File") {
+		t.Error("New File still shows after it is switched off")
 	}
 }
 
@@ -73,16 +73,16 @@ func TestPreviewKeepsFileTypesInsideNewFile(t *testing.T) {
 			m.cfg.FileTypes[i].Location = config.FileTypeMain
 		}
 	}
-	if previewHas(m, ctxBlank, "新建 JSON") {
+	if previewHas(m, ctxBlank, "New JSON") {
 		t.Error("JSON leaked to the top level of the preview")
 	}
-	if !previewHas(m, ctxBlank, "新建文件") {
+	if !previewHas(m, ctxBlank, "New File") {
 		t.Error("New File is missing from the preview")
 	}
 	for i := range m.cfg.FileTypes {
 		m.cfg.FileTypes[i].Enabled = false
 	}
-	if previewHas(m, ctxBlank, "新建文件") {
-		t.Error("新建文件 still shows when every file type is hidden")
+	if previewHas(m, ctxBlank, "New File") {
+		t.Error("New File still shows when every file type is hidden")
 	}
 }

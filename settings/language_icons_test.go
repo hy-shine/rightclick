@@ -6,7 +6,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
-	"rightclick/internal/catalog"
+	"github.com/hy-shine/rightclick/internal/catalog"
 )
 
 func TestCodeLanguageIconsParse(t *testing.T) {

@@ -5,15 +5,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"github.com/hy-shine/rightclick/locales"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"rightclick/locales"
 	"strings"
 	"unicode/utf8"
 
-	"rightclick/internal/catalog"
+	"github.com/hy-shine/rightclick/internal/catalog"
 )
 
 // Template is a text that a new file starts with, such as a Markdown outline.
@@ -73,6 +73,9 @@ func TemplateFromFile(path string) (Template, error) {
 	info, err := os.Stat(path)
 	if err != nil {
 		return Template{}, err
+	}
+	if !info.Mode().IsRegular() {
+		return Template{}, errors.New(locales.TemplateRegularFileOnly())
 	}
 	if info.Size() > 16<<20 {
 		return Template{}, errors.New(locales.TemplateTooLarge())

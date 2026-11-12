@@ -1,4 +1,4 @@
-module rightclick
+module github.com/hy-shine/rightclick
 
 go 1.27.3
 

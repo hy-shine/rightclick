@@ -63,9 +63,9 @@ func TestDefaultFileTypesIncludeWPSFormats(t *testing.T) {
 	tests := []struct {
 		id, label, extension string
 	}{
-		{"wps-document", "WPS 文档", "docx"},
-		{"wps-spreadsheet", "WPS 表格", "xlsx"},
-		{"wps-presentation", "WPS 演示", "pptx"},
+		{"wps-document", "WPS Writer", "docx"},
+		{"wps-spreadsheet", "WPS Spreadsheet", "xlsx"},
+		{"wps-presentation", "WPS Presentation", "pptx"},
 	}
 	cfg := Default()
 	for _, tt := range tests {
@@ -115,6 +115,8 @@ func TestStoredDropsNamesTheLanguageSupplies(t *testing.T) {
 	}
 }
 
+// The fixture holds the legacy Chinese names on purpose: they are the data that
+// older files stored, not UI text.
 func TestLoadClearsChineseNamesFromOlderFiles(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "config.json")
 	data := `{"version":3,"fileTypes":[{"id":"word","label":"Word 文档","extension":"docx","defaultName":"未命名","template":"docx","enabled":true}]}`
@@ -136,8 +138,8 @@ func TestLoadClearsChineseNamesFromOlderFiles(t *testing.T) {
 	if strings.Contains(string(saved), "Word 文档") {
 		t.Error("the saved file still has the Chinese name, so the Finder extension would show it")
 	}
-	if name := word.DisplayLabel(); name != "Word 文档" {
-		t.Errorf("DisplayLabel() = %q, want the Chinese catalog name", name)
+	if name := word.DisplayLabel(); name != "Word Document" {
+		t.Errorf("DisplayLabel() = %q, want the catalog name", name)
 	}
 }
 
@@ -183,7 +185,7 @@ func TestSaveThenLoadRoundTrips(t *testing.T) {
 	cfg.MenuItems[0].Enabled = false
 	cfg.FileTypes[1].Location = FileTypeMain
 	cfg.WatchFolders = []string{"/tmp/only"}
-	cfg.Terminal = "iTerm"
+	cfg.Programs = []string{"iTerm", "Warp"}
 	cfg.OpenAfterCreate = true
 	if err := Save(path, cfg); err != nil {
 		t.Fatal(err)
@@ -201,8 +203,36 @@ func TestSaveThenLoadRoundTrips(t *testing.T) {
 	if got.FileTypes[1].Location != FileTypeSubmenu || !got.OpenAfterCreate {
 		t.Fatalf("round trip lost file type settings: %+v", got)
 	}
-	if len(got.WatchFolders) != 1 || got.WatchFolders[0] != "/tmp/only" || got.Terminal != "iTerm" {
+	if len(got.WatchFolders) != 1 || got.WatchFolders[0] != "/tmp/only" || !slices.Equal(got.Programs, []string{"iTerm", "Warp"}) {
 		t.Fatalf("round trip lost settings: %+v", got)
+	}
+}
+
+func TestLoadMergesTheLegacyProgramLists(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.json")
+	if err := os.WriteFile(path, []byte(`{"version":3,"editors":["Cursor"],"terminals":["Warp"]}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	got, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"Cursor", "Warp"}; !slices.Equal(got.Programs, want) {
+		t.Fatalf("programs = %q, want %q", got.Programs, want)
+	}
+}
+
+func TestLoadSeedsProgramsFromTheLegacyTerminal(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.json")
+	if err := os.WriteFile(path, []byte(`{"version":3,"terminal":"Warp"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	got, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"Warp"}; !slices.Equal(got.Programs, want) {
+		t.Fatalf("programs = %q, want %q", got.Programs, want)
 	}
 }
 
@@ -241,7 +271,7 @@ func TestLoadMigratesLegacyNewEntries(t *testing.T) {
 func TestLoadAppendsMissingFileTypes(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "config.json")
 	data := []byte(`{"version":2,"fileTypes":[
-		{"id":"python","label":"Python 3","extension":"py","defaultName":"脚本","content":"","location":"main"}
+		{"id":"python","label":"Python 3","extension":"py","defaultName":"script","content":"","location":"main"}
 	]}`)
 	if err := os.WriteFile(path, data, 0o644); err != nil {
 		t.Fatal(err)
@@ -283,5 +313,45 @@ func TestLoadRejectsBrokenFile(t *testing.T) {
 	}
 	if _, err := Load(path); err == nil {
 		t.Fatal("expected an error for a broken file")
+	}
+}
+
+// TestLoadDropsRemovedOpenWith keeps an older file from carrying a menu entry
+// whose submenu no longer exists. App shortcut entries use the same URL action,
+// so only the menu entry is dropped.
+func TestLoadDropsRemovedOpenWith(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.json")
+	data := `{"version":3,"menuItems":[{"id":"open-with","enabled":true,"location":"submenu"},{"id":"app:Cursor","enabled":true,"location":"main"}]}`
+	if err := os.WriteFile(path, []byte(data), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, item := range cfg.MenuItems {
+		if item.ID == "open-with" {
+			t.Fatal("a removed menu entry survived the load")
+		}
+	}
+	if !slices.ContainsFunc(cfg.MenuItems, func(item MenuItem) bool { return item.ID == "app:Cursor" }) {
+		t.Error("the app shortcut entry was dropped with the removed entry")
+	}
+}
+
+// TestGroupMenuByLocationKeepsOrderInEachPart checks that the main entries move
+// ahead of the submenu entries and that each part keeps its own order.
+func TestGroupMenuByLocationKeepsOrderInEachPart(t *testing.T) {
+	cfg := Config{MenuItems: []MenuItem{
+		{ID: "a", Location: FileTypeSubmenu}, {ID: "b", Location: FileTypeMain},
+		{ID: "c", Location: FileTypeSubmenu}, {ID: "d", Location: FileTypeMain},
+	}}
+	cfg.GroupMenuByLocation()
+	var got []string
+	for _, item := range cfg.MenuItems {
+		got = append(got, item.ID)
+	}
+	if want := []string{"b", "d", "a", "c"}; !slices.Equal(got, want) {
+		t.Fatalf("order = %q, want %q", got, want)
 	}
 }

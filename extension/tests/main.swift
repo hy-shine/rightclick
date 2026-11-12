@@ -48,7 +48,40 @@ precondition(templateMenu.items.contains { $0.title == "新建 会议记录" } =
 let fileTarget = MenuTarget(items: [MenuTarget.Item(url: URL(fileURLWithPath: "/private/tmp/document.txt"))], isBlankArea: false)
 let fileMenu = provider.buildMenu(target: fileTarget, config: config, templates: [])
 precondition(fileMenu?.items.contains { $0.title == "在终端打开" || $0.title == "新建文件" } == false, "folder actions visible on a file")
-print("Finder menu verified: New File submenu placement, disabled types, Office defaults, templates, URL routing and file context")
+
+// Copy variants: both are listed for a file, and the extension one is hidden
+// when no selected item has an extension.
+precondition(allTitles(fileMenu).contains("拷贝不含扩展名的名字"), "copy base name is missing")
+precondition(allTitles(fileMenu).contains("拷贝扩展名"), "copy extension is missing")
+let namedWithoutExtension = MenuTarget(items: [MenuTarget.Item(url: URL(fileURLWithPath: "/private/tmp/README"))], isBlankArea: false)
+precondition(namedWithoutExtension.allows("copy-basename"), "copy base name is hidden without an extension")
+precondition(!namedWithoutExtension.allows("copy-extension"), "copy extension is shown without one")
+precondition(fileTarget.allows("copy-extension"), "copy extension is hidden for a file that has one")
+
+// A saved entry for the removed Open With submenu must not bring it back.
+let staleConfig = try JSONDecoder().decode(AppConfig.self, from: Data(#"{"menuItems":[{"id":"open-with","enabled":true,"location":"submenu"}]}"#.utf8))
+guard let staleMenu = provider.buildMenu(target: fileTarget, config: staleConfig, templates: []) else {
+    fatalError("missing menu for a stale config")
+}
+precondition(!allTitles(staleMenu).contains("用…打开"), "a removed action still builds a menu row")
+
+// Action icons come from the Lucide set. Warm them from the source folder and
+// check that every action and every menu row carries one.
+ActionIcons.warm(from: stringsRoot.deletingLastPathComponent().deletingLastPathComponent()
+    .appendingPathComponent("internal/actionicons/icons"))
+for id in MenuActions.defaultOrder {
+    precondition(ActionIcons.image(for: id) != nil, "no icon for action \(id)")
+}
+func menuItems(_ menu: NSMenu?) -> [NSMenuItem] {
+    (menu?.items ?? []).flatMap { [$0] + menuItems($0.submenu) }
+}
+guard let iconMenu = provider.buildMenu(target: fileTarget, config: config, templates: []) else {
+    fatalError("missing menu with icons")
+}
+for item in menuItems(iconMenu) where !item.isSeparatorItem {
+    precondition(item.image != nil, "menu item \(item.title) has no icon")
+}
+print("Finder menu verified: New File submenu placement, disabled types, Office defaults, templates, URL routing, copy variants and file context")
 
 // The same menu in English, read from en.lproj.
 Localized.bundle = Bundle(url: stringsRoot.appendingPathComponent("en.lproj"))!
@@ -87,12 +120,41 @@ guard let copyMenu = appSubmenu.items.first(where: { $0.title == "Copy To…" })
       let copyFavoriteURL = provider.menuURL(for: copyFavorite) else { fatalError("copy favorite missing") }
 precondition(copyFavoriteURL.host == "copy-to" && copyFavoriteURL.query?.contains("favorite=archive") == true, "copy favorite routes incorrectly")
 precondition(copyMenu.items.contains(where: { $0.title == "Choose Another Folder…" }), "folder picker fallback is missing")
+precondition(!copyMenu.items.contains(where: { $0.isSeparatorItem }), "a separator splits the folder destinations")
+precondition(copyMenu.items.allSatisfy { $0.image != nil }, "a folder destination has no icon")
 precondition(!shortcutsFileMenu.items.contains(where: { $0.title.hasPrefix("New ") }), "creation shortcuts appear on a selected file")
 print("Shortcuts, custom ordering, names and favorite destinations verified")
+
+
+let captureConfig = try JSONDecoder().decode(AppConfig.self, from: Data(#"{"menuItems":[{"id":"add-template","enabled":true,"location":"main"}]}"#.utf8))
+guard let captureMenu = provider.buildMenu(target: fileTarget, config: captureConfig, templates: []),
+      let captureItem = captureMenu.items.first(where: { $0.title == "Add as Template…" }),
+      let captureURL = provider.menuURL(for: captureItem) else { fatalError("capture template action missing") }
+precondition(captureURL.host == "add-template" && captureURL.query?.contains("document.txt") == true, "capture route lost source file")
+precondition(!target.allows("add-template"), "capture action appears on a folder background")
+let multipleFiles = MenuTarget(items: fileTarget.items + fileTarget.items, isBlankArea: false)
+precondition(!multipleFiles.allows("add-template"), "capture accepts multiple files")
+let captureOff = try JSONDecoder().decode(AppConfig.self, from: Data(#"{"menuItems":[{"id":"add-template","enabled":false,"location":"main"}]}"#.utf8))
+precondition(!MenuActions.enabledIDs(from: captureOff.menuItems).contains("add-template"), "disabled capture action still appears")
+let customTypeConfig = try JSONDecoder().decode(AppConfig.self, from: Data(#"{"fileTypes":[{"id":"custom-config","label":"Project Config","extension":"yaml","defaultName":"config","content":"port: 8080","location":"submenu","enabled":true}]}"#.utf8))
+guard let customTypeMenu = provider.buildMenu(target: target, config: customTypeConfig, templates: []),
+      let customTypeItem = customTypeMenu.items.first(where: { $0.title == "New File" })?.submenu?.items.first(where: { $0.title == "Project Config" }),
+      let customTypeURL = provider.menuURL(for: customTypeItem) else { fatalError("custom type absent from Finder") }
+precondition(customTypeURL.host == "new-file" && customTypeURL.query?.contains("type=custom-config") == true, "custom type route is wrong")
+print("Template capture context and custom file type routing verified")
 
 // The destructive action starts switched off and appears only when turned on.
 func allTitles(_ menu: NSMenu?) -> [String] {
     (menu?.items ?? []).flatMap { [$0.title] + allTitles($0.submenu) }
+}
+
+/// Returns the first item with title, at any depth.
+func firstItem(_ menu: NSMenu?, title: String) -> NSMenuItem? {
+    for item in menu?.items ?? [] {
+        if item.title == title { return item }
+        if let found = firstItem(item.submenu, title: title) { return found }
+    }
+    return nil
 }
 Localized.bundle = Bundle(url: stringsRoot.appendingPathComponent("en.lproj"))!
 precondition(!MenuActions.enabledIDs(from: nil).contains("delete-permanently"), "destructive action is on by default")

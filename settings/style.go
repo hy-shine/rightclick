@@ -84,13 +84,29 @@ func tint(e ui.Element, rest, hover, pressed ui.Color) {
 	e.Background(e.AnimateColor("bg", target, ui.Animation{Duration: fade}))
 }
 
+// controlHeight is the height every button control uses, so actions that sit
+// side by side share one baseline.
+const controlHeight = 30
+
 // primaryButton is the one filled button of a view: the action to take next. It
 // takes the brand blue, with icon s before the label when s is not nil. It
 // reports a click.
 func primaryButton(c *ui.Context, s *ui.SVG, label string) bool {
+	return primaryButtonAligned(c, s, label, ui.Start)
+}
+
+// primaryButtonCentered is a primaryButton that centers itself in a row, for
+// actions that sit beside a heading instead of at the start of a pane. Without
+// it, a centered quiet button next to a start-aligned primary one leaves the
+// pair on different baselines.
+func primaryButtonCentered(c *ui.Context, s *ui.SVG, label string) bool {
+	return primaryButtonAligned(c, s, label, ui.Center)
+}
+
+func primaryButtonAligned(c *ui.Context, s *ui.SVG, label string, align ui.Align) bool {
 	t := c.Theme()
 	fill, hover, pressed, text := t.Accent, t.AccentHover, t.AccentPressed, t.AccentText
-	b := ui.ButtonBase(c).Gap(6).Padding(7, 14).Radius(t.Radius).AlignSelf(ui.Start).Label(label).Children(func() {
+	b := ui.ButtonBase(c).Gap(6).Padding(7, 14).Height(controlHeight).Radius(t.Radius).AlignSelf(align).Label(label).Children(func() {
 		if s != nil {
 			glyph(c, s, 14, text)
 		}
@@ -114,7 +130,7 @@ func quietButtonCentered(c *ui.Context, s *ui.SVG, label string) bool {
 
 func quietButtonAligned(c *ui.Context, s *ui.SVG, label string, align ui.Align) bool {
 	t := c.Theme()
-	b := ui.ButtonBase(c).Gap(6).Padding(6, 12).Radius(t.Radius).AlignSelf(align).
+	b := ui.ButtonBase(c).Gap(6).Padding(7, 12).Height(controlHeight).Radius(t.Radius).AlignSelf(align).
 		Border(1, separatorColor(c)).Label(label).Children(func() {
 		if s != nil {
 			glyph(c, s, 14, t.TextMuted)
@@ -142,6 +158,27 @@ func ghostButton(c *ui.Context, label string, danger bool) bool {
 	})
 	if b.Hovered() {
 		text.TextColor(hover)
+	}
+	tint(b, ui.Transparent, t.SurfaceHover, t.SurfacePressed)
+	return b.Clicked()
+}
+
+// iconButton is a ghostButton that shows only its icon. The label stays as the
+// accessible name. The icon turns danger-colored on hover, as the text of a
+// ghostButton does.
+func iconButton(c *ui.Context, s *ui.SVG, label string, danger bool) bool {
+	t := c.Theme()
+	hover := t.Text
+	if danger {
+		hover = t.Danger
+	}
+	b := ui.ButtonBase(c).Padding(5, 6).Radius(t.Radius).Label(label)
+	var mark ui.Element
+	b.Children(func() {
+		mark = ui.Icon(c, s).Size(15, 15).TextColor(t.TextMuted)
+	})
+	if b.Hovered() {
+		mark.TextColor(hover)
 	}
 	tint(b, ui.Transparent, t.SurfaceHover, t.SurfacePressed)
 	return b.Clicked()

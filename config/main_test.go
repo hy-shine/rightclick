@@ -7,10 +7,10 @@ import (
 	"github.com/egoist/mygo/i18n"
 )
 
-// TestMain shows the catalogs in Simplified Chinese, the language that most
-// assertions in this package check. Tests that check English call useLocale.
+// TestMain shows the catalogs in English, the source language that tests assert
+// against. Tests that check another language call useLocale.
 func TestMain(m *testing.M) {
-	i18n.SetLocaleFunc(func() string { return "zh-Hans" })
+	i18n.SetLocaleFunc(func() string { return "en" })
 	os.Exit(m.Run())
 }
 

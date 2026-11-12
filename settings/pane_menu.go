@@ -1,13 +1,13 @@
 package settings
 
 import (
-	"rightclick/locales"
+	"github.com/hy-shine/rightclick/locales"
 	"slices"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
 
-	"rightclick/config"
+	"github.com/hy-shine/rightclick/config"
 )
 
 // The places a right-click can happen. The menu preview shows the menu for one
@@ -34,14 +34,16 @@ func menuEntries() map[string]menuEntry {
 		"new-file":           {locales.MenuNewFile(), locales.WhereBlankFolder()},
 		"new-folder":         {locales.MenuNewFolder(), locales.WhereBlankFolder()},
 		"new-template":       {locales.MenuNewTemplate(), locales.WhereBlankFolder()},
+		"add-template":       {locales.CaptureTemplate(), locales.WhereOneFile()},
 		"favorite-folders":   {locales.FavoriteFolders(), locales.WhereAnywhere()},
 		"copy-path":          {locales.MenuCopyPath(), locales.WhereSelection()},
 		"copy-name":          {locales.MenuCopyName(), locales.WhereSelection()},
+		"copy-basename":      {locales.MenuCopyBaseName(), locales.WhereSelection()},
+		"copy-extension":     {locales.MenuCopyExtension(), locales.WhereSelection()},
 		"copy-to":            {locales.MenuCopyTo(), locales.WhereSelection()},
 		"move-to":            {locales.MenuMoveTo(), locales.WhereSelection()},
 		"open-terminal":      {locales.MenuOpenTerminal(), locales.WhereBlankFolder()},
 		"open-editor":        {locales.MenuOpenEditor(), locales.WhereAnywhere()},
-		"open-with":          {locales.MenuOpenWith(), locales.WhereAnywhere()},
 		"zip":                {locales.MenuZip(), locales.WhereSelectedFiles()},
 		"unzip":              {locales.MenuUnzip(), locales.WhereZipOnly()},
 		"hash":               {locales.MenuHash(), locales.WhereOneFile()},
@@ -51,17 +53,32 @@ func menuEntries() map[string]menuEntry {
 	}
 }
 
+// gripMark is the drag handle of a menu row. Its viewBox is cropped to the three
+// pairs of dots, so the dots start at the left edge of the handle's box. The
+// section header lines up with that edge. gripScale is the scale the 24-unit
+// handle had in its 10 pt box before, so the dots keep their size.
+var gripMark = ui.MustParseSVG([]byte(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="7.7 4.7 8.6 14.6" ` +
+	`fill="none" stroke="#000" stroke-linecap="round"><path stroke-width="2.6" ` +
+	`d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01"/></svg>`))
+
+const gripScale = 10.0 / 24
+
+// gripWidth is the width of the dots, and so of the handle's box. A wider box
+// would leave an empty gap between the dots and the entry icon.
+const gripWidth = 8.6 * gripScale
+
 // menuGroups lists the IDs of each group of the Finder submenu, in the order
 // the submenu shows them. It mirrors MenuActions.groups in
 // extension/RightClickFinderSync/MenuConfig.swift; change both together.
 var menuGroups = [][]string{
 	{"new-file", "new-folder", "new-template"},
-	{"copy-path", "copy-name", "copy-to", "move-to"},
-	{"open-terminal", "open-editor", "open-with"},
+	{"copy-path", "copy-name", "copy-basename", "copy-extension", "copy-to", "move-to"},
+	{"open-terminal", "open-editor"},
 	{"zip", "unzip", "hash"},
 	{"compare-hash"},
 	{"toggle-hidden"},
 	{"delete-permanently"},
+	{"add-template"},
 }
 
 // menuContexts lists, by entry ID, the places where Finder shows the entry. It
@@ -71,13 +88,15 @@ var menuContexts = map[string][]int{
 	"new-file":           {ctxBlank, ctxFolder},
 	"new-folder":         {ctxBlank, ctxFolder},
 	"new-template":       {ctxBlank, ctxFolder},
+	"add-template":       {ctxFile},
 	"copy-path":          {ctxFolder, ctxFile, ctxTwoFiles},
 	"copy-name":          {ctxFolder, ctxFile, ctxTwoFiles},
+	"copy-basename":      {ctxFolder, ctxFile, ctxTwoFiles},
+	"copy-extension":     {ctxFolder, ctxFile, ctxTwoFiles},
 	"copy-to":            {ctxFolder, ctxFile, ctxTwoFiles},
 	"move-to":            {ctxFolder, ctxFile, ctxTwoFiles},
 	"open-terminal":      {ctxBlank, ctxFolder},
 	"open-editor":        {ctxBlank, ctxFolder, ctxFile, ctxTwoFiles},
-	"open-with":          {ctxBlank, ctxFolder, ctxFile, ctxTwoFiles},
 	"zip":                {ctxFile, ctxTwoFiles},
 	"unzip":              {ctxFile},
 	"hash":               {ctxFile},
@@ -87,7 +106,10 @@ var menuContexts = map[string][]int{
 }
 
 // menuRowHeight is the height of one row of the menu editor, in points.
-const menuRowHeight = 46
+const menuRowHeight = 36
+
+// menuWhenWidth is the width of the condition column beside an entry.
+const menuWhenWidth = 150
 
 // menuEntryFor returns the entry for id. An unknown ID is shown as it is.
 func menuEntryFor(id string) menuEntry {
@@ -169,7 +191,7 @@ func (m *app) previewGroups(ctx int) [][]previewItem {
 		if !item.Enabled || item.Location == config.FileTypeMain || !m.menuItemAvailable(item, ctx) {
 			continue
 		}
-		if item.ID == "new-template" || item.ID == "open-editor" && len(m.cfg.Editors) == 0 {
+		if item.ID == "new-template" {
 			continue
 		}
 		if item.ID == "new-file" && !m.hasNewFileContents() {
@@ -191,9 +213,6 @@ func (m *app) previewTopItems(ctx int) []previewItem {
 		}
 		if item.ID == "new-template" {
 			continue
-		}
-		if item.ID == "open-editor" && len(m.cfg.Editors) == 0 {
-			continue // The Finder menu hides this entry when no editor is listed.
 		}
 		if item.ID == "new-file" && !m.hasNewFileContents() {
 			continue
@@ -434,41 +453,55 @@ func (m *app) menuGroup(c *ui.Context, g int, rows []int) {
 		if !item.Enabled {
 			labelColor, iconColor = t.TextMuted, t.TextMuted.Alpha(0.6)
 		}
-		row := ui.Row(c).Height(menuRowHeight).Padding(0, 8).AlignItems(ui.Center).Radius(5)
-		row.Children(func() {
-			ui.Row(c).Gap(9).Grow(1).MinWidth(0).AlignItems(ui.Center).Children(func() {
-				if strings.TrimSpace(m.menuSearch) == "" {
-					gripColor := ui.Transparent
-					if row.Hovered() {
-						gripColor = t.TextMuted.Alpha(.45)
+		buildRow := func(height float32) {
+			row := ui.Row(c).Height(height).Padding(0, 8).AlignItems(ui.Center).Radius(5)
+			row.Children(func() {
+				ui.Row(c).Gap(9).Grow(1).MinWidth(0).AlignItems(ui.Center).Children(func() {
+					if strings.TrimSpace(m.menuSearch) == "" {
+						gripColor := ui.Transparent
+						if row.Hovered() {
+							gripColor = t.TextMuted.Alpha(.45)
+						}
+						ui.Row(c).Size(gripWidth, 14).Shrink(0).AlignItems(ui.Center).Children(func() {
+							ui.Icon(c, gripMark).Size(8.6*gripScale, 14.6*gripScale).Shrink(0).TextColor(gripColor)
+						})
+					} else {
+						ui.Row(c).Size(gripWidth, 14).Shrink(0)
 					}
-					ui.Icon(c, iconGrip).Size(10, 14).Shrink(0).TextColor(gripColor)
-				} else {
-					ui.Row(c).Size(10, 14).Shrink(0)
-				}
-				ui.Icon(c, entryIcon(item.ID)).Size(16, 16).Shrink(0).TextColor(iconColor)
-				ui.Column(c).Grow(1).MinWidth(0).Gap(1).Children(func() {
-					ui.Text(c, entry.label).FontSize(sizeBody).TextColor(labelColor).SingleLine()
-					ui.Text(c, entry.when).FontSize(sizeCaption).TextColor(t.TextMuted).SingleLine()
+					ui.Icon(c, entryIcon(item.ID)).Size(16, 16).Shrink(0).TextColor(iconColor)
+					ui.Text(c, entry.label).FontSize(sizeBody).TextColor(labelColor).SingleLine().Grow(1).MinWidth(0)
+					// The condition keeps its own column, so every entry stays on one
+					// line; a group's shared condition stays in its header.
+					ui.Text(c, entry.when).FontSize(sizeCaption).TextColor(t.TextMuted).SingleLine().Width(menuWhenWidth).Shrink(0)
+				})
+				ui.Row(c).Width(118).Shrink(0).AlignItems(ui.Center).Children(func() {
+					if item.ID == "new-template" {
+						ui.Text(c, locales.MenuNewFileInside()).FontSize(sizeCaption).TextColor(t.TextMuted)
+					} else {
+						locationSelect(c, &item.Location, "action:"+item.ID, locales.LocationLabel(entry.label),
+							[]string{config.FileTypeSubmenu, config.FileTypeMain}, []string{locales.LocInApp(), locales.LocFinderTopShort()}, item.Enabled, m.saveConfig)
+					}
+				})
+				ui.Row(c).Width(48).Shrink(0).Justify(ui.Center).AlignItems(ui.Center).Children(func() {
+					creationSwitch(c, &item.Enabled, locales.EnableLabel(entry.label)).OnChange(m.saveConfig)
 				})
 			})
-			ui.Row(c).Width(118).Shrink(0).AlignItems(ui.Center).Children(func() {
-				if item.ID == "new-template" {
-					ui.Text(c, locales.MenuNewFileInside()).FontSize(sizeCaption).TextColor(t.TextMuted)
-				} else {
-					locationSelect(c, &item.Location, "action:"+item.ID, locales.LocationLabel(entry.label),
-						[]string{config.FileTypeSubmenu, config.FileTypeMain}, []string{locales.LocInApp(), locales.LocFinderTopShort()}, item.Enabled, m.saveConfig)
-				}
-			})
-			ui.Row(c).Width(48).Shrink(0).Justify(ui.Center).AlignItems(ui.Center).Children(func() {
-				creationSwitch(c, &item.Enabled, locales.EnableLabel(entry.label)).OnChange(m.saveConfig)
-			})
-		})
-		if row.Hovered() {
-			row.Background(t.SurfaceHover)
+			if row.Hovered() {
+				row.Background(t.SurfaceHover)
+			}
+			if row.RowDoubleClicked() {
+				m.menuNameID, m.menuName, m.menuNameOpen = item.ID, item.Label, true
+			}
 		}
-		if row.RowDoubleClicked() {
-			m.menuNameID, m.menuName, m.menuNameOpen = item.ID, item.Label, true
+		// The first submenu entry after the main entries gets a rule above it. The rule
+		// takes one point of the row's height, so the rows keep their pitch.
+		if i > 0 && item.Location != config.FileTypeMain && m.cfg.MenuItems[rows[i-1]].Location == config.FileTypeMain {
+			ui.Column(c).Height(menuRowHeight).Children(func() {
+				ui.Row(c).Height(1).Background(separatorColor(c))
+				buildRow(menuRowHeight - 1)
+			})
+			return
 		}
+		buildRow(menuRowHeight)
 	}).Height(float32(len(rows)) * menuRowHeight)
 }

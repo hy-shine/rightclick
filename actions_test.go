@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"rightclick/config"
-	"rightclick/files"
+	"github.com/hy-shine/rightclick/config"
+	"github.com/hy-shine/rightclick/files"
 )
 
 func TestFileTypeFileName(t *testing.T) {
@@ -20,13 +20,13 @@ func TestFileTypeFileName(t *testing.T) {
 	}{
 		{
 			name:     "normal type",
-			fileType: config.FileType{DefaultName: "未命名", Extension: "txt"},
-			want:     "未命名.txt",
+			fileType: config.FileType{DefaultName: "Untitled", Extension: "txt"},
+			want:     "Untitled.txt",
 		},
 		{
 			name:     "extension dot",
-			fileType: config.FileType{DefaultName: "脚本", Extension: ".py"},
-			want:     "脚本.py",
+			fileType: config.FileType{DefaultName: "script", Extension: ".py"},
+			want:     "script.py",
 		},
 		{
 			name:     "name already has extension",
@@ -36,7 +36,7 @@ func TestFileTypeFileName(t *testing.T) {
 		{
 			name:     "empty base uses default",
 			fileType: config.FileType{DefaultName: "", Extension: "go"},
-			want:     "未命名.go",
+			want:     "Untitled.go",
 		},
 		{
 			name:     "path in base",
@@ -75,14 +75,14 @@ func TestCreateFileFromTypeWritesContentAndNumbersNames(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	data, err := os.ReadFile(filepath.Join(dir, "未命名.json"))
+	data, err := os.ReadFile(filepath.Join(dir, "Untitled.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if got, want := string(data), "{\"ok\": true}\n"; got != want {
 		t.Errorf("created content = %q, want %q", got, want)
 	}
-	if _, err := os.Stat(filepath.Join(dir, "未命名 2.json")); err != nil {
+	if _, err := os.Stat(filepath.Join(dir, "Untitled 2.json")); err != nil {
 		t.Errorf("second file was not numbered: %v", err)
 	}
 }
@@ -101,17 +101,17 @@ func TestCreateFileFromTypeRejectsHiddenType(t *testing.T) {
 
 func TestFindTemplate(t *testing.T) {
 	templates := []files.Template{
-		{Name: "周报.md", Content: "# 周报"},
-		{Name: "会议.txt", Content: "议题"},
+		{Name: "weekly.md", Content: "# Weekly"},
+		{Name: "meeting.txt", Content: "Agenda"},
 	}
-	got, err := findTemplate(templates, "会议.txt")
+	got, err := findTemplate(templates, "meeting.txt")
 	if err != nil {
-		t.Fatalf("findTemplate(会议.txt) error = %v", err)
+		t.Fatalf("findTemplate(meeting.txt) error = %v", err)
 	}
-	if got.Content != "议题" {
-		t.Fatalf("findTemplate(会议.txt) content = %q, want %q", got.Content, "议题")
+	if got.Content != "Agenda" {
+		t.Fatalf("findTemplate(meeting.txt) content = %q, want %q", got.Content, "Agenda")
 	}
-	if _, err := findTemplate(templates, "不存在.md"); err == nil {
+	if _, err := findTemplate(templates, "missing.md"); err == nil {
 		t.Fatal("findTemplate with a missing name returned no error")
 	}
 	if _, err := findTemplate([]files.Template{{Name: "../x.md"}}, "../x.md"); err == nil {
@@ -128,9 +128,9 @@ func TestArchiveName(t *testing.T) {
 		paths []string
 		want  string
 	}{
-		{name: "one file", paths: []string{"/Users/a/报告.pdf"}, want: "报告.zip"},
+		{name: "one file", paths: []string{"/Users/a/report.pdf"}, want: "report.zip"},
 		{name: "one folder", paths: []string{"/Users/a/photos"}, want: "photos.zip"},
-		{name: "several items", paths: []string{"/Users/a/x.txt", "/Users/a/y"}, want: "归档.zip"},
+		{name: "several items", paths: []string{"/Users/a/x.txt", "/Users/a/y"}, want: "Archive.zip"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -203,7 +203,7 @@ func TestTransferOp(t *testing.T) {
 
 func TestCompareSummary(t *testing.T) {
 	title, body := compareSummary(files.SHA256, false, "/a/x.txt", "h1", "/b/y.txt", "h2")
-	if title != "SHA-256 比较：不同" {
+	if title != "SHA-256 comparison: different" {
 		t.Fatalf("title = %q", title)
 	}
 	for _, want := range []string{"x.txt", "h1", "y.txt", "h2"} {
@@ -212,7 +212,7 @@ func TestCompareSummary(t *testing.T) {
 		}
 	}
 	title, _ = compareSummary(files.MD5, true, "/a/x", "h", "/b/y", "h")
-	if title != "MD5 比较：相同" {
+	if title != "MD5 comparison: same" {
 		t.Fatalf("title = %q", title)
 	}
 }

@@ -3,11 +3,11 @@ package files
 import (
 	"errors"
 	"fmt"
+	"github.com/hy-shine/rightclick/locales"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"rightclick/locales"
 	"strings"
 	"syscall"
 )

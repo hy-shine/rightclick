@@ -22,7 +22,7 @@ func TestSidebarHasOnlyPaneLabels(t *testing.T) {
 			t.Errorf("sidebar still shows summary %q", summary)
 		}
 	}
-	if err := tester.Click("新建"); err != nil {
+	if err := tester.Click("New"); err != nil {
 		t.Fatal(err)
 	}
 	if model.currentPane() != paneTemplates {

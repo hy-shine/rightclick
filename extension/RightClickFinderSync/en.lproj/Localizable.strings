@@ -7,13 +7,15 @@
 "finder.newFile" = "New File";
 "finder.newFolder" = "Folder";
 "finder.userTemplate" = "User Template";
+"finder.captureTemplate" = "Add as Template…";
 "finder.copyPath" = "Copy Path";
 "finder.copyName" = "Copy Name";
+"finder.copyBaseName" = "Copy Name Without Extension";
+"finder.copyExtension" = "Copy Extension";
 "finder.copyTo" = "Copy To…";
 "finder.moveTo" = "Move To…";
 "finder.openTerminal" = "Open in Terminal";
-"finder.openEditor" = "Open in Default Editor";
-"finder.openWith" = "Open With…";
+"finder.openEditor" = "Open with Default App";
 "finder.openWithApp" = "Open with %@";
 "finder.zip" = "Compress to ZIP";
 "finder.unzip" = "Extract Here";

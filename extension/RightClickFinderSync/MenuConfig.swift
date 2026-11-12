@@ -146,6 +146,8 @@ struct AppConfig: Decodable {
     let fileTypes: [FileTypeSetting]?
     let watchFolders: [String]?
     let editors: [String]?
+    let programs: [String]?
+    let terminals: [String]?
     let favoriteFolders: [FavoriteFolderSetting]?
 
     /// Returns nil when config.json is missing or cannot be decoded.
@@ -197,12 +199,13 @@ enum MenuActions {
     /// Groups in the order they appear in the submenu. Within a group, config order applies.
     static let groups: [[String]] = [
         ["new-file", "new-folder", "new-template"],
-        ["copy-path", "copy-name", "copy-to", "move-to"],
-        ["open-terminal", "open-editor", "open-with"],
+        ["copy-path", "copy-name", "copy-basename", "copy-extension", "copy-to", "move-to"],
+        ["open-terminal", "open-editor"],
         ["zip", "unzip", "hash"],
         ["compare-hash"],
         ["toggle-hidden"],
         ["delete-permanently"],
+        ["add-template"],
     ]
 
     /// Every ID in default order. It is also the order used when config.json is missing.

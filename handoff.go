@@ -2,9 +2,9 @@ package main
 
 import (
 	"errors"
+	"github.com/hy-shine/rightclick/locales"
 	"net/url"
 	"path/filepath"
-	"rightclick/locales"
 )
 
 // parseURL splits a rightclick://<action>?<params> URL into its action, its query

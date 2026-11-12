@@ -7,13 +7,15 @@
 "finder.newFile" = "新建文件";
 "finder.newFolder" = "文件夹";
 "finder.userTemplate" = "用户模板";
+"finder.captureTemplate" = "添加为模板…";
 "finder.copyPath" = "拷贝路径";
 "finder.copyName" = "拷贝文件名";
+"finder.copyBaseName" = "拷贝不含扩展名的名字";
+"finder.copyExtension" = "拷贝扩展名";
 "finder.copyTo" = "复制到…";
 "finder.moveTo" = "移动到…";
 "finder.openTerminal" = "在终端打开";
-"finder.openEditor" = "用默认编辑器打开";
-"finder.openWith" = "用…打开";
+"finder.openEditor" = "用默认应用打开";
 "finder.openWithApp" = "用 %@ 打开";
 "finder.zip" = "压缩为 ZIP";
 "finder.unzip" = "解压到此处";

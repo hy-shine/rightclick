@@ -19,6 +19,7 @@ Finder 右键助手。主程序用 mygo v0.6.4 原生 UI，Finder 菜单是 Swif
 - `mygo.json` 的 `name` 和 `identifier` 是占位值，改之前先问用户。
 - 测试 UI 用 `ui.NewTester`，等待条件成立，不用固定时长的 sleep。
 - 代码注释用英文（Go、Swift、shell）。文件名和目录名也用英文，不用中文。
+- 图标不手绘：从 Lucide（ISC）取现成 SVG，放在 `extension/RightClickFinderSync/ActionIcons/`，许可文件随目录保留。图标要和动作的语义对得上；新增菜单项必须同时加图标，并让 `extension/tests/main.swift` 的图标断言通过。
 
 ## 做完的标准
 

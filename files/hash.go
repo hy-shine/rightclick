@@ -6,10 +6,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"github.com/hy-shine/rightclick/locales"
 	"hash"
 	"io"
 	"os"
-	"rightclick/locales"
 )
 
 // Algorithm is a hash function offered by the menu.

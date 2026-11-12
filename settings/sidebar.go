@@ -1,11 +1,11 @@
 package settings
 
 import (
-	"rightclick/locales"
+	"github.com/hy-shine/rightclick/locales"
 
 	"github.com/egoist/mygo/ui"
 
-	"rightclick/config"
+	"github.com/hy-shine/rightclick/config"
 )
 
 // paneIcons are the icons of the sidebar rows, by pane ID.
@@ -103,7 +103,7 @@ func (m *app) navSummary(id string) string {
 		}
 		return locales.FolderCount(len(m.cfg.WatchFolders))
 	case paneOpeners:
-		return locales.TerminalLine(m.cfg.Terminal)
+		return locales.ProgramCount(len(m.cfg.Programs))
 	case paneDiagnostics:
 		return m.setupStep().summary()
 	case paneGeneral:

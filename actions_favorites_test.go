@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"rightclick/config"
+	"github.com/hy-shine/rightclick/config"
 )
 
 func TestFavoriteDestinationCopiesAndMovesWithoutPicker(t *testing.T) {
@@ -18,7 +18,7 @@ func TestFavoriteDestinationCopiesAndMovesWithoutPicker(t *testing.T) {
 			}
 			destination := t.TempDir()
 			cfg := config.Default()
-			cfg.FavoriteFolders = []config.FavoriteFolder{{ID: "archive", Path: destination, Label: "归档", Enabled: true}}
+			cfg.FavoriteFolders = []config.FavoriteFolder{{ID: "archive", Path: destination, Label: "Archive", Enabled: true}}
 			params := url.Values{"favorite": {"archive"}}
 			if err := runAction(action, params, []string{source}, cfg); err != nil {
 				t.Fatal(err)

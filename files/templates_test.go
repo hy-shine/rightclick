@@ -37,7 +37,7 @@ func TestSaveAndLoadTemplatesRoundTrip(t *testing.T) {
 
 func TestTemplateFromTextFile(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "outline.md")
-	content := "# 标题\n\n- 要点\n"
+	content := "# Title\n\n- Point\n"
 	writeFile(t, path, content)
 	got, err := TemplateFromFile(path)
 	if err != nil {

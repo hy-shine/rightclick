@@ -10,8 +10,8 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 
-	"rightclick/config"
-	"rightclick/files"
+	"github.com/hy-shine/rightclick/config"
+	"github.com/hy-shine/rightclick/files"
 )
 
 // testEnv replaces every system call, so that the tests change no system state.
@@ -24,6 +24,9 @@ func testEnv() env {
 		restartFinder:      func() error { return nil },
 		openDialog:         func(mygo.OpenDialogOptions) ([]string, error) { return nil, nil },
 		setLocale:          func(string) {},
+		folderAccess:       func(string) files.Access { return files.AccessOK },
+		fullDiskAccess:     func() bool { return true },
+		openPrivacy:        func(string) error { return nil },
 	}
 }
 
@@ -45,7 +48,7 @@ func TestSwitchSavesMenuItem(t *testing.T) {
 	tt := ui.NewTester(m.view, minWidth, minHeight)
 	// The editor is on the first screen even in the smallest window.
 	tt.Frame()
-	if err := tt.Click("启用 新建文件"); err != nil {
+	if err := tt.Click("Enable New File"); err != nil {
 		t.Fatal(err)
 	}
 	cfg, err := config.Load(store.ConfigPath)
@@ -79,11 +82,11 @@ func TestClickingTabShowsItsPane(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt := ui.NewTester(m.view, 760, 560)
-	if err := tt.Click("通用"); err != nil {
+	if err := tt.Click("General"); err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Contains(tt.Texts(), "开机启动") {
-		t.Fatalf("after clicking 通用 the general pane is not shown; texts %q", tt.Texts())
+	if !slices.Contains(tt.Texts(), "Open at Login") {
+		t.Fatalf("after clicking General the general pane is not shown; texts %q", tt.Texts())
 	}
 }
 
@@ -94,7 +97,7 @@ func TestGeneralPaneShowsVersion(t *testing.T) {
 	}
 	m.selectPane(paneGeneral)
 	texts := ui.NewTester(m.view, mainWidth, mainHeight).Texts()
-	if !slices.Contains(texts, "版本 "+version) {
+	if !slices.Contains(texts, "Version "+version) {
 		t.Errorf("general pane does not show the version; texts %q", texts)
 	}
 }
@@ -105,8 +108,8 @@ func TestSidebarHasNoAboutPane(t *testing.T) {
 		t.Fatal(err)
 	}
 	texts := ui.NewTester(m.view, mainWidth, mainHeight).Texts()
-	if slices.Contains(texts, "关于") {
-		t.Errorf("sidebar still has a 关于 pane; texts %q", texts)
+	if slices.Contains(texts, "About") {
+		t.Errorf("sidebar still has a About pane; texts %q", texts)
 	}
 }
 
@@ -117,7 +120,7 @@ func TestAddedTemplateIsSaved(t *testing.T) {
 		t.Fatal(err)
 	}
 	src := filepath.Join(t.TempDir(), "meeting.md")
-	if err := os.WriteFile(src, []byte("# 会议\n"), 0o644); err != nil {
+	if err := os.WriteFile(src, []byte("# Meeting\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	tpl, err := files.TemplateFromFile(src)
@@ -129,7 +132,7 @@ func TestAddedTemplateIsSaved(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []files.Template{{Name: "meeting.md", Content: "# 会议\n", Location: config.FileTypeSubmenu}}
+	want := []files.Template{{Name: "meeting.md", Content: "# Meeting\n", Location: config.FileTypeSubmenu}}
 	if !slices.Equal(got, want) {
 		t.Errorf("templates read back = %+v, want %+v", got, want)
 	}
@@ -152,7 +155,7 @@ func TestNewPaneListsBuiltInFileTypes(t *testing.T) {
 			t.Errorf("new pane does not show file type %q; texts %q", want, texts)
 		}
 	}
-	if slices.Contains(texts, "Finder 菜单") {
+	if slices.Contains(texts, "Finder Menu") {
 		t.Errorf("new pane still shows the Finder menu preview; texts %q", texts)
 	}
 }
@@ -166,13 +169,13 @@ func TestNewPaneSwitchesToUserTemplates(t *testing.T) {
 	m.tplSel = -1
 	m.selectPane(paneTemplates)
 	tt := ui.NewTester(m.view, mainWidth, mainHeight)
-	if err := tt.Click("我的模板"); err != nil {
+	if err := tt.Click("My Templates"); err != nil {
 		t.Fatal(err)
 	}
 	if m.newMode != newModeTemplates {
 		t.Errorf("newMode = %d, want templates", m.newMode)
 	}
-	if !slices.Contains(tt.Texts(), "添加模板…") {
+	if !slices.Contains(tt.Texts(), "Add Template…") {
 		t.Errorf("empty user template view does not show its action; texts %q", tt.Texts())
 	}
 }
@@ -207,7 +210,7 @@ func TestCreationPaneHasNoMenuLocationControl(t *testing.T) {
 	}
 	m.selectPane(paneTemplates)
 	texts := ui.NewTester(m.view, mainWidth, mainHeight).Texts()
-	for _, unwanted := range []string{"菜单位置", "Finder 右键顶层", "新建文件子菜单"} {
+	for _, unwanted := range []string{"Menu location", "Finder Top Custom", "New File submenu"} {
 		if slices.Contains(texts, unwanted) {
 			t.Errorf("creation pane still shows %q", unwanted)
 		}
@@ -223,20 +226,21 @@ func menuIDs(items []config.MenuItem) []string {
 	return ids
 }
 
-func TestReorderStaysInItsGroup(t *testing.T) {
+// TestReorderStopsAtTheMainEntries checks that a submenu entry moved to the top
+// of its group stops below the main entries of that group.
+func TestReorderStopsAtTheMainEntries(t *testing.T) {
 	m, err := newApp(testStore(t), testEnv())
 	if err != nil {
 		t.Fatal(err)
 	}
-	before := menuIDs(m.cfg.MenuItems)
-	rows := m.groupRows(1) // copy-path, copy-name, copy-to, move-to
-	m.reorderGroup(1, []int{1}, 0)
-	want := slices.Clone(before)
-	for k, id := range []string{"copy-name", "copy-path", "copy-to", "move-to"} {
-		want[rows[k]] = id
+	m.reorderGroup(1, []int{3}, 0) // move copy-extension to the top of the group
+	var got []string
+	for _, i := range m.groupRows(1) {
+		got = append(got, m.cfg.MenuItems[i].ID)
 	}
-	if got := menuIDs(m.cfg.MenuItems); !slices.Equal(got, want) {
-		t.Errorf("after moving copy-name to the top of its group:\n got %q\nwant %q", got, want)
+	want := []string{"copy-path", "copy-extension", "copy-name", "copy-basename", "copy-to", "move-to"}
+	if !slices.Equal(got, want) {
+		t.Errorf("group order = %q, want %q", got, want)
 	}
 }
 
@@ -245,11 +249,11 @@ func TestSidebarCountsEnabledMenuItems(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := m.navSummary(paneMenu), "已启用 15 项"; got != want {
+	if got, want := m.navSummary(paneMenu), "17 items enabled"; got != want {
 		t.Errorf("sidebar line = %q, want %q", got, want)
 	}
 	m.cfg.MenuItems[0].Enabled = false
-	if got, want := m.navSummary(paneMenu), "已启用 14 项"; got != want {
+	if got, want := m.navSummary(paneMenu), "16 items enabled"; got != want {
 		t.Errorf("after one entry is switched off, sidebar line = %q, want %q", got, want)
 	}
 }

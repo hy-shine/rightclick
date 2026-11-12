@@ -4,19 +4,53 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 
-	"rightclick/config"
+	"github.com/hy-shine/rightclick/locales"
 )
 
-func TestTerminalChoicesIncludeCommonAppsAndCurrent(t *testing.T) {
-	choices := terminalChoices("CustomTerm")
-	for _, want := range []string{
-		"Terminal", "iTerm", "Warp", "Ghostty", "kitty",
-		"Alacritty", "WezTerm", "Hyper", "Tabby", "CustomTerm",
-	} {
-		if !slices.Contains(choices, want) {
-			t.Errorf("terminal choices do not contain %q: %q", want, choices)
+// TestProgramSearchFiltersTheList checks that the search box keeps only the
+// matching programs, and says so when none match.
+func TestProgramSearchFiltersTheList(t *testing.T) {
+	m, err := newApp(testStore(t), testEnv())
+	if err != nil {
+		t.Fatal(err)
+	}
+	m.cfg.Programs = []string{"Visual Studio Code", "Cursor", "Terminal"}
+	m.selectPane(paneOpeners)
+	m.programSearch = "CUR"
+	texts := ui.NewTester(m.view, minWidth, 900).Texts()
+	if !slices.Contains(texts, "Cursor") || slices.Contains(texts, "Visual Studio Code") {
+		t.Errorf("search for CUR shows %q, want Cursor only", texts)
+	}
+	m.programSearch = "no-such-app"
+	texts = ui.NewTester(m.view, minWidth, 900).Texts()
+	if !slices.Contains(texts, locales.NoProgramMatches()) {
+		t.Errorf("empty search state is missing: %q", texts)
+	}
+}
+
+// TestChooseAppPanelDoesNotGreyOutBundles checks the picker options: an "app"
+// extension filter would grey out every application bundle in the panel.
+func TestChooseAppPanelDoesNotGreyOutBundles(t *testing.T) {
+	m, err := newApp(testStore(t), testEnv())
+	if err != nil {
+		t.Fatal(err)
+	}
+	opts := make(chan mygo.OpenDialogOptions, 1)
+	m.env.openDialog = func(o mygo.OpenDialogOptions) ([]string, error) {
+		opts <- o
+		return nil, nil
+	}
+	m.pickEditor()
+	o := <-opts
+	if o.DefaultPath != "/Applications" {
+		t.Errorf("the panel opens at %q, want /Applications", o.DefaultPath)
+	}
+	for _, f := range o.Filters {
+		if slices.Contains(f.Extensions, "app") {
+			t.Errorf("the panel filters by the app extension, which greys out bundles: %+v", f)
 		}
 	}
 }
@@ -42,22 +76,24 @@ func TestApplicationName(t *testing.T) {
 	}
 }
 
-func TestSetDefaultEditorMovesItToFront(t *testing.T) {
-	store := testStore(t)
-	m, err := newApp(store, testEnv())
+// TestEditorRowsNameTheirCheckBox keeps the second list without a header from
+// carrying an unexplained box: the label says what it adds, and the row still
+// fits the smallest window.
+func TestEditorRowsNameTheirCheckBox(t *testing.T) {
+	model, err := newApp(testStore(t), testEnv())
 	if err != nil {
 		t.Fatal(err)
 	}
-	m.selectPane(paneOpeners)
-	tt := ui.NewTester(m.view, mainWidth, mainHeight)
-	if err := tt.Click("设为默认"); err != nil {
-		t.Fatal(err)
+	model.selectPane(paneOpeners)
+	screen := ui.NewTester(model.view, minWidth, 900)
+	if !slices.Contains(screen.Texts(), locales.QuickAccess()) {
+		t.Errorf("the editor rows have no label for the check box: %q", screen.Texts())
 	}
-	saved, err := config.Load(store.ConfigPath)
-	if err != nil {
-		t.Fatal(err)
+	remove, ok := screen.Find(locales.Remove())
+	if !ok {
+		t.Fatal("the remove button is missing")
 	}
-	if len(saved.Editors) < 2 || saved.Editors[0] != "Cursor" {
-		t.Fatalf("editors = %q, want Cursor first", saved.Editors)
+	if remove.X+remove.W > minWidth {
+		t.Errorf("the remove button ends at %.1f pt, past the window width %d", remove.X+remove.W, minWidth)
 	}
 }

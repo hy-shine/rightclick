@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui"
-	"rightclick/config"
-	"rightclick/files"
+	"github.com/hy-shine/rightclick/config"
+	"github.com/hy-shine/rightclick/files"
 )
 
 func TestRenderCreationReview(t *testing.T) {
@@ -46,7 +46,7 @@ func TestCreationListAndDialogShareEnabledState(t *testing.T) {
 	}
 	model.selectPane(paneTemplates)
 	tester := ui.NewTester(model.view, mainWidth, mainHeight)
-	if err := tester.Click("启用 Word 文档"); err != nil {
+	if err := tester.Click("Enable Word Document"); err != nil {
 		t.Fatal(err)
 	}
 	saved, err := config.Load(store.ConfigPath)
@@ -56,19 +56,19 @@ func TestCreationListAndDialogShareEnabledState(t *testing.T) {
 	if saved.FileTypes[0].Enabled {
 		t.Fatal("list switch did not save disabled state")
 	}
-	if err := tester.Click("编辑 Word 文档"); err != nil {
+	if err := tester.Click("Edit Word Document"); err != nil {
 		t.Fatal(err)
 	}
 	if model.editCreation.Enabled {
 		t.Fatal("dialog did not inherit disabled state")
 	}
-	if err := tester.Click("启用此文件类型"); err != nil {
+	if err := tester.Click("Turn on this file type"); err != nil {
 		t.Fatal(err)
 	}
 	if !model.editCreation.Enabled {
 		t.Fatalf("switch did not change draft; texts %q", tester.Texts())
 	}
-	if err := tester.Click("保存修改"); err != nil {
+	if err := tester.Click("Save Changes"); err != nil {
 		t.Fatal(err)
 	}
 	saved, err = config.Load(store.ConfigPath)
@@ -93,7 +93,7 @@ func TestCreationEditorCancelDoesNotChangeSavedContent(t *testing.T) {
 	model.openCreationEditor(creationRow{index: 0})
 	tester.Frame()
 	model.editCreation.Label = "changed"
-	if err := tester.Click("取消"); err != nil {
+	if err := tester.Click("Cancel"); err != nil {
 		t.Fatal(err)
 	}
 	if model.cfg.FileTypes[0].Label == "changed" {
@@ -111,7 +111,7 @@ func TestCustomTemplateSwitchStaysInsideNewFile(t *testing.T) {
 	model.newMode = newModeTemplates
 	model.selectPane(paneTemplates)
 	tester := ui.NewTester(model.view, mainWidth, mainHeight)
-	if err := tester.Click("启用 meeting"); err != nil {
+	if err := tester.Click("Enable meeting"); err != nil {
 		t.Fatal(err)
 	}
 	templates, err := files.LoadTemplates(filepath.Join(filepath.Dir(store.ConfigPath), "templates.json"))

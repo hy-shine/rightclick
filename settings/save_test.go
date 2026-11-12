@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"rightclick/config"
-	"rightclick/files"
+	"github.com/hy-shine/rightclick/config"
+	"github.com/hy-shine/rightclick/files"
 )
 
 // makeReadOnly stops the files of store from being written. The folder is opened
@@ -29,7 +29,7 @@ func makeReadOnly(t *testing.T, store Store) {
 func TestFailedConfigSaveKeepsTheSavedValues(t *testing.T) {
 	store := testStore(t)
 	cfg := config.Default()
-	cfg.Terminal = "Ghostty"
+	cfg.Programs = []string{"Cursor"}
 	if err := config.Save(store.ConfigPath, cfg); err != nil {
 		t.Fatal(err)
 	}
@@ -39,11 +39,11 @@ func TestFailedConfigSaveKeepsTheSavedValues(t *testing.T) {
 	}
 	makeReadOnly(t, store)
 
-	m.cfg.Terminal = "iTerm"
+	m.cfg.Programs = []string{"Warp"}
 	m.saveConfig()
 
-	if m.cfg.Terminal != "Ghostty" {
-		t.Errorf("window shows terminal %q, want the saved %q", m.cfg.Terminal, "Ghostty")
+	if len(m.cfg.Programs) != 1 || m.cfg.Programs[0] != "Cursor" {
+		t.Errorf("window shows programs %q, want [Cursor]", m.cfg.Programs)
 	}
 	if m.notice == "" {
 		t.Error("the failed save is not reported below the pane")
@@ -52,8 +52,8 @@ func TestFailedConfigSaveKeepsTheSavedValues(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if saved.Terminal != "Ghostty" {
-		t.Errorf("file holds terminal %q, want %q", saved.Terminal, "Ghostty")
+	if len(saved.Programs) != 1 || saved.Programs[0] != "Cursor" {
+		t.Errorf("file holds programs %q, want [Cursor]", saved.Programs)
 	}
 }
 
@@ -61,7 +61,7 @@ func TestFailedConfigSaveKeepsTheSavedValues(t *testing.T) {
 // cannot be written is removed again, and that the selection stays in range.
 func TestFailedTemplateSaveKeepsTheSavedTemplates(t *testing.T) {
 	store := testStore(t)
-	saved := []files.Template{{Name: "meeting.md", Content: "# 会议\n", Location: config.FileTypeSubmenu}}
+	saved := []files.Template{{Name: "meeting.md", Content: "# Meeting\n", Location: config.FileTypeSubmenu}}
 	if err := files.SaveTemplates(store.TemplatesPath, saved); err != nil {
 		t.Fatal(err)
 	}

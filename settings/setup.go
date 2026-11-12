@@ -1,12 +1,12 @@
 package settings
 
 import (
-	"rightclick/locales"
+	"github.com/hy-shine/rightclick/locales"
 	"slices"
 
 	"github.com/egoist/mygo/ui"
 
-	"rightclick/config"
+	"github.com/hy-shine/rightclick/config"
 )
 
 // setupStep is the first thing still missing before the Finder menu can show,
@@ -90,4 +90,5 @@ func (m *app) useDefaultFolders() {
 		m.foldersChanged = true
 	}
 	m.saveConfig()
+	m.refreshFolderAccess()
 }

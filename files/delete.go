@@ -3,9 +3,9 @@ package files
 import (
 	"errors"
 	"fmt"
+	"github.com/hy-shine/rightclick/locales"
 	"os"
 	"path/filepath"
-	"rightclick/locales"
 )
 
 // Protected reports whether path must not be deleted: a relative path, the root

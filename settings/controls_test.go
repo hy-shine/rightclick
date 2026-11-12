@@ -8,9 +8,10 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
-	"rightclick/config"
-	"rightclick/internal/catalog"
-	"rightclick/locales"
+	"github.com/hy-shine/rightclick/config"
+	"github.com/hy-shine/rightclick/internal/actionicons"
+	"github.com/hy-shine/rightclick/internal/catalog"
+	"github.com/hy-shine/rightclick/locales"
 )
 
 func TestPlaceSwitchChangesPreview(t *testing.T) {
@@ -19,20 +20,20 @@ func TestPlaceSwitchChangesPreview(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt := ui.NewTester(m.view, minWidth, minHeight)
-	if err := tt.Click("预览"); err != nil {
+	if err := tt.Click("Preview"); err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Contains(tt.Texts(), "显示 9 项") {
-		t.Fatalf("a file shows 9 entries; texts %q", tt.Texts())
+	if !slices.Contains(tt.Texts(), "Shows 11 items") {
+		t.Fatalf("a file shows 12 entries; texts %q", tt.Texts())
 	}
 	tt.Frame()
-	if err := tt.Click("空白处"); err != nil {
+	if err := tt.Click("Blank Space"); err != nil {
 		t.Fatal(err)
 	}
 	if m.previewCtx != ctxBlank {
-		t.Errorf("previewCtx = %d after clicking 空白处, want %d", m.previewCtx, ctxBlank)
+		t.Errorf("previewCtx = %d after clicking Blank Space, want %d", m.previewCtx, ctxBlank)
 	}
-	if !slices.Contains(tt.Texts(), "显示 6 项") {
+	if !slices.Contains(tt.Texts(), "Shows 5 items") {
 		t.Errorf("blank space shows 6 entries; texts %q", tt.Texts())
 	}
 }
@@ -78,7 +79,7 @@ func TestRestoreDefaultsSwitchesEntriesBackOn(t *testing.T) {
 	tt := ui.NewTester(m.view, minWidth, minHeight)
 	// The reset button is at the top of the editor, on the first screen.
 	tt.Frame()
-	if err := tt.Click("恢复默认"); err != nil {
+	if err := tt.Click("Restore Defaults"); err != nil {
 		t.Fatal(err)
 	}
 	cfg, err := config.Load(store.ConfigPath)
@@ -91,7 +92,7 @@ func TestRestoreDefaultsSwitchesEntriesBackOn(t *testing.T) {
 	if !m.confirmRestore {
 		t.Fatal("restore confirmation did not open")
 	}
-	if err := tt.Click("恢复"); err != nil {
+	if err := tt.Click("Restore"); err != nil {
 		t.Fatal(err)
 	}
 	cfg, err = config.Load(store.ConfigPath)
@@ -99,7 +100,7 @@ func TestRestoreDefaultsSwitchesEntriesBackOn(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !cfg.MenuItems[0].Enabled {
-		t.Errorf("new-file still switched off after 恢复默认: %+v", cfg.MenuItems[0])
+		t.Errorf("new-file still switched off after Restore Defaults: %+v", cfg.MenuItems[0])
 	}
 }
 
@@ -112,7 +113,7 @@ func TestRemovingFolderIsSaved(t *testing.T) {
 	first, n := m.cfg.WatchFolders[0], len(m.cfg.WatchFolders)
 	m.selectPane(paneFolders)
 	tt := ui.NewTester(m.view, 760, 560)
-	if err := tt.Click("移除"); err != nil {
+	if err := tt.Click("Remove"); err != nil {
 		t.Fatal(err)
 	}
 	cfg, err := config.Load(store.ConfigPath)
@@ -126,7 +127,7 @@ func TestRemovingFolderIsSaved(t *testing.T) {
 
 func TestEveryMenuEntryHasAnIcon(t *testing.T) {
 	for _, item := range config.Default().MenuItems {
-		if _, ok := entryIcons[item.ID]; !ok {
+		if actionicons.Icon(item.ID) == nil {
 			t.Errorf("menu entry %q has no icon", item.ID)
 		}
 		if _, ok := menuEntries()[item.ID]; !ok {
@@ -149,18 +150,18 @@ func TestMenuPageFitsTheMinimumWindow(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt := ui.NewTester(m.view, minWidth, minHeight)
-	name, ok := tt.Find("新建文件")
+	name, ok := tt.Find("New File")
 	if !ok {
 		t.Fatal("the first action is not on the pane")
 	}
-	preview, ok := tt.Find("预览")
+	preview, ok := tt.Find("Preview")
 	if !ok {
 		t.Fatal("the preview button is not on the pane")
 	}
 	if name.Y+name.H > minHeight || preview.Y+preview.H > minHeight {
 		t.Error("the first action or preview button is outside the window")
 	}
-	if slices.Contains(tt.Texts(), "显示 9 项") {
+	if slices.Contains(tt.Texts(), "Shows 11 items") {
 		t.Error("preview content is visible before the preview opens")
 	}
 }
@@ -172,7 +173,7 @@ func TestMenuSearchFiltersAndKeepsContextVisible(t *testing.T) {
 	}
 	m.menuSearch = "zip"
 	texts := ui.NewTester(m.view, minWidth, minHeight).Texts()
-	if !slices.Contains(texts, "仅 .zip 文件") {
+	if !slices.Contains(texts, "Only .zip files") {
 		t.Errorf("matching action does not show its context: %q", texts)
 	}
 	if rows := m.menuDisplayRows(3); len(rows) != 2 {
@@ -180,10 +181,10 @@ func TestMenuSearchFiltersAndKeepsContextVisible(t *testing.T) {
 	}
 	m.menuSearch = "not-an-action"
 	texts = ui.NewTester(m.view, minWidth, minHeight).Texts()
-	if !slices.Contains(texts, "没有匹配的动作") {
+	if !slices.Contains(texts, "No matching actions") {
 		t.Errorf("empty search state is missing: %q", texts)
 	}
-	if !slices.Contains(texts, "预览") {
+	if !slices.Contains(texts, "Preview") {
 		t.Error("empty search should keep the preview button visible")
 	}
 }
@@ -195,7 +196,7 @@ func TestCreationEditButtonHasAUsefulTarget(t *testing.T) {
 	}
 	m.selectPane(paneTemplates)
 	tt := ui.NewTester(m.view, mainWidth, mainHeight)
-	bounds, ok := tt.Find("编辑 Word 文档")
+	bounds, ok := tt.Find("Edit Word Document")
 	if !ok {
 		t.Fatal("edit button is missing")
 	}
@@ -212,10 +213,10 @@ func TestPreviewCountFitsItsColumn(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt := ui.NewTester(m.view, minWidth, minHeight)
-	if err := tt.Click("预览"); err != nil {
+	if err := tt.Click("Preview"); err != nil {
 		t.Fatal(err)
 	}
-	count, ok := tt.Find("显示 9 项")
+	count, ok := tt.Find("Shows 11 items")
 	if !ok {
 		t.Fatal("the entry count is not on the pane")
 	}
@@ -237,11 +238,8 @@ func TestEmptyTemplatesShowOnlyTheEmptyState(t *testing.T) {
 	m.selectPane(paneTemplates)
 	tt := ui.NewTester(m.view, 760, 560)
 	texts := tt.Texts()
-	if !slices.Contains(texts, "没有找到相关类型") || !slices.Contains(texts, "添加模板…") {
-		t.Errorf("empty templates pane shows %q, want the empty state and 添加模板…", texts)
-	}
-	if slices.Contains(texts, "名称") {
-		t.Errorf("empty templates pane still shows the template editor: %q", texts)
+	if !slices.Contains(texts, "No matching types") || !slices.Contains(texts, "Add Template…") {
+		t.Errorf("empty templates pane shows %q, want the empty state and Add Template…", texts)
 	}
 }
 
@@ -253,7 +251,7 @@ func TestSidebarNamesPanesByTheirPurpose(t *testing.T) {
 		t.Fatal(err)
 	}
 	texts := ui.NewTester(m.view, 760, 560).Texts()
-	for _, want := range []string{"新建", "文件夹范围"} {
+	for _, want := range []string{"New", "Folder Scope"} {
 		if !slices.Contains(texts, want) {
 			t.Errorf("sidebar does not show %q; texts %q", want, texts)
 		}

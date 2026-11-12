@@ -3,18 +3,19 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/hy-shine/rightclick/locales"
 	"log"
 	"net/url"
 	"os"
 	"path/filepath"
-	"rightclick/locales"
 	"strings"
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/transfer"
-	"rightclick/config"
-	"rightclick/files"
-	"rightclick/finder"
+	"github.com/hy-shine/rightclick/config"
+	"github.com/hy-shine/rightclick/files"
+	"github.com/hy-shine/rightclick/finder"
+	"github.com/hy-shine/rightclick/settings"
 )
 
 // routeURL handles a rightclick:// URL sent by the Finder extension. The action
@@ -93,6 +94,16 @@ func actionHandlers() map[string]actionHandler {
 		"copy-name": func(_ url.Values, paths []string, _ config.Config) error {
 			return copyText(joinLines(baseNames(paths)))
 		},
+		"copy-basename": func(_ url.Values, paths []string, _ config.Config) error {
+			return copyText(joinLines(stemNames(paths)))
+		},
+		"copy-extension": func(_ url.Values, paths []string, _ config.Config) error {
+			extensions := extensionNames(paths)
+			if len(extensions) == 0 {
+				return errors.New(locales.NoExtensions())
+			}
+			return copyText(joinLines(extensions))
+		},
 		"new-file": func(params url.Values, paths []string, cfg config.Config) error {
 			return createFileFromType(cfg, params.Get("type"), paths)
 		},
@@ -114,6 +125,13 @@ func actionHandlers() map[string]actionHandler {
 			}
 			return createFromTemplate(templatesPath, params.Get("name"), paths, cfg)
 		},
+		"add-template": func(_ url.Values, paths []string, _ config.Config) error {
+			return captureTemplate(paths, func(template files.Template) error {
+				result := make(chan error, 1)
+				mygo.RunOnMain(func() { result <- settings.OpenTemplateDraft(template) })
+				return <-result
+			})
+		},
 		"copy-to": transferAction("copy-to"),
 		"move-to": transferAction("move-to"),
 		"open-favorite": func(params url.Values, _ []string, cfg config.Config) error {
@@ -124,7 +142,7 @@ func actionHandlers() map[string]actionHandler {
 			return files.Open(path)
 		},
 		"open-terminal": openTerminal,
-		"open-editor":   openWithApp,
+		"open-editor":   openEditor,
 		"open-with":     openWithApp,
 		"zip": func(_ url.Values, paths []string, _ config.Config) error {
 			return zipItems(paths)
@@ -152,6 +170,18 @@ func runAction(action string, params url.Values, paths []string, cfg config.Conf
 		return errors.New(locales.ErrUnknownAction(action))
 	}
 	return handler(params, paths, cfg)
+}
+
+func captureTemplate(paths []string, present func(files.Template) error) error {
+	path, err := requireOne(paths)
+	if err != nil {
+		return err
+	}
+	template, err := files.TemplateFromFile(path)
+	if err != nil {
+		return err
+	}
+	return present(template)
 }
 
 // createFolder makes a folder in the folder the action was started in.
@@ -357,25 +387,71 @@ func chooseFolder(title string) (string, error) {
 	return dirs[0], nil
 }
 
-// openTerminal opens each folder with the terminal app from the settings.
-func openTerminal(_ url.Values, paths []string, cfg config.Config) error {
-	return openEach(cfg.Terminal, paths)
+// openTerminal opens each folder in Terminal.
+func openTerminal(params url.Values, paths []string, _ config.Config) error {
+	app := strings.TrimSpace(params.Get("app"))
+	if app == "" {
+		app = "Terminal"
+	}
+	return openEach(app, foldersOf(paths))
 }
 
-// openWithApp handles open-editor and open-with, which name the app in the app
-// parameter.
+// openEditor opens the selection with its default application. A menu entry may
+// still name a program, which keeps older URLs working.
+func openEditor(params url.Values, paths []string, cfg config.Config) error {
+	if app := strings.TrimSpace(params.Get("app")); app != "" {
+		return openWithApp(params, paths, cfg)
+	}
+	return openDefaultEach(paths)
+}
+
+// openWithApp opens the selection in the named app. Terminal programs get the
+// folder that holds the selection, because they cannot open a file directly.
 func openWithApp(params url.Values, paths []string, _ config.Config) error {
 	app := params.Get("app")
 	if app == "" {
 		return errors.New(locales.ErrURLNoApp())
 	}
+	if config.IsTerminalApp(app) {
+		paths = foldersOf(paths)
+	}
 	return openEach(app, paths)
 }
+
+// foldersOf returns the folder for each path: the path itself when it is a
+// folder, otherwise its parent.
+func foldersOf(paths []string) []string {
+	folders := make([]string, 0, len(paths))
+	for _, path := range paths {
+		if info, err := os.Stat(path); err == nil && info.IsDir() {
+			folders = append(folders, path)
+			continue
+		}
+		folders = append(folders, filepath.Dir(path))
+	}
+	return folders
+}
+
+// openWith and openDefault are the system open calls. Tests replace them.
+var openWith = files.OpenWith
+var openDefault = files.Open
 
 // openEach opens each path with app. Every path is tried; the errors of the
 // failed ones are returned together.
 func openEach(app string, paths []string) error {
-	return openEachWith(files.OpenWith, app, paths)
+	return openEachWith(openWith, app, paths)
+}
+
+// openDefaultEach opens each path with its default application. Every path is
+// tried; the errors of the failed ones are returned together.
+func openDefaultEach(paths []string) error {
+	var errs []error
+	for _, p := range paths {
+		if err := openDefault(p); err != nil {
+			errs = append(errs, errors.New(locales.OpenFailed(files.Name(p), err.Error())))
+		}
+	}
+	return errors.Join(errs...)
 }
 
 // openEachWith calls open for each path. It takes the open call as a parameter so
@@ -609,6 +685,28 @@ func baseNames(paths []string) []string {
 	names := make([]string, 0, len(paths))
 	for _, p := range paths {
 		names = append(names, files.Name(p))
+	}
+	return names
+}
+
+// stemNames returns the name of each path without its extension. For a folder or
+// a name that starts with a dot, the name has no extension and stays as it is.
+func stemNames(paths []string) []string {
+	names := make([]string, 0, len(paths))
+	for _, p := range paths {
+		names = append(names, files.BaseName(p))
+	}
+	return names
+}
+
+// extensionNames returns the extension of each path without its dot. A path with
+// no extension adds no line, so the clipboard does not gain blank entries.
+func extensionNames(paths []string) []string {
+	names := make([]string, 0, len(paths))
+	for _, p := range paths {
+		if ext := files.Ext(p); ext != "" {
+			names = append(names, ext)
+		}
 	}
 	return names
 }

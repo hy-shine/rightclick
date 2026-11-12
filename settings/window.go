@@ -1,8 +1,10 @@
 package settings
 
 import (
+	"errors"
+	"github.com/hy-shine/rightclick/files"
+	"github.com/hy-shine/rightclick/locales"
 	"log"
-	"rightclick/locales"
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
@@ -78,6 +80,18 @@ func OpenDiagnostics() {
 		return // Open could not create the window and has already reported why
 	}
 	openApp.selectPane(paneDiagnostics)
+}
+
+func OpenTemplateDraft(template files.Template) error {
+	Open()
+	if openApp == nil || openWindow == nil || openWindow.IsDestroyed() {
+		return errors.New(locales.WindowOpenFailed())
+	}
+	if err := openApp.beginTemplate(template); err != nil {
+		return err
+	}
+	openWindow.Invalidate()
+	return nil
 }
 
 // ExtensionEnabled reports whether macOS has the Finder extension switched on.

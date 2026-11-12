@@ -7,7 +7,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
-	"rightclick/locales"
+	"github.com/hy-shine/rightclick/locales"
 )
 
 func TestDiagnosticsCheckingDoesNotClaimSuccess(t *testing.T) {

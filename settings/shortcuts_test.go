@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui"
-	"rightclick/config"
-	"rightclick/files"
-	"rightclick/locales"
+	"github.com/hy-shine/rightclick/config"
+	"github.com/hy-shine/rightclick/files"
+	"github.com/hy-shine/rightclick/locales"
 )
 
 func TestFileTypeShortcutCanBeAddedAndRemovedFromList(t *testing.T) {
@@ -37,21 +37,21 @@ func TestFileTypeShortcutCanBeAddedAndRemovedFromList(t *testing.T) {
 	}
 }
 
-func TestMenuReordersAcrossCategoriesAndShortcuts(t *testing.T) {
+func TestMenuReordersShortcutsToTheTop(t *testing.T) {
 	model := readyApp(t)
 	model.setShortcut("app:Cursor", true)
-	last := len(model.cfg.MenuItems) - 1
-	model.reorderGroup(-1, []int{last}, 0)
+	at := slices.IndexFunc(model.cfg.MenuItems, func(item config.MenuItem) bool { return item.ID == "app:Cursor" })
+	model.reorderGroup(-1, []int{at}, 0)
 	if model.cfg.MenuItems[0].ID != "app:Cursor" {
-		t.Fatal("shortcut cannot move across the built-in categories")
+		t.Fatal("shortcut did not reach the top of the main entries")
 	}
-	model.cfg.MenuItems[0].Label = "工作编辑器"
+	model.cfg.MenuItems[0].Label = "Work Editor"
 	model.saveConfig()
 	saved, err := config.Load(model.store.ConfigPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if saved.MenuItems[0].Label != "工作编辑器" || model.previewTopItems(ctxBlank)[0].label != "工作编辑器" {
+	if saved.MenuItems[0].Label != "Work Editor" || model.previewTopItems(ctxBlank)[0].label != "Work Editor" {
 		t.Fatal("saved name or preview order differs from menu order")
 	}
 }
@@ -116,12 +116,12 @@ func TestFavoritePaneAndRename(t *testing.T) {
 	if err := tester.Click(locales.EditMenuName()); err != nil {
 		t.Fatal(err)
 	}
-	model.favoriteName = "项目归档"
+	model.favoriteName = "Project Archive"
 	tester.Frame()
 	if err := tester.Click(locales.SaveChanges()); err != nil {
 		t.Fatal(err)
 	}
-	if model.cfg.FavoriteFolders[0].Label != "项目归档" {
+	if model.cfg.FavoriteFolders[0].Label != "Project Archive" {
 		t.Fatal("favorite rename was not saved")
 	}
 }

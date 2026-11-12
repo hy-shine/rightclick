@@ -4,8 +4,8 @@ package finder
 
 import (
 	"errors"
+	"github.com/hy-shine/rightclick/locales"
 	"os/exec"
-	"rightclick/locales"
 	"strings"
 )
 

@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo/ui"
-	"rightclick/config"
-	"rightclick/locales"
+	"github.com/hy-shine/rightclick/config"
+	"github.com/hy-shine/rightclick/locales"
 )
 
 func (m *app) hasShortcut(id string) bool {
@@ -26,8 +26,14 @@ func (m *app) setShortcut(id string, enabled bool) {
 }
 
 func (m *app) shortcutToggle(c *ui.Context, id, label string) {
+	m.shortcutToggleLabeled(c, id, label, "")
+}
+
+// shortcutToggleLabeled is shortcutToggle with a visible label, for rows whose
+// list has no column header to explain what the box does.
+func (m *app) shortcutToggleLabeled(c *ui.Context, id, label, visible string) {
 	enabled := m.hasShortcut(id)
-	ui.Checkbox(c.Key("shortcut:"+id), &enabled, "").Label(locales.ShortcutFor(label)).OnClick(func() {
+	ui.Checkbox(c.Key("shortcut:"+id), &enabled, visible).Label(locales.ShortcutFor(label)).OnClick(func() {
 		m.setShortcut(id, enabled)
 	})
 }
@@ -92,7 +98,7 @@ func (m *app) menuItemAvailable(item config.MenuItem, context int) bool {
 			}
 		}
 	case "app":
-		return slices.Contains(m.cfg.Editors, target)
+		return slices.Contains(m.cfg.Programs, target)
 	case "folder":
 		return slices.ContainsFunc(m.cfg.FavoriteFolders, func(folder config.FavoriteFolder) bool {
 			return folder.ID == target && folder.Enabled

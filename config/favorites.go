@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"rightclick/locales"
+	"github.com/hy-shine/rightclick/locales"
 )
 
 func (cfg Config) FavoritePath(id string) (string, error) {

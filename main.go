@@ -6,15 +6,28 @@ package main
 import (
 	"log"
 	"os"
+	"sync/atomic"
+	"time"
 
 	"github.com/egoist/mygo"
-	"rightclick/settings"
+	"github.com/hy-shine/rightclick/settings"
 )
+
+// launchedForURL records that a rightclick:// link started this process. Such a
+// start runs in the background and must not show the main window.
+var launchedForURL atomic.Bool
+
+// windowOpenDelay is how long start-up waits for a launch link before it shows
+// the window. macOS delivers the link just after the app finishes launching.
+const windowOpenDelay = 300 * time.Millisecond
 
 func main() {
 	// Register before Run. OnOpenURL also delivers the URL the app was launched
 	// with (docs/app.md, "Deep links").
-	mygo.App.OnOpenURL(routeURL)
+	mygo.App.OnOpenURL(func(raw string) {
+		launchedForURL.Store(true)
+		routeURL(raw)
+	})
 	// Closing the main window keeps the app running, so the Finder actions stay
 	// available. Without a listener, mygo quits the app when its last window
 	// closes.
@@ -36,14 +49,21 @@ func main() {
 				mygo.App.SetLocale(cfg.Language)
 			}
 		}
-		settings.Open()
+		openedAtLogin := mygo.App.WasOpenedAtLogin()
+		if shouldOpenWindow(openedAtLogin, launchedForURL.Load()) {
+			time.AfterFunc(windowOpenDelay, func() {
+				if shouldOpenWindow(openedAtLogin, launchedForURL.Load()) {
+					mygo.RunOnMain(settings.Open)
+				}
+			})
+		}
 		// pluginkit blocks, so the check runs off the main thread. Its result
 		// goes back to the main thread, which shows the diagnostics tab when the
 		// extension is off.
 		go func() {
 			enabled := settings.ExtensionEnabled()
 			mygo.RunOnMain(func() {
-				if !enabled {
+				if !enabled && shouldOpenWindow(openedAtLogin, launchedForURL.Load()) {
 					settings.OpenDiagnostics()
 				}
 			})
@@ -53,4 +73,10 @@ func main() {
 	if err := mygo.App.Run(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+// shouldOpenWindow reports whether start-up shows the main window. A start at
+// login and a start from a rightclick:// link stay in the background.
+func shouldOpenWindow(openedAtLogin, launchedForURL bool) bool {
+	return !openedAtLogin && !launchedForURL
 }

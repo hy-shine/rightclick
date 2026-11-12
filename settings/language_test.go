@@ -7,8 +7,8 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
-	"rightclick/config"
-	"rightclick/locales"
+	"github.com/hy-shine/rightclick/config"
+	"github.com/hy-shine/rightclick/locales"
 )
 
 // TestLanguagePickerSavesTheChoice checks that choosing a language in the dropdown
@@ -24,11 +24,11 @@ func TestLanguagePickerSavesTheChoice(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt := ui.NewTester(m.view, 760, 560)
-	if err := tt.Click("通用"); err != nil {
+	if err := tt.Click("General"); err != nil {
 		t.Fatal(err)
 	}
-	// The button shows 跟随系统, the saved choice. Open the dropdown and pick English.
-	if err := tt.Click("跟随系统"); err != nil {
+	// The button shows Same as System, the saved choice. Open the dropdown and pick English.
+	if err := tt.Click("Same as System"); err != nil {
 		t.Fatal(err)
 	}
 	if err := tt.Click("English"); err != nil {
@@ -38,7 +38,7 @@ func TestLanguagePickerSavesTheChoice(t *testing.T) {
 	if err := tt.Click("English"); err != nil {
 		t.Fatal(err)
 	}
-	if err := tt.Click("跟随系统"); err != nil {
+	if err := tt.Click("Same as System"); err != nil {
 		t.Fatal(err)
 	}
 	if want := []string{"en", ""}; !slices.Equal(shown, want) {

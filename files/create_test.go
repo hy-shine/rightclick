@@ -8,10 +8,10 @@ import (
 
 func TestCreateFileNumbersTakenNames(t *testing.T) {
 	dir := t.TempDir()
-	names := []string{"未命名.md", "未命名 2.md", "未命名 3.md"}
+	names := []string{"Untitled.md", "Untitled 2.md", "Untitled 3.md"}
 	contents := []string{"first", "second", "third"}
 	for i, want := range names {
-		got, err := CreateFile(dir, "未命名.md", []byte(contents[i]))
+		got, err := CreateFile(dir, "Untitled.md", []byte(contents[i]))
 		if err != nil {
 			t.Fatalf("CreateFile attempt %d: %v", i+1, err)
 		}
@@ -28,9 +28,9 @@ func TestCreateFileNumbersTakenNames(t *testing.T) {
 
 func TestCreateFolderNumbersTakenNames(t *testing.T) {
 	dir := t.TempDir()
-	names := []string{"新建文件夹", "新建文件夹 2"}
+	names := []string{"New Folder", "New Folder 2"}
 	for _, want := range names {
-		got, err := CreateFolder(dir, "新建文件夹")
+		got, err := CreateFolder(dir, "New Folder")
 		if err != nil {
 			t.Fatalf("CreateFolder: %v", err)
 		}

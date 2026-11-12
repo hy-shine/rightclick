@@ -3,8 +3,8 @@ package settings
 import (
 	"testing"
 
-	"rightclick/config"
-	"rightclick/locales"
+	"github.com/hy-shine/rightclick/config"
+	"github.com/hy-shine/rightclick/locales"
 )
 
 // submenuHas reports whether a submenu group of the preview shows label.
@@ -19,16 +19,15 @@ func submenuHas(m *app, ctx int, label string) bool {
 	return false
 }
 
-// TestPreviewLeavesOutTheEditorWhenNoEditorIsListed checks that the preview follows
-// the Finder menu: the editor entry is shown only when an editor is listed. Both
-// the top level and the submenu are checked.
-func TestPreviewLeavesOutTheEditorWhenNoEditorIsListed(t *testing.T) {
+// TestPreviewShowsTheDefaultOpenEntry checks that the default open entry follows
+// its location setting; it no longer depends on a configured program.
+func TestPreviewShowsTheDefaultOpenEntry(t *testing.T) {
 	m, err := newApp(testStore(t), testEnv())
 	if err != nil {
 		t.Fatal(err)
 	}
 	label := locales.MenuOpenEditor()
-
+	m.cfg.Programs = []string{}
 	setEditorLocation := func(location string) {
 		for i := range m.cfg.MenuItems {
 			if m.cfg.MenuItems[i].ID == "open-editor" {
@@ -36,24 +35,12 @@ func TestPreviewLeavesOutTheEditorWhenNoEditorIsListed(t *testing.T) {
 			}
 		}
 	}
-
 	setEditorLocation(config.FileTypeMain)
-	m.cfg.Editors = []string{"Cursor"}
 	if !previewHas(m, ctxBlank, label) {
-		t.Error("top level: the editor entry is missing although an editor is listed")
+		t.Error("top level: the default open entry is missing")
 	}
-	m.cfg.Editors = []string{}
-	if previewHas(m, ctxBlank, label) {
-		t.Error("top level: the editor entry is shown although no editor is listed")
-	}
-
 	setEditorLocation(config.FileTypeSubmenu)
-	m.cfg.Editors = []string{"Cursor"}
 	if !submenuHas(m, ctxBlank, label) {
-		t.Error("submenu: the editor entry is missing although an editor is listed")
-	}
-	m.cfg.Editors = []string{}
-	if submenuHas(m, ctxBlank, label) {
-		t.Error("submenu: the editor entry is shown although no editor is listed")
+		t.Error("submenu: the default open entry is missing")
 	}
 }

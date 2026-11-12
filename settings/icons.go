@@ -3,6 +3,8 @@ package settings
 import (
 	"strings"
 
+	"github.com/hy-shine/rightclick/internal/actionicons"
+
 	"github.com/egoist/mygo/ui"
 )
 
@@ -39,51 +41,20 @@ var (
 	iconSwift      = icon(`<path d="M5 16c4 0 7-2.5 9-7 1 2.5 2.2 4.1 4 5-3.8-1.2-8.4.2-13 2z"/><path d="M15 5c1.8 2.5 2 5.2.2 7.8"/>`)
 	iconPython     = icon(`<path d="M9 4h5a3 3 0 0 1 3 3v3H9a3 3 0 0 0-3 3v1h3"/><path d="M15 20h-5a3 3 0 0 1-3-3v-3h8a3 3 0 0 0 3-3v-1h-3"/><path d="M10 7h.01M14 17h.01"/>`)
 	iconDatabase   = icon(`<path d="M4.5 5.5a7.5 2.5 0 1 0 15 0a7.5 2.5 0 1 0-15 0"/><path d="M4.5 5.5v13a7.5 2.5 0 0 0 15 0v-13"/><path d="M4.5 12a7.5 2.5 0 0 0 15 0"/>`)
-	iconFolderPlus = icon(`<path d="M3.5 7.5a2 2 0 0 1 2-2h3.6l2 2.2h7.4a2 2 0 0 1 2 2v7.8a2 2 0 0 1-2 2H5.5a2 2 0 0 1-2-2z"/><path d="M12 11.5v4.5M9.8 13.8h4.4"/>`)
-	iconTemplate   = icon(`<rect x="4" y="4" width="16" height="16" rx="2.2"/><path d="M4 9.5h16M9.5 9.5V20"/>`)
-	iconCopy       = icon(`<rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2.2"/><path d="M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/>`)
-	iconName       = icon(`<path d="M5 8V6h14v2"/><path d="M12 6v12M9.5 18h5"/>`)
-	iconCopyTo     = icon(`<rect x="3.5" y="3.5" width="10" height="10" rx="2"/><path d="M10.5 17.5h6a2 2 0 0 0 2-2v-6"/><path d="M15.5 20.5l3-3-3-3"/>`)
-	iconMoveTo     = icon(`<path d="M4 12h13M13 7l5 5-5 5"/><path d="M21 5v14"/>`)
-	iconTerminal   = icon(`<rect x="3" y="4.5" width="18" height="15" rx="2.2"/><path d="M7.5 9.5l3 2.5-3 2.5"/><path d="M13 15h3.5"/>`)
 	iconCode       = icon(`<path d="M8.5 7.5L4 12l4.5 4.5M15.5 7.5L20 12l-4.5 4.5"/><path d="M13.5 5.5l-3 13"/>`)
-	iconZip        = icon(`<path d="M4.5 8.5h15V18a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2z"/><path d="M3.5 4.5h17v4h-17z"/><path d="M10 12.5h4"/>`)
-	iconUnzip      = icon(`<path d="M4.5 8.5h15V18a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2z"/><path d="M3.5 4.5h17v4h-17z"/><path d="M12 17v-5M9.8 14l2.2-2.2 2.2 2.2"/>`)
-	iconHash       = icon(`<path d="M5 9h14M5 15h14M10.3 4L8.7 20M15.3 4l-1.6 16"/>`)
-	iconCompare    = icon(`<path d="M4 8.5h13M13.5 5l3.5 3.5-3.5 3.5"/><path d="M20 15.5H7M10.5 12l-3.5 3.5 3.5 3.5"/>`)
 	iconEye        = icon(`<path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12s-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/>`)
-	iconTrash      = icon(`<path d="M4 7h16"/><path d="M9.5 7V4.8h5V7"/><path d="M6.5 7l1 12.2h9l1-12.2"/><path d="M10 11v5M14 11v5"/>`)
 
 	// Marks.
 	iconChevron     = icon(`<path d="M9.5 6l6 6-6 6"/>`)
 	iconChevronDown = icon(`<path d="M6 9.5l6 6 6-6"/>`)
 	iconGrip        = icon(`<path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" stroke-width="2.6"/>`)
 	iconPlus        = icon(`<path d="M12 5v14M5 12h14"/>`)
+	iconTrash       = icon(`<path d="M10 11v6M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>`)
 	iconEdit        = icon(`<path d="M4 20h4l10.5-10.5-4-4L4 16z"/><path d="M12.5 7.5l4 4"/>`)
 	iconCheck       = icon(`<path d="M5 12.5l4.5 4.5L19 7.5"/>`)
 	iconAlert       = icon(`<path d="M12 4l9 15.5H3z"/><path d="M12 10v4.2"/><path d="M12 17h.01"/>`)
 	iconRestart     = icon(`<path d="M4.5 12a7.5 7.5 0 1 0 2.4-5.5"/><path d="M4.5 4.5v4h4"/>`)
 )
-
-// entryIcons maps the ID of a menu entry to its icon.
-var entryIcons = map[string]*ui.SVG{
-	"new-file":           iconNew,
-	"new-folder":         iconFolderPlus,
-	"new-template":       iconTemplate,
-	"copy-path":          iconCopy,
-	"copy-name":          iconName,
-	"copy-to":            iconCopyTo,
-	"move-to":            iconMoveTo,
-	"open-terminal":      iconTerminal,
-	"open-editor":        iconCode,
-	"open-with":          iconOpen,
-	"zip":                iconZip,
-	"unzip":              iconUnzip,
-	"hash":               iconHash,
-	"compare-hash":       iconCompare,
-	"toggle-hidden":      iconEye,
-	"delete-permanently": iconTrash,
-}
 
 // entryIcon returns the icon of the menu entry id, or the plain document
 // icon for an entry it does not know.
@@ -91,16 +62,16 @@ func entryIcon(id string) *ui.SVG {
 	if target, ok := strings.CutPrefix(id, "type:"); ok {
 		return fileTypeIcon(target)
 	}
-	if id == "favorite-folders" || strings.HasPrefix(id, "folder:") {
-		return iconDir
-	}
-	if strings.HasPrefix(id, "app:") {
-		return iconOpen
-	}
 	if fileTypeID, ok := strings.CutPrefix(id, "file-type:"); ok {
 		return fileTypeIcon(fileTypeID)
 	}
-	if s, ok := entryIcons[id]; ok {
+	if strings.HasPrefix(id, "folder:") {
+		return actionicons.Icon("folder")
+	}
+	if strings.HasPrefix(id, "app:") {
+		return actionicons.Icon("app")
+	}
+	if s := actionicons.Icon(id); s != nil {
 		return s
 	}
 	return iconText
