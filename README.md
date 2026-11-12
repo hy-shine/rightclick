@@ -28,7 +28,7 @@ English | [简体中文](README.zh-CN.md)
 
 ## Requirements
 
-- An Apple silicon Mac running macOS 15.0 or later
+- A Mac with Apple silicon or Intel, running macOS 15.0 or later
 - Go, as set in `go.mod`. If your Go is older, the `go` command downloads the matching toolchain automatically.
 - Xcode or the Xcode Command Line Tools, for `swiftc` and `codesign`
 
@@ -36,7 +36,7 @@ English | [简体中文](README.zh-CN.md)
 
 Builds are not signed with an Apple Developer ID or notarized, so macOS blocks the first launch. To open RightClick:
 
-1. Download `RightClick.app` from the GitHub Releases page and move it to `/Applications`.
+1. Download the disk image for your Mac from the GitHub Releases page: `RightClick-0.1.0-arm64.dmg` for Apple silicon, or `RightClick-0.1.0-x86_64.dmg` for Intel. (**About This Mac** shows **Chip** for Apple silicon and **Processor** for Intel.) Open the image and drag RightClick to `/Applications`.
 2. Double-click RightClick. macOS shows a warning. Click **Done**.
 3. Open **System Settings › Privacy & Security**, scroll to the **Security** section, and click **Open Anyway** next to the message about RightClick. Enter your password or use Touch ID.
 4. Click **Open Anyway** in the confirmation dialog.
@@ -126,7 +126,7 @@ Issues and pull requests are welcome. Before you open a pull request, run the Go
 
 ## License
 
-No license has been chosen yet. A license file will be added before the project is published.
+RightClick is released under the [MIT License](LICENSE). The bundled Lucide icons are under the ISC license; see `THIRD_PARTY_LICENSES.txt`.
 
 ## Acknowledgements
 

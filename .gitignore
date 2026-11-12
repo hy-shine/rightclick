@@ -28,8 +28,6 @@ xcuserdata/
 # The main binary that `go build ./cmd/rightclick` writes into the repo root
 /rightclick
 
-# Local agent and editor settings
-.claude/settings.local.json
+# Editor settings
 .vscode/
 .idea/
-.alma-snapshots

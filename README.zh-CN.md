@@ -28,7 +28,7 @@
 
 ## 系统要求
 
-- 搭载 Apple 芯片（arm64）的 Mac，macOS 15.0 或更高版本
+- 搭载 Apple 芯片或 Intel 芯片的 Mac，macOS 15.0 或更高版本
 - Go，版本见 `go.mod`。本机的 Go 较旧时，`go` 命令会自动下载匹配的工具链。
 - Xcode 或 Xcode 命令行工具（提供 `swiftc` 和 `codesign`）
 
@@ -36,7 +36,7 @@
 
 发布版没有使用 Apple 开发者证书签名，也没有公证，所以 macOS 会阻止第一次打开。打开方法：
 
-1. 从 GitHub Releases 页面下载 `RightClick.app`，拖到「应用程序」文件夹。
+1. 从 GitHub Releases 页面下载你的 Mac 对应的磁盘映像：Apple 芯片用 `RightClick-0.1.0-arm64.dmg`，Intel 芯片用 `RightClick-0.1.0-x86_64.dmg`。（「关于本机」里，Apple 芯片显示「芯片」，Intel 显示「处理器」。）打开映像，把 RightClick 拖到「应用程序」文件夹。
 2. 双击 RightClick，macOS 会弹出警告，点「完成」。
 3. 打开「系统设置 › 隐私与安全性」，滚动到「安全性」区域，点 RightClick 那条提示旁边的「仍要打开」，输入密码或使用触控 ID。
 4. 在弹出的确认框里再点一次「仍要打开」。
@@ -126,7 +126,7 @@ uv run --with python-docx==1.2.0 --with openpyxl==3.1.5 --with python-pptx==1.0.
 
 ## 许可证
 
-目前还没有选定许可证。发布前会补上许可证文件。
+右键助手以 [MIT 许可证](LICENSE) 发布。内置的 Lucide 图标采用 ISC 许可证，见 `THIRD_PARTY_LICENSES.txt`。
 
 ## 致谢
 

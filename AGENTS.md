@@ -10,8 +10,8 @@ RightClick is a macOS Finder context-menu helper for everyday file actions.
 
 - The app is written in Go and built with mygo. The version is pinned in `go.mod`. The UI is native, through mygo's `ui` package.
 - The Finder menu is a Swift Finder Sync extension in `extension/`. See "Finder extension" below.
-- Requirements: macOS, the Go version in `go.mod`, and the Xcode Command Line Tools (`swiftc`, `codesign`).
-- Do not publish, release, or add a git remote unless asked.
+- Requirements: macOS 15.0 or later, the Go version in `go.mod`, and the Xcode Command Line Tools (`swiftc`, `codesign`).
+- Publishing follows the Git rule under Working rules. The remote `origin` is github.com/hy-shine/rightclick.
 
 ## Commands
 
@@ -42,7 +42,8 @@ Other commands:
 - `go tool mygo dev`: run the app with hot reload.
 - `go tool mygo generate`: regenerate `internal/locales/catalog_gen.go` after editing the locale JSON.
 - `go tool mygo build -skip-dmg`: build the app bundle under `build/`.
-- `sh extension/build.sh <path to RightClick.app>`: build the Finder extension and install it into that bundle. Run it after `go tool mygo build`.
+- `sh extension/build.sh <path to RightClick.app>`: build the Finder extension and install it into that bundle. Run it after `go tool mygo build`. `ARCH=arm64` or `ARCH=x86_64` picks the Mac architecture; by default it is this Mac's.
+- `sh scripts/release-dmg.sh`: build two release disk images under `build/release/`, one for Apple silicon (arm64) and one for Intel (x86_64). Each has the Finder extension inside the app and its SHA-256 beside it.
 
 Do not quit, restart or re-register the app or the Finder extension on your own. If the user asks for that, follow the steps under "Development" in README.md.
 
@@ -54,14 +55,13 @@ internal/app/                     menu action handlers, rightclick:// link parsi
 internal/config/                  saved settings, defaults and migrations
 internal/files/                   file operations; no UI code
 internal/finder/                  Finder helpers: restart, hidden files, the action script, extension registration
-internal/settings/                the settings window; one pane_*.go per sidebar pane
+internal/settings/                the settings window; pane_*.go holds the panes, and pane_system.go holds General and Diagnostics
 internal/locales/                 en.json (source), zh-Hans.json, zh-Hant.json; catalog_gen.go is generated
 internal/actionicons/             Lucide icons for menu actions; bundled into the app and the extension
-internal/catalog/                 blank document templates for New File, with their icons and license files
+internal/catalog/                 blank document templates for New File, with their icons
 extension/                        Finder Sync extension in Swift, build.sh, tests/main.swift
 scripts/                          release-dmg.sh builds the release disk image; document_templates.py regenerates the blank templates
 resources/                        app icon used by the README
-.agents/skills/mygo-maintenance/  mygo UI skill; read it before changing internal/settings/ UI code
 ```
 
 - Put new Go code in a package directory, not in the repository root.
@@ -86,7 +86,7 @@ resources/                        app icon used by the README
 
 ## Icons
 
-- Do not hand-draw action icons. Use Lucide SVGs (ISC) from `internal/actionicons/icons/`, and keep the Lucide license with them.
+- Do not hand-draw action icons. Use the Lucide SVGs (ISC) in `internal/actionicons/icons/`.
 - A new menu action needs an icon whose meaning matches the action. Extension tests in `extension/tests/main.swift` must cover it.
 
 ## Menu actions
@@ -96,7 +96,6 @@ resources/                        app icon used by the README
 
 ## Settings UI
 
-- Read `.agents/skills/mygo-maintenance/SKILL.md` before editing UI code.
 - Reuse the shared controls in `internal/settings/style.go`, such as `actionButton`, `iconButton`, `settingRow` and `itemRow`, before adding a new variant.
 - Check every layout visually. Render the pane to PNG with `ui.NewTester(...).Image()` in a temporary `_test.go` file, look at the image, then delete both the test file and the PNG. Judge the result as a designer would: hierarchy, spacing, alignment and wording. Compiling is not enough.
 

@@ -5,6 +5,7 @@
   "main": "./cmd/rightclick",
   "out": "build",
   "urlSchemes": ["rightclick"],
+  "macos": {"minimumSystemVersion": "15.0"},
   "i18n": {
     "dir": "internal/locales",
     "source": "en"

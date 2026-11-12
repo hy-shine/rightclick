@@ -1,7 +1,7 @@
 import AppKit
 
 /// Icons for the built-in actions, taken from the Lucide icon set (ISC license,
-/// see ActionIcons/LICENSE.txt in the extension's resources). The files are
+/// see THIRD_PARTY_LICENSES.txt at the repository root). The files are
 /// loaded once, off the main thread: Finder builds the menu on its main thread
 /// every time it opens, and a cold load of every icon costs about 13 ms, which
 /// the menu itself must not pay.

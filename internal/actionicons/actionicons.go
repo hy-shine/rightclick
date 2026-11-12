@@ -1,5 +1,5 @@
 // Package actionicons holds the icons shown for the app's menu actions. The
-// files come from the Lucide set (ISC, see icons/LICENSE.txt) and are bundled
+// files come from the Lucide set (ISC, see THIRD_PARTY_LICENSES.txt) and are bundled
 // into the Finder extension as well, so the settings window and the Finder menu
 // show the same picture for an action.
 package actionicons
