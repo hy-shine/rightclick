@@ -1516,21 +1516,21 @@ func (msgs Messages) CheckUpdate() string {
 	return Catalog.Format(msgs.locale, "checkUpdate", nil)
 }
 
-// CheckNow says "Open Release Page"
+// CheckNow says "Check Now"
 // in the language the app shows.
 func CheckNow() string { return In(i18n.Locale()).CheckNow() }
 
-// CheckNow says "Open Release Page"
+// CheckNow says "Check Now"
 // in the language of msgs.
 func (msgs Messages) CheckNow() string {
 	return Catalog.Format(msgs.locale, "checkNow", nil)
 }
 
-// UpdateHint says "Opens the newest release on GitHub in your browser. You download and install it yourself."
+// UpdateHint says "Checks for a new version and installs it in the app."
 // in the language the app shows.
 func UpdateHint() string { return In(i18n.Locale()).UpdateHint() }
 
-// UpdateHint says "Opens the newest release on GitHub in your browser. You download and install it yourself."
+// UpdateHint says "Checks for a new version and installs it in the app."
 // in the language of msgs.
 func (msgs Messages) UpdateHint() string {
 	return Catalog.Format(msgs.locale, "updateHint", nil)

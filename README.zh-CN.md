@@ -22,9 +22,11 @@
 
 需要 macOS 15.0 或更高版本。
 
-1. 从 GitHub Releases 下载磁盘映像：Apple 芯片用 `RightClick-0.1.1-arm64.dmg`，Intel 芯片用 `RightClick-0.1.1-x86_64.dmg`。
+1. 从 GitHub Releases 下载磁盘映像：Apple 芯片用 `RightClick-0.1.2-arm64.dmg`，Intel 芯片用 `RightClick-0.1.2-x86_64.dmg`。
 2. 打开磁盘映像，把 RightClick 拖到「应用程序」文件夹。
 3. 双击 RightClick，macOS 会弹出警告。关闭它。
+
+0.1.2 及之后可以在应用内更新。仍在使用 0.1.1 的话，先手动安装一次 0.1.2。
 
 如果 RightClick 仍然打不开，用下面两种方法之一。
 

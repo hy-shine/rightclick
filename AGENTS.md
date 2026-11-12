@@ -43,7 +43,7 @@ Other commands:
 - `go tool mygo generate`: regenerate `internal/locales/catalog_gen.go` after editing the locale JSON.
 - `go tool mygo build -skip-dmg`: build the app bundle under `build/`.
 - `sh extension/build.sh <path to RightClick.app>`: build the Finder extension and install it into that bundle. Run it after `go tool mygo build`. `ARCH=arm64` or `ARCH=x86_64` picks the Mac architecture; by default it is this Mac's.
-- `sh scripts/release-dmg.sh`: build two release disk images under `build/release/`, one for Apple silicon (arm64) and one for Intel (x86_64). Each has the Finder extension inside the app and its SHA-256 beside it.
+- `sh scripts/release-dmg.sh`: build two release disk images and two signed update archives under `build/release/`, one for Apple silicon (arm64) and one for Intel (x86_64). Each app has the Finder extension inside it; each disk image and update archive has its SHA-256 beside it. It needs `MYGO_UPDATER_PRIVATE_KEY_FILE` and `updates.publicKey` in `mygo.json`.
 
 Do not quit, restart or re-register the app or the Finder extension on your own. If the user asks for that: the app registers the extension at every start, so opening it again after a rebuild is enough. If the menu does not appear, the user clicks Turn On on the Finder Extension page, or restarts Finder.
 
@@ -51,6 +51,7 @@ Do not quit, restart or re-register the app or the Finder extension on your own.
 
 ```
 cmd/rightclick/                   app entry only: start-up and which window opens
+cmd/updatepack/                   release tool: signs and packages one update target
 internal/app/                     menu action handlers, rightclick:// link parsing and the --action run, with their tests
 internal/config/                  saved settings, defaults and migrations
 internal/files/                   file operations; no UI code
@@ -59,8 +60,9 @@ internal/settings/                the settings window; pane_*.go holds the panes
 internal/locales/                 en.json (source), zh-Hans.json, zh-Hant.json; catalog_gen.go is generated
 internal/actionicons/             Lucide icons for menu actions; bundled into the app and the extension
 internal/catalog/                 blank document templates for New File, with their icons
+internal/updatepack/              signed update archives and manifests, with their tests
 extension/                        Finder Sync extension in Swift, build.sh, tests/main.swift
-scripts/                          release-dmg.sh builds the release disk image; document_templates.py regenerates the blank templates
+scripts/                          release-dmg.sh builds the release images and signed updates; document_templates.py regenerates the blank templates
 resources/                        app icon used by the README
 ```
 

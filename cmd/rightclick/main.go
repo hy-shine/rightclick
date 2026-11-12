@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/egoist/mygo"
+	"github.com/egoist/mygo/plugins/updater/native"
 	"github.com/hy-shine/rightclick/internal/app"
 	"github.com/hy-shine/rightclick/internal/finder"
 	"github.com/hy-shine/rightclick/internal/settings"
@@ -29,6 +30,9 @@ func main() {
 	if len(os.Args) == 3 && os.Args[1] == "--action" {
 		os.Exit(app.RunAction(os.Args[2]))
 	}
+	// Update in the app. Finder action launches return above, so they do not
+	// start the updater.
+	mygo.Use(native.Plugin)
 	// Register before Run. OnOpenURL also delivers the URL the app was launched
 	// with (docs/app.md, "Deep links").
 	mygo.App.OnOpenURL(func(raw string) {

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.2 - 2026-11-12
+
+### Added
+
+- Check for Updates now downloads and installs signed updates in the app, with release notes, download progress and a relaunch prompt. The app checks once a day in the background; the app menu and Settings can check at any time.
+- Update archives are signed with Ed25519 and verified before installation. The Finder extension is included in the update.
+
+### Notes
+
+- 0.1.1 users need to install 0.1.2 manually once. 0.1.2 is the first version that can update itself.
+
 ## 0.1.1 - 2026-11-12
 
 ### Changed

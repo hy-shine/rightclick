@@ -1,13 +1,21 @@
 {
   "name": "RightClick",
   "identifier": "com.example.rightclick",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "main": "./cmd/rightclick",
   "out": "build",
-  "urlSchemes": ["rightclick"],
-  "macos": {"minimumSystemVersion": "15.0"},
+  "urlSchemes": [
+    "rightclick"
+  ],
+  "macos": {
+    "minimumSystemVersion": "15.0"
+  },
   "i18n": {
     "dir": "internal/locales",
     "source": "en"
+  },
+  "updates": {
+    "publicKey": "os+6xR7Era4FIFzngXqqVM8sfiL30Q5gIhXkSt7hSE4=",
+    "github": "hy-shine/rightclick"
   }
 }

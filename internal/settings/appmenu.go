@@ -2,6 +2,7 @@ package settings
 
 import (
 	"github.com/egoist/mygo"
+	"github.com/egoist/mygo/plugins/updater"
 
 	"github.com/hy-shine/rightclick/internal/locales"
 )
@@ -36,10 +37,10 @@ func InstallAppMenu() {
 	}))
 }
 
-// CheckForUpdates opens the newest release page in the browser. The application menu
-// calls it, on the main thread.
+// CheckForUpdates opens the updater's window. The application menu calls it, on the
+// main thread.
 func CheckForUpdates() {
-	openLatestRelease()
+	updater.CheckForUpdates()
 }
 
 // refreshAppMenuLabels gives the Check for Updates item the label of the language the

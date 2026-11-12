@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/egoist/mygo"
+	"github.com/egoist/mygo/plugins/updater"
 
 	"github.com/hy-shine/rightclick/internal/finder"
 )
@@ -29,7 +30,7 @@ type env struct {
 	openDialog         func(opts mygo.OpenDialogOptions) ([]string, error) // blocks until dismissed
 	setLocale          func(tag string)                                    // "" follows the system
 	setWindowTitle     func(title string)                                  // renames the main window when it is open
-	checkForUpdates    func()                                              // opens the newest release page in the browser
+	checkForUpdates    func()                                              // opens the updater's window
 }
 
 // defaultEnv returns the env that calls mygo and the macOS tools.
@@ -46,7 +47,7 @@ func defaultEnv() env {
 		openDialog:      mygo.Dialog.Open,
 		setLocale:       mygo.App.SetLocale,
 		setWindowTitle:  setMainWindowTitle,
-		checkForUpdates: openLatestRelease,
+		checkForUpdates: updater.CheckForUpdates,
 	}
 }
 
