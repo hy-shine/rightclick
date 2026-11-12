@@ -355,6 +355,26 @@ func TestLoadDropsTheRemovedOpenEditor(t *testing.T) {
 	}
 }
 
+// TestNewSettingsAddNoApps keeps the Open With list empty until the user fills it:
+// neither a new install nor a file written before the list existed names an app.
+func TestNewSettingsAddNoApps(t *testing.T) {
+	if got := Default().Programs; len(got) != 0 {
+		t.Errorf("a new install starts with apps %q, want none", got)
+	}
+	path := filepath.Join(t.TempDir(), "config.json")
+	data := `{"version":3,"menuItems":[{"id":"copy-path","enabled":true,"location":"main"}]}`
+	if err := os.WriteFile(path, []byte(data), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cfg.Programs) != 0 {
+		t.Errorf("loading added apps %q, want none", cfg.Programs)
+	}
+}
+
 // TestGroupMenuByLocationKeepsOrderInEachPart checks that the main entries move
 // ahead of the submenu entries and that each part keeps its own order.
 func TestGroupMenuByLocationKeepsOrderInEachPart(t *testing.T) {

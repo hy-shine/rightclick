@@ -84,6 +84,7 @@ func TestEditorRowsNameTheirCheckBox(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	model.cfg.Programs = []string{"Visual Studio Code"}
 	model.selectPane(paneOpeners)
 	screen := ui.NewTester(model.view, minWidth, 900)
 	if !slices.Contains(screen.Texts(), locales.QuickAccess()) {

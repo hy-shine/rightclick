@@ -12,6 +12,7 @@ import (
 
 func TestMenuReordersShortcutsToTheTop(t *testing.T) {
 	model := readyApp(t)
+	model.cfg.Programs = []string{"Cursor"}
 	model.setShortcut("app:Cursor", true)
 	at := slices.IndexFunc(model.cfg.MenuItems, func(item config.MenuItem) bool { return item.ID == "app:Cursor" })
 	model.reorderGroup(-1, []int{at}, 0)

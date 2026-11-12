@@ -50,7 +50,7 @@ final class FinderSyncExtension: FIFinderSync {
         // Older files kept editors and terminals separately; merge them until the
         // app rewrites the file with one program list.
         let legacyPrograms = (config?.editors ?? []) + (config?.terminals ?? [])
-        let programs = config?.programs ?? (legacyPrograms.isEmpty ? ["Visual Studio Code", "Cursor"] : legacyPrograms)
+        let programs = config?.programs ?? legacyPrograms
         let visibleTemplates = templates.filter { $0.disabled != true }
         let favorites = (config?.favoriteFolders ?? []).filter { $0.enabled }
         let menu = NSMenu(title: "")

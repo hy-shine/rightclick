@@ -193,7 +193,8 @@ func Default() Config {
 		Version:   Version,
 		MenuItems: items,
 		FileTypes: DefaultFileTypes(),
-		Programs:  []string{"Visual Studio Code", "Cursor", "Terminal"},
+		// No app is added for the user: the Open With list is theirs to fill.
+		Programs: []string{},
 	}
 }
 
@@ -509,9 +510,6 @@ func (cfg *Config) normalizePrograms() {
 		legacy := append(slices.Clone(cfg.Editors), cfg.Terminals...)
 		if len(legacy) == 0 && cfg.Terminal != "" {
 			legacy = []string{cfg.Terminal}
-		}
-		if len(legacy) == 0 && cfg.Editors == nil && cfg.Terminals == nil && cfg.Terminal == "" {
-			legacy = []string{"Visual Studio Code", "Cursor", "Terminal"}
 		}
 		cfg.Programs = legacy
 	}
