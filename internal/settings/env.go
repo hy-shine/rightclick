@@ -7,7 +7,6 @@ import (
 	"github.com/egoist/mygo"
 
 	"github.com/hy-shine/rightclick/internal/finder"
-	"github.com/hy-shine/rightclick/internal/update"
 )
 
 // finderExtensionID is the bundle identifier of the Finder Sync extension
@@ -30,8 +29,7 @@ type env struct {
 	openDialog         func(opts mygo.OpenDialogOptions) ([]string, error) // blocks until dismissed
 	setLocale          func(tag string)                                    // "" follows the system
 	setWindowTitle     func(title string)                                  // renames the main window when it is open
-	latestRelease      func() (update.Release, error)                      // reads GitHub; called off the main thread
-	openURL            func(url string) error
+	checkForUpdates    func()                                              // opens the newest release page in the browser
 }
 
 // defaultEnv returns the env that calls mygo and the macOS tools.
@@ -44,12 +42,11 @@ func defaultEnv() env {
 		openFinderSettings: func() error {
 			return mygo.Shell.OpenExternal(finderSettingsURL)
 		},
-		restartFinder:  finder.Restart,
-		openDialog:     mygo.Dialog.Open,
-		setLocale:      mygo.App.SetLocale,
-		setWindowTitle: setMainWindowTitle,
-		latestRelease:  update.Latest,
-		openURL:        mygo.Shell.OpenExternal,
+		restartFinder:   finder.Restart,
+		openDialog:      mygo.Dialog.Open,
+		setLocale:       mygo.App.SetLocale,
+		setWindowTitle:  setMainWindowTitle,
+		checkForUpdates: openLatestRelease,
 	}
 }
 

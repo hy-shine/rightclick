@@ -36,15 +36,10 @@ func InstallAppMenu() {
 	}))
 }
 
-// CheckForUpdates shows the main window on the general pane and checks for a newer
-// release. The application menu calls it. Call it on the main thread, like Open.
+// CheckForUpdates opens the newest release page in the browser. The application menu
+// calls it, on the main thread.
 func CheckForUpdates() {
-	Open()
-	if openApp == nil {
-		return // Open could not create the window and has already reported why
-	}
-	openApp.selectPane(paneGeneral)
-	openApp.checkForUpdate()
+	openLatestRelease()
 }
 
 // refreshAppMenuLabels gives the Check for Updates item the label of the language the

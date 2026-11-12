@@ -113,7 +113,6 @@ type app struct {
 
 	finder         finderState
 	finderSeq      int // counts the checks, so that an older result is dropped
-	updates        updateCheck
 	confirmRestart bool
 
 	openAtLogin bool

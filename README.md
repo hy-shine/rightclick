@@ -69,7 +69,7 @@ Removing an entry from a list only removes it from RightClick. It never deletes 
 
 ## Privacy and Safety
 
-- RightClick makes no network request on its own. The only one is the update check: it runs when you click **Check** in the General pane, reads the newest release from GitHub, and never downloads or installs anything.
+- RightClick makes no network requests of its own. "Check for Updates", in the app menu or the button in Settings, opens the newest release page on GitHub in your browser. You download and install the new version yourself.
 - Actions run through a script that starts RightClick's program with `--action`. Clicking a menu item does not open the app window.
 - Delete Permanently is off by default and works only on selected items.
 

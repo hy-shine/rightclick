@@ -58,9 +58,8 @@ internal/settings/                the settings window; one pane_*.go per sidebar
 internal/locales/                 en.json (source), zh-Hans.json, zh-Hant.json; catalog_gen.go is generated
 internal/actionicons/             Lucide icons for menu actions; bundled into the app and the extension
 internal/catalog/                 blank document templates for New File, with their icons and license files
-internal/update/                  update check against GitHub releases; never downloads
 extension/                        Finder Sync extension in Swift, build.sh, tests/main.swift
-scripts/                          document_templates.py regenerates the blank templates
+scripts/                          release-dmg.sh builds the release disk image; document_templates.py regenerates the blank templates
 resources/                        app icon used by the README
 .agents/skills/mygo-maintenance/  mygo UI skill; read it before changing internal/settings/ UI code
 ```

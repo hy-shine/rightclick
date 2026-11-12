@@ -1,7 +1,6 @@
 package settings
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"slices"
@@ -13,7 +12,6 @@ import (
 
 	"github.com/hy-shine/rightclick/internal/config"
 	"github.com/hy-shine/rightclick/internal/files"
-	"github.com/hy-shine/rightclick/internal/update"
 )
 
 // testEnv replaces every system call, so that the tests change no system state.
@@ -28,9 +26,7 @@ func testEnv() env {
 		openDialog:         func(mygo.OpenDialogOptions) ([]string, error) { return nil, nil },
 		setLocale:          func(string) {},
 		setWindowTitle:     func(string) {},
-		// The tests never reach the network: the check reports that it is offline.
-		latestRelease: func() (update.Release, error) { return update.Release{}, errors.New("offline") },
-		openURL:       func(string) error { return nil },
+		checkForUpdates:    func() {},
 	}
 }
 

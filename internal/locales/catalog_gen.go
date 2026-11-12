@@ -1456,84 +1456,24 @@ func (msgs Messages) CheckUpdate() string {
 	return Catalog.Format(msgs.locale, "checkUpdate", nil)
 }
 
-// CheckNow says "Check"
+// CheckNow says "Open Release Page"
 // in the language the app shows.
 func CheckNow() string { return In(i18n.Locale()).CheckNow() }
 
-// CheckNow says "Check"
+// CheckNow says "Open Release Page"
 // in the language of msgs.
 func (msgs Messages) CheckNow() string {
 	return Catalog.Format(msgs.locale, "checkNow", nil)
 }
 
-// UpdateHint says "Looks for a newer release on GitHub. It checks only when you click."
+// UpdateHint says "Opens the newest release on GitHub in your browser. You download and install it yourself."
 // in the language the app shows.
 func UpdateHint() string { return In(i18n.Locale()).UpdateHint() }
 
-// UpdateHint says "Looks for a newer release on GitHub. It checks only when you click."
+// UpdateHint says "Opens the newest release on GitHub in your browser. You download and install it yourself."
 // in the language of msgs.
 func (msgs Messages) UpdateHint() string {
 	return Catalog.Format(msgs.locale, "updateHint", nil)
-}
-
-// UpdateChecking says "Checking…"
-// in the language the app shows.
-func UpdateChecking() string { return In(i18n.Locale()).UpdateChecking() }
-
-// UpdateChecking says "Checking…"
-// in the language of msgs.
-func (msgs Messages) UpdateChecking() string {
-	return Catalog.Format(msgs.locale, "updateChecking", nil)
-}
-
-// UpdateCurrent says "You have the latest version ({version})."
-// in the language the app shows.
-func UpdateCurrent(version string) string { return In(i18n.Locale()).UpdateCurrent(version) }
-
-// UpdateCurrent says "You have the latest version ({version})."
-// in the language of msgs.
-func (msgs Messages) UpdateCurrent(version string) string {
-	return Catalog.Format(msgs.locale, "updateCurrent", map[string]any{"version": version})
-}
-
-// UpdateAvailable says "Version {version} is available."
-// in the language the app shows.
-func UpdateAvailable(version string) string { return In(i18n.Locale()).UpdateAvailable(version) }
-
-// UpdateAvailable says "Version {version} is available."
-// in the language of msgs.
-func (msgs Messages) UpdateAvailable(version string) string {
-	return Catalog.Format(msgs.locale, "updateAvailable", map[string]any{"version": version})
-}
-
-// UpdateFailed says "Could not check for updates. Check your connection and try again."
-// in the language the app shows.
-func UpdateFailed() string { return In(i18n.Locale()).UpdateFailed() }
-
-// UpdateFailed says "Could not check for updates. Check your connection and try again."
-// in the language of msgs.
-func (msgs Messages) UpdateFailed() string {
-	return Catalog.Format(msgs.locale, "updateFailed", nil)
-}
-
-// DownloadUpdate says "Download"
-// in the language the app shows.
-func DownloadUpdate() string { return In(i18n.Locale()).DownloadUpdate() }
-
-// DownloadUpdate says "Download"
-// in the language of msgs.
-func (msgs Messages) DownloadUpdate() string {
-	return Catalog.Format(msgs.locale, "downloadUpdate", nil)
-}
-
-// OpenDownloadFailed says "Could not open the download page"
-// in the language the app shows.
-func OpenDownloadFailed() string { return In(i18n.Locale()).OpenDownloadFailed() }
-
-// OpenDownloadFailed says "Could not open the download page"
-// in the language of msgs.
-func (msgs Messages) OpenDownloadFailed() string {
-	return Catalog.Format(msgs.locale, "openDownloadFailed", nil)
 }
 
 // LocFinderTopShort says "Main Menu"
