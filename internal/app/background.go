@@ -28,8 +28,9 @@ func RunAction(raw string) int {
 	if err != nil {
 		return failInBackground(raw, err)
 	}
-	if action == "add-template" {
-		// The template editor is a window of the app, so the link opens the app.
+	if action == "add-template" || action == "hash" {
+		// Both show a window of the app, so the link opens the app and the window
+		// appears there. The background process cannot show one: it has no run loop.
 		if err := exec.Command("/usr/bin/open", raw).Run(); err != nil {
 			return failInBackground(raw, err)
 		}

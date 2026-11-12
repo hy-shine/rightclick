@@ -276,7 +276,7 @@ func (m *app) menuPreviewDialog(c *ui.Context) {
 		t := c.Theme()
 		_, height := c.Size()
 		backdrop.Background(ui.RGBA(0, 0, 0, .3))
-		panel.Width(520).MaxHeight(height-32).Padding(22).Background(t.Surface).Border(1, t.Border).Radius(10).Label(locales.MenuPreview())
+		panel.Width(520).MaxHeight(height-32).Padding(22).Background(t.Surface).Border(1, t.Border).Radius(dialogRadius).Label(locales.MenuPreview())
 		hint := locales.PreviewLiveHint()
 		if strings.TrimSpace(m.menuSearch) != "" {
 			hint = locales.PreviewSearchHint()

@@ -128,7 +128,7 @@ func actionHandlers() map[string]actionHandler {
 		},
 		"unzip": unzipAction,
 		"hash": func(params url.Values, paths []string, _ config.Config) error {
-			return hashItem(params.Get("algo"), paths)
+			return hashWindow(params.Get("algo"), paths)
 		},
 		"compare-hash": func(params url.Values, paths []string, _ config.Config) error {
 			return compareItems(params.Get("algo"), paths)
@@ -548,18 +548,18 @@ func deleteDetail(paths []string) string {
 	return strings.Join(lines, "\n")
 }
 
-// hashItem computes the digest of the one selected file, copies it to the
-// clipboard, and shows it in a notification.
-func hashItem(algoName string, paths []string) error {
-	algo, path, digest, err := digestOf(algoName, paths)
+// hashWindow opens the window that shows the digest of the one selected file.
+// The window belongs to the app, so the action opens it on the main thread.
+func hashWindow(algoName string, paths []string) error {
+	path, err := requireOne(paths)
 	if err != nil {
 		return err
 	}
-	if err := copyText(digest); err != nil {
-		return err
-	}
-	notify(locales.HashCopied(string(algo)), files.Name(path)+"\n"+digest)
-	return nil
+	var openErr error
+	mygo.RunOnMain(func() {
+		openErr = settings.OpenHashWindow(path, algoName)
+	})
+	return openErr
 }
 
 // digestOf returns the algorithm, the path, and the digest of the one selected

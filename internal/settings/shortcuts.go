@@ -76,7 +76,7 @@ func (m *app) menuItemAvailable(item config.MenuItem, context int) bool {
 func (m *app) menuNameDialog(c *ui.Context) {
 	ui.DialogBase(c, &m.menuNameOpen, func(backdrop, panel ui.Element) {
 		backdrop.Background(ui.RGBA(0, 0, 0, 0.3))
-		panel.Width(360).Padding(22).Background(c.Theme().Surface).Radius(10).Label(locales.RenameMenuItem())
+		panel.Width(360).Padding(22).Background(c.Theme().Surface).Border(1, c.Theme().Border).Radius(dialogRadius).Label(locales.RenameMenuItem())
 		ui.Column(c).Gap(14).Children(func() {
 			sectionTitle(c, locales.RenameMenuItem())
 			ui.TextInput(c.Key("menu-name"), &m.menuName).Label(locales.EditMenuName())

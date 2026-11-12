@@ -16,61 +16,6 @@ var helloDigests = map[string]string{
 	"MD5":     "5d41402abc4b2a76b9719d911017c592",
 }
 
-// TestHashCopiesTheChosenAlgorithm copies the digest of the algorithm the menu
-// sent, and names that algorithm in the notification.
-func TestHashCopiesTheChosenAlgorithm(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "hello.txt")
-	if err := os.WriteFile(path, []byte("hello"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	var copied, title string
-	oldCopy, oldNotify := copyText, notify
-	t.Cleanup(func() { copyText, notify = oldCopy, oldNotify })
-	copyText = func(text string) error { copied = text; return nil }
-	notify = func(gotTitle, _ string) { title = gotTitle }
-
-	for algo, digest := range helloDigests {
-		copied, title = "", ""
-		if err := hashItem(algo, []string{path}); err != nil {
-			t.Fatalf("hashItem(%q) error = %v", algo, err)
-		}
-		if copied != digest {
-			t.Errorf("%s copied %q, want %q", algo, copied, digest)
-		}
-		if !strings.Contains(title, algo) {
-			t.Errorf("%s notification title %q does not name the algorithm", algo, title)
-		}
-	}
-}
-
-// TestHashDefaultsToSHA256AndRefusesUnknownAlgorithms keeps menu links without an
-// algorithm working as SHA-256, and copies nothing for a name it does not know.
-func TestHashDefaultsToSHA256AndRefusesUnknownAlgorithms(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "hello.txt")
-	if err := os.WriteFile(path, []byte("hello"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	var copied string
-	oldCopy, oldNotify := copyText, notify
-	t.Cleanup(func() { copyText, notify = oldCopy, oldNotify })
-	copyText = func(text string) error { copied = text; return nil }
-	notify = func(string, string) {}
-
-	if err := hashItem("", []string{path}); err != nil {
-		t.Fatal(err)
-	}
-	if copied != helloDigests["SHA-256"] {
-		t.Errorf("empty algorithm copied %q, want the SHA-256 digest", copied)
-	}
-	copied = ""
-	if err := hashItem("SHA-512", []string{path}); err == nil {
-		t.Error("an unknown algorithm was accepted")
-	}
-	if copied != "" {
-		t.Errorf("an unknown algorithm copied %q", copied)
-	}
-}
-
 // TestCompareFilesUsesTheChosenAlgorithm reports whether two files match under the
 // chosen algorithm, lists both digests, and refuses anything but two files.
 func TestCompareFilesUsesTheChosenAlgorithm(t *testing.T) {

@@ -100,7 +100,7 @@ func (m *app) removeFavorite(id string) {
 func (m *app) favoriteDialog(c *ui.Context) {
 	ui.DialogBase(c, &m.favoriteEditOpen, func(backdrop, panel ui.Element) {
 		backdrop.Background(ui.RGBA(0, 0, 0, 0.3))
-		panel.Width(360).Padding(22).Background(c.Theme().Surface).Radius(10).Label(locales.EditMenuName())
+		panel.Width(360).Padding(22).Background(c.Theme().Surface).Border(1, c.Theme().Border).Radius(dialogRadius).Label(locales.EditMenuName())
 		ui.Column(c).Gap(14).Children(func() {
 			sectionTitle(c, locales.EditMenuName())
 			ui.TextInput(c.Key("favorite-name"), &m.favoriteName).Label(locales.EditMenuName())

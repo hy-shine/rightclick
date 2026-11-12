@@ -184,13 +184,9 @@ final class FinderSyncExtension: FIFinderSync {
             let folders = target.items.map { $0.isDirectory ? $0.url : $0.url.deletingLastPathComponent() }
             return actionItem(title: title(for: id), urlAction: id, params: pathParams(folders))
         case "hash":
-            // SHA-256 is the default. The other two algorithms sit in the same submenu.
-            let children = ["SHA-256", "SHA-1", "MD5"].map { algorithm in
-                let child = actionItem(title: algorithm, urlAction: id, params: [("algo", algorithm)] + paths)
-                child.image = ActionIcons.image(for: id)
-                return child
-            }
-            return submenuItem(title: title(for: id), children: children, emptyTitle: title(for: id))
+            // One entry: the window hashes with SHA-256 first and offers the other
+            // two algorithms, so the menu does not ask for one.
+            return actionItem(title: title(for: id), urlAction: id, params: paths)
         default:
             return actionItem(title: title(for: id), urlAction: id, params: paths)
         }

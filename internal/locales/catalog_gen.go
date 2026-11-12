@@ -1306,14 +1306,74 @@ func (msgs Messages) HashCompareTitle(algo string, verdict string) string {
 	return Catalog.Format(msgs.locale, "hashCompareTitle", map[string]any{"algo": algo, "verdict": verdict})
 }
 
-// HashCopied says "{algo} copied"
+// HashWindowTitle says "File Hash"
 // in the language the app shows.
-func HashCopied(algo string) string { return In(i18n.Locale()).HashCopied(algo) }
+func HashWindowTitle() string { return In(i18n.Locale()).HashWindowTitle() }
 
-// HashCopied says "{algo} copied"
+// HashWindowTitle says "File Hash"
 // in the language of msgs.
-func (msgs Messages) HashCopied(algo string) string {
-	return Catalog.Format(msgs.locale, "hashCopied", map[string]any{"algo": algo})
+func (msgs Messages) HashWindowTitle() string {
+	return Catalog.Format(msgs.locale, "hashWindowTitle", nil)
+}
+
+// HashAlgorithm says "Algorithm"
+// in the language the app shows.
+func HashAlgorithm() string { return In(i18n.Locale()).HashAlgorithm() }
+
+// HashAlgorithm says "Algorithm"
+// in the language of msgs.
+func (msgs Messages) HashAlgorithm() string {
+	return Catalog.Format(msgs.locale, "hashAlgorithm", nil)
+}
+
+// HashCopy says "Copy Hash"
+// in the language the app shows.
+func HashCopy() string { return In(i18n.Locale()).HashCopy() }
+
+// HashCopy says "Copy Hash"
+// in the language of msgs.
+func (msgs Messages) HashCopy() string {
+	return Catalog.Format(msgs.locale, "hashCopy", nil)
+}
+
+// HashCopiedButton says "Copied"
+// in the language the app shows.
+func HashCopiedButton() string { return In(i18n.Locale()).HashCopiedButton() }
+
+// HashCopiedButton says "Copied"
+// in the language of msgs.
+func (msgs Messages) HashCopiedButton() string {
+	return Catalog.Format(msgs.locale, "hashCopiedButton", nil)
+}
+
+// HashComputing says "Computing…"
+// in the language the app shows.
+func HashComputing() string { return In(i18n.Locale()).HashComputing() }
+
+// HashComputing says "Computing…"
+// in the language of msgs.
+func (msgs Messages) HashComputing() string {
+	return Catalog.Format(msgs.locale, "hashComputing", nil)
+}
+
+// HashFailed says "Could not hash this file"
+// in the language the app shows.
+func HashFailed() string { return In(i18n.Locale()).HashFailed() }
+
+// HashFailed says "Could not hash this file"
+// in the language of msgs.
+func (msgs Messages) HashFailed() string {
+	return Catalog.Format(msgs.locale, "hashFailed", nil)
+}
+
+// HashRetry says "Try Again"
+// in the language the app shows.
+func HashRetry() string { return In(i18n.Locale()).HashRetry() }
+
+// HashRetry says "Try Again"
+// in the language of msgs.
+func (msgs Messages) HashRetry() string {
+	return Catalog.Format(msgs.locale, "hashRetry", nil)
 }
 
 // HashNeedsFile says "Only files can be hashed: {path}"

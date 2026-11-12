@@ -206,7 +206,8 @@ func deepTitles(_ menu: NSMenu?) -> [String] {
 let offTitles = deepTitles(provider.buildMenu(target: target, config: newFileOffConfig, templates: []))
 precondition(!offTitles.contains("New Folder") && !offTitles.contains("New File"), "children stayed visible with New File off: \(offTitles)")
 
-// Compute Hash lists SHA-256 (the default), SHA-1 and MD5. Each child sends its algorithm and has an icon.
+// Compute Hash is one entry that sends no algorithm: the window picks SHA-256 first
+// and offers the other two itself.
 func findItem(_ menu: NSMenu?, titled title: String) -> NSMenuItem? {
     for item in menu?.items ?? [] {
         if item.title == title { return item }
@@ -216,15 +217,13 @@ func findItem(_ menu: NSMenu?, titled title: String) -> NSMenuItem? {
 }
 let hashConfig = try JSONDecoder().decode(AppConfig.self, from: Data(#"{"menuItems":[{"id":"hash","enabled":true,"location":"submenu"}]}"#.utf8))
 let hashMenu = provider.buildMenu(target: fileTarget, config: hashConfig, templates: [])
-guard let hashParent = findItem(hashMenu, titled: "Compute Hash"),
-      let hashChildren = hashParent.submenu?.items else { fatalError("missing Compute Hash submenu") }
-precondition(hashChildren.map { $0.title } == ["SHA-256", "SHA-1", "MD5"], "hash algorithms are \(hashChildren.map { $0.title })")
-for child in hashChildren {
-    precondition(child.image != nil, "\(child.title) has no icon")
-    guard let url = provider.menuURL(for: child), url.host == "hash",
-          url.query?.contains("algo=\(child.title)") == true else { fatalError("\(child.title) does not send its algorithm") }
-}
-print("Compute Hash offers SHA-256, SHA-1 and MD5")
+guard let hashItem = findItem(hashMenu, titled: "Compute Hash") else { fatalError("missing Compute Hash") }
+precondition(hashItem.submenu == nil, "Compute Hash still opens a submenu")
+precondition(hashItem.image != nil, "Compute Hash has no icon")
+guard let hashURL = provider.menuURL(for: hashItem) else { fatalError("Compute Hash has no route") }
+precondition(hashURL.host == "hash", "Compute Hash routes to \(hashURL.host ?? "nothing")")
+precondition(hashURL.query?.contains("algo=") != true, "Compute Hash still sends an algorithm")
+print("Compute Hash is one entry and sends no algorithm")
 
 // An app's item shows that app's own icon. An app that is not installed has none.
 let programConfig = try JSONDecoder().decode(AppConfig.self, from: Data(#"{"programs":["Finder"],"menuItems":[{"id":"app:Finder","enabled":true,"location":"main"}]}"#.utf8))

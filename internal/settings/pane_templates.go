@@ -179,7 +179,7 @@ func (m *app) creationDialog(c *ui.Context) {
 				title = locales.AddFileTemplate()
 			}
 		}
-		panel.Width(440).MaxHeight(height-32).Padding(22).Background(t.Surface).Border(1, t.Border).Radius(12).Label(locales.EditFileType())
+		panel.Width(440).MaxHeight(height-32).Padding(22).Background(t.Surface).Border(1, t.Border).Radius(dialogRadius).Label(locales.EditFileType())
 		ui.Column(c).Gap(14).Children(func() {
 			ui.Row(c).Gap(10).AlignItems(ui.Center).Children(func() {
 				creationFileIcon(c, m.editCreation.Extension, 32)

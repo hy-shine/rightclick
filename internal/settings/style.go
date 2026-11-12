@@ -133,6 +133,10 @@ func tint(e ui.Element, rest, hover, pressed ui.Color) {
 // side by side share one baseline.
 const controlHeight = 30
 
+// dialogRadius rounds the corners of the app's own dialogs. They all use it, so a
+// dialog looks like the same object whichever size its content asks for.
+const dialogRadius = 10
+
 // primaryButton is the one filled button of a view: the action to take next. It
 // takes the brand blue, with icon s before the label when s is not nil. It
 // reports a click.
@@ -182,6 +186,14 @@ type buttonLook struct {
 // actionButton draws the button behind primaryButton and quietButton. align says
 // where it sits in its row. It reports a click.
 func actionButton(c *ui.Context, kind buttonKind, s *ui.SVG, label string, align ui.Align) bool {
+	return actionButtonEnabled(c, kind, true, s, label, align)
+}
+
+// actionButtonEnabled is actionButton for a button that an action can disable
+// while it cannot run, as the copy button of the hash window is while the digest
+// is computed. A disabled button turns gray, as the system's own do, and reports
+// no click.
+func actionButtonEnabled(c *ui.Context, kind buttonKind, enabled bool, s *ui.SVG, label string, align ui.Align) bool {
 	t := c.Theme()
 	look := buttonLook{fill: t.Surface, hover: t.SurfaceHover, pressed: t.SurfacePressed,
 		text: t.Text, icon: t.TextMuted, padX: 12, bordered: true}
@@ -189,9 +201,13 @@ func actionButton(c *ui.Context, kind buttonKind, s *ui.SVG, label string, align
 		look = buttonLook{fill: t.Accent, hover: t.AccentHover, pressed: t.AccentPressed,
 			text: t.AccentText, icon: t.AccentText, padX: 14, weight: 600}
 	}
-	b := ui.ButtonBase(c).Gap(6).Padding(7, look.padX).Height(controlHeight).Radius(t.Radius).AlignSelf(align).Label(label)
-	if look.bordered {
+	b := ui.ButtonBase(c).Gap(6).Padding(7, look.padX).Height(controlHeight).Radius(t.Radius).AlignSelf(align).Label(label).Disabled(!enabled)
+	if look.bordered && enabled {
 		b.Border(1, separatorColor(c))
+	}
+	if !enabled {
+		look.text, look.icon = t.TextMuted.Alpha(0.55), t.TextMuted.Alpha(0.55)
+		look.fill, look.hover, look.pressed = t.Surface, t.Surface, t.Surface
 	}
 	b.Children(func() {
 		if s != nil {
@@ -203,7 +219,7 @@ func actionButton(c *ui.Context, kind buttonKind, s *ui.SVG, label string, align
 		}
 	})
 	tint(b, look.fill, look.hover, look.pressed)
-	return b.Clicked()
+	return b.Clicked() && enabled
 }
 
 // ghostButton is text with no border, for actions that sit in every row and
