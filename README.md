@@ -22,7 +22,7 @@ English | [简体中文](README.zh-CN.md)
 
 Requires macOS 15.0 or later.
 
-1. Download the disk image from GitHub Releases: `RightClick-0.1.0-arm64.dmg` for Apple silicon, `RightClick-0.1.0-x86_64.dmg` for Intel.
+1. Download the disk image from GitHub Releases: `RightClick-0.1.1-arm64.dmg` for Apple silicon, `RightClick-0.1.1-x86_64.dmg` for Intel.
 2. Open the disk image and drag RightClick into `/Applications`.
 3. Double-click RightClick. macOS shows a warning. Close it.
 

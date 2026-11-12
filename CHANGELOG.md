@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.1 - 2026-11-12
+
+### Changed
+
+- New File starts with documents and text. The programming languages are in settings, switched off.
+- New from Template and Add as Template start switched off.
+- The Open With list starts empty; add the apps you use.
+- The delete confirmation is a native alert, with Cancel as the default button.
+- Several English messages read more naturally.
+
+### Removed
+
+- Open with Default App. Finder already opens a double-click with the default app.
+
 ## 0.1.0 - 2026-11-12
 
 The first release.
