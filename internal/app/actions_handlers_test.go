@@ -217,26 +217,6 @@ func TestOpenWithSendsTerminalProgramsTheFolder(t *testing.T) {
 	}
 }
 
-func TestOpenEditorUsesTheSystemDefault(t *testing.T) {
-	oldDefault := openDefault
-	t.Cleanup(func() { openDefault = oldDefault })
-	var opened []string
-	openDefault = func(path string) error {
-		opened = append(opened, path)
-		return nil
-	}
-	file := filepath.Join(t.TempDir(), "a.txt")
-	if err := os.WriteFile(file, []byte("x"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	if err := openEditor(nil, []string{file}, config.Default()); err != nil {
-		t.Fatal(err)
-	}
-	if want := []string{file}; !reflect.DeepEqual(opened, want) {
-		t.Fatalf("opened = %q, want %q", opened, want)
-	}
-}
-
 func TestRunActionRejectsUnknownAction(t *testing.T) {
 	err := runAction("bogus", nil, []string{"/tmp"}, config.Default())
 	if err == nil || !strings.Contains(err.Error(), "Unknown action") {

@@ -28,7 +28,6 @@ var Names = map[string]string{
 	"copy-to":            "copy-to",
 	"move-to":            "move-to",
 	"open-terminal":      "open-terminal",
-	"open-editor":        "open-editor",
 	"zip":                "zip",
 	"unzip":              "unzip",
 	"hash":               "hash",

@@ -13,7 +13,6 @@
 "finder.copyTo" = "复制到…";
 "finder.moveTo" = "移动到…";
 "finder.openTerminal" = "用终端打开";
-"finder.openEditor" = "用默认应用打开";
 "finder.openWithApp" = "用 %@ 打开";
 "finder.zip" = "压缩为 ZIP";
 "finder.unzip" = "解压到此处";

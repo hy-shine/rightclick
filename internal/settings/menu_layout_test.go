@@ -23,7 +23,7 @@ func TestMenuNamesStayOnOneLineInNarrowEditor(t *testing.T) {
 			}
 		})
 	}, 680, 800)
-	for _, label := range []string{"Open with Terminal", locales.MenuOpenEditor(), "Compress to ZIP", "Compare File Hashes", "Show or Hide Hidden Files (⌘⇧.)"} {
+	for _, label := range []string{"Open with Terminal", "Compress to ZIP", "Compare File Hashes", "Show or Hide Hidden Files (⌘⇧.)"} {
 		bounds, found := tester.Find(label)
 		if !found || bounds.H > 22 || bounds.W < 100 {
 			t.Errorf("menu name %q is not a readable single line: found=%v bounds=%+v", label, found, bounds)

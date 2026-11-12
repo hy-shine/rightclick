@@ -23,8 +23,8 @@ func TestPlaceSwitchChangesPreview(t *testing.T) {
 	if err := tt.Click("Preview"); err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Contains(tt.Texts(), "Shows 10 items") {
-		t.Fatalf("a file shows 10 entries; texts %q", tt.Texts())
+	if !slices.Contains(tt.Texts(), "Shows 8 items") {
+		t.Fatalf("a file shows 8 entries; texts %q", tt.Texts())
 	}
 	tt.Frame()
 	if err := tt.Click("Blank Space"); err != nil {
@@ -33,8 +33,8 @@ func TestPlaceSwitchChangesPreview(t *testing.T) {
 	if m.previewCtx != ctxBlank {
 		t.Errorf("previewCtx = %d after clicking Blank Space, want %d", m.previewCtx, ctxBlank)
 	}
-	if !slices.Contains(tt.Texts(), "Shows 6 items") {
-		t.Errorf("blank space shows 6 entries; texts %q", tt.Texts())
+	if !slices.Contains(tt.Texts(), "Shows 5 items") {
+		t.Errorf("blank space shows 5 entries; texts %q", tt.Texts())
 	}
 }
 
@@ -140,7 +140,7 @@ func TestMenuPageFitsTheMinimumWindow(t *testing.T) {
 	if name.Y+name.H > minHeight || preview.Y+preview.H > minHeight {
 		t.Error("the first action or preview button is outside the window")
 	}
-	if slices.Contains(tt.Texts(), "Shows 10 items") {
+	if slices.Contains(tt.Texts(), "Shows 8 items") {
 		t.Error("preview content is visible before the preview opens")
 	}
 }
@@ -195,7 +195,7 @@ func TestPreviewCountFitsItsColumn(t *testing.T) {
 	if err := tt.Click("Preview"); err != nil {
 		t.Fatal(err)
 	}
-	count, ok := tt.Find("Shows 10 items")
+	count, ok := tt.Find("Shows 8 items")
 	if !ok {
 		t.Fatal("the entry count is not on the pane")
 	}

@@ -182,7 +182,7 @@ enum MenuActions {
     static let groups: [[String]] = [
         ["new-file", "new-folder", "new-template"],
         ["copy-path", "copy-name", "copy-basename", "copy-to", "move-to"],
-        ["open-terminal", "open-editor"],
+        ["open-terminal"],
         ["zip", "unzip", "hash"],
         ["compare-hash"],
         ["toggle-hidden"],

@@ -67,7 +67,7 @@ func TestMenuPageOmitsSetupWarnings(t *testing.T) {
 	m := readyApp(t)
 	m.finder = finderOff
 	texts := ui.NewTester(m.view, mainWidth, mainHeight).Texts()
-	for _, unwanted := range []string{"The Finder extension is not on yet", "The extension must be turned on"} {
+	for _, unwanted := range []string{"The Finder extension is still off", "The extension must be turned on"} {
 		if slices.Contains(texts, unwanted) {
 			t.Errorf("menu page still shows setup warning %q; texts %q", unwanted, texts)
 		}

@@ -39,10 +39,11 @@ func TestOpenTerminalStartsOff(t *testing.T) {
 	}
 }
 
-func TestDefaultFileTypesIncludeCodeLanguages(t *testing.T) {
+func TestDefaultFileTypesIncludeCodeLanguagesSwitchedOff(t *testing.T) {
 	tests := []struct {
 		id, label, extension, content string
 	}{
+		{"javascript", "JavaScript", "js", "\"use strict\";\n"},
 		{"go", "Go", "go", "package main\n\n"},
 		{"rust", "Rust", "rs", ""},
 		{"java", "Java", "java", ""},
@@ -51,6 +52,8 @@ func TestDefaultFileTypesIncludeCodeLanguages(t *testing.T) {
 		{"sql", "SQL", "sql", ""},
 		{"typescript", "TypeScript", "ts", ""},
 		{"shell", "Shell", "sh", "#!/usr/bin/env bash\n"},
+		{"swift", "Swift", "swift", ""},
+		{"python", "Python", "py", "#!/usr/bin/env python3\n"},
 	}
 	cfg := Default()
 	for _, tt := range tests {
@@ -61,9 +64,22 @@ func TestDefaultFileTypesIncludeCodeLanguages(t *testing.T) {
 		}
 		got := cfg.FileTypes[index]
 		want := FileType{ID: tt.id, Label: tt.label, Extension: tt.extension,
-			Content: tt.content, Location: FileTypeSubmenu, Enabled: true}
+			Content: tt.content, Location: FileTypeSubmenu, Enabled: false}
 		if got != want {
 			t.Errorf("file type %q = %+v, want %+v", tt.id, got, want)
+		}
+	}
+}
+
+func TestDefaultFileTypesKeepDocumentsSwitchedOn(t *testing.T) {
+	enabled := map[string]bool{}
+	for _, fileType := range Default().FileTypes {
+		enabled[fileType.ID] = fileType.Enabled
+	}
+	for _, id := range []string{"word", "excel", "powerpoint", "wps-document", "wps-spreadsheet",
+		"wps-presentation", "rtf", "text", "markdown", "json", "csv", "html", "css"} {
+		if !enabled[id] {
+			t.Errorf("file type %q starts switched off, want it on", id)
 		}
 	}
 }
@@ -319,6 +335,23 @@ func TestLoadDropsRemovedOpenWith(t *testing.T) {
 	}
 	if !slices.ContainsFunc(cfg.MenuItems, func(item MenuItem) bool { return item.ID == "app:Cursor" }) {
 		t.Error("the app shortcut entry was dropped with the removed entry")
+	}
+}
+
+// TestLoadDropsTheRemovedOpenEditor keeps a saved Open with Default App entry from
+// coming back after the action was removed.
+func TestLoadDropsTheRemovedOpenEditor(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.json")
+	data := `{"version":3,"menuItems":[{"id":"open-editor","enabled":true,"location":"main"},{"id":"copy-path","enabled":true,"location":"main"}]}`
+	if err := os.WriteFile(path, []byte(data), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if slices.ContainsFunc(cfg.MenuItems, func(item MenuItem) bool { return item.ID == "open-editor" }) {
+		t.Error("the removed Open with Default App entry was kept")
 	}
 }
 

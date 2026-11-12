@@ -42,7 +42,6 @@ func menuEntries() map[string]menuEntry {
 		"copy-to":            {locales.MenuCopyTo(), locales.WhereSelection()},
 		"move-to":            {locales.MenuMoveTo(), locales.WhereSelection()},
 		"open-terminal":      {locales.MenuOpenTerminal(), locales.WhereBlankFolder()},
-		"open-editor":        {locales.MenuOpenEditor(), locales.WhereAnywhere()},
 		"zip":                {locales.MenuZip(), locales.WhereSelectedFiles()},
 		"unzip":              {locales.MenuUnzip(), locales.WhereZipOnly()},
 		"hash":               {locales.MenuHash(), locales.WhereOneFile()},
@@ -66,13 +65,23 @@ const gripScale = 10.0 / 24
 // would leave an empty gap between the dots and the entry icon.
 const gripWidth = 8.6 * gripScale
 
+// locationValues and locationLabels are the choices of the location dropdown, in the
+// order they are shown: the top of the Finder menu first, the app's own submenu second.
+func locationValues() []string {
+	return []string{config.FileTypeMain, config.FileTypeSubmenu}
+}
+
+func locationLabels() []string {
+	return []string{locales.LocFinderTopShort(), locales.LocInApp()}
+}
+
 // menuGroups lists the IDs of each group of the Finder submenu, in the order
 // the submenu shows them. It mirrors MenuActions.groups in
 // extension/RightClickFinderSync/MenuConfig.swift; change both together.
 var menuGroups = [][]string{
 	{"new-file", "new-folder", "new-template"},
 	{"copy-path", "copy-name", "copy-basename", "copy-to", "move-to"},
-	{"open-terminal", "open-editor"},
+	{"open-terminal"},
 	{"zip", "unzip", "hash"},
 	{"compare-hash"},
 	{"toggle-hidden"},
@@ -94,7 +103,6 @@ var menuContexts = map[string][]int{
 	"copy-to":            {ctxFolder, ctxFile, ctxTwoFiles},
 	"move-to":            {ctxFolder, ctxFile, ctxTwoFiles},
 	"open-terminal":      {ctxBlank, ctxFolder},
-	"open-editor":        {ctxBlank, ctxFolder, ctxFile, ctxTwoFiles},
 	"zip":                {ctxFile, ctxTwoFiles},
 	"unzip":              {ctxFile},
 	"hash":               {ctxFile},
@@ -476,7 +484,7 @@ func (m *app) menuGroup(c *ui.Context, g int, rows []int) {
 						ui.Text(c, locales.MenuNewFileInside()).FontSize(sizeCaption).TextColor(t.TextMuted)
 					} else {
 						locationSelect(c, &item.Location, "action:"+item.ID, locales.LocationLabel(entry.label),
-							[]string{config.FileTypeSubmenu, config.FileTypeMain}, []string{locales.LocInApp(), locales.LocFinderTopShort()}, item.Enabled, m.saveConfig)
+							locationValues(), locationLabels(), item.Enabled, m.saveConfig)
 					}
 				})
 				ui.Row(c).Width(48).Shrink(0).Justify(ui.Center).AlignItems(ui.Center).Children(func() {

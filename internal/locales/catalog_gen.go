@@ -46,11 +46,11 @@ func (msgs Messages) FavoriteFolders() string {
 	return Catalog.Format(msgs.locale, "favoriteFolders", nil)
 }
 
-// FavoriteFoldersHint says "Use them as Copy To and Move To destinations, or add them to the menu. Delete only removes a folder from the list; th…"
+// FavoriteFoldersHint says "Use them as Copy To or Move To destinations, or add them to the menu. Removing a folder here only takes it off the li…"
 // in the language the app shows.
 func FavoriteFoldersHint() string { return In(i18n.Locale()).FavoriteFoldersHint() }
 
-// FavoriteFoldersHint says "Use them as Copy To and Move To destinations, or add them to the menu. Delete only removes a folder from the list; th…"
+// FavoriteFoldersHint says "Use them as Copy To or Move To destinations, or add them to the menu. Removing a folder here only takes it off the li…"
 // in the language of msgs.
 func (msgs Messages) FavoriteFoldersHint() string {
 	return Catalog.Format(msgs.locale, "favoriteFoldersHint", nil)
@@ -66,11 +66,11 @@ func (msgs Messages) NoFavoriteFolders() string {
 	return Catalog.Format(msgs.locale, "noFavoriteFolders", nil)
 }
 
-// AddFavoriteHint says "Add a project or archive folder to reach it directly from Finder."
+// AddFavoriteHint says "Add a project or archive folder to open it straight from Finder."
 // in the language the app shows.
 func AddFavoriteHint() string { return In(i18n.Locale()).AddFavoriteHint() }
 
-// AddFavoriteHint says "Add a project or archive folder to reach it directly from Finder."
+// AddFavoriteHint says "Add a project or archive folder to open it straight from Finder."
 // in the language of msgs.
 func (msgs Messages) AddFavoriteHint() string {
 	return Catalog.Format(msgs.locale, "addFavoriteHint", nil)
@@ -138,11 +138,11 @@ func (msgs Messages) OpenWithShortcut(name string) string {
 	return Catalog.Format(msgs.locale, "openWithShortcut", map[string]any{"name": name})
 }
 
-// MenuArrangeHint says "Drag to reorder · Double-click to rename · Items can be added from New, Open With, or Favorite Folders."
+// MenuArrangeHint says "Drag to reorder · Double-click to rename · Add items from New, Open With, or Favorite Folders."
 // in the language the app shows.
 func MenuArrangeHint() string { return In(i18n.Locale()).MenuArrangeHint() }
 
-// MenuArrangeHint says "Drag to reorder · Double-click to rename · Items can be added from New, Open With, or Favorite Folders."
+// MenuArrangeHint says "Drag to reorder · Double-click to rename · Add items from New, Open With, or Favorite Folders."
 // in the language of msgs.
 func (msgs Messages) MenuArrangeHint() string {
 	return Catalog.Format(msgs.locale, "menuArrangeHint", nil)
@@ -278,11 +278,11 @@ func (msgs Messages) AppNameEmpty(path string) string {
 	return Catalog.Format(msgs.locale, "appNameEmpty", map[string]any{"path": path})
 }
 
-// BannerExtensionOff says "The Finder extension is not on yet"
+// BannerExtensionOff says "The Finder extension is still off"
 // in the language the app shows.
 func BannerExtensionOff() string { return In(i18n.Locale()).BannerExtensionOff() }
 
-// BannerExtensionOff says "The Finder extension is not on yet"
+// BannerExtensionOff says "The Finder extension is still off"
 // in the language of msgs.
 func (msgs Messages) BannerExtensionOff() string {
 	return Catalog.Format(msgs.locale, "bannerExtensionOff", nil)
@@ -498,11 +498,11 @@ func (msgs Messages) ColLocation() string {
 	return Catalog.Format(msgs.locale, "colLocation", nil)
 }
 
-// CompareNeedsTwo says "Hash comparison needs exactly two selected files"
+// CompareNeedsTwo says "Comparing hashes needs exactly two files"
 // in the language the app shows.
 func CompareNeedsTwo() string { return In(i18n.Locale()).CompareNeedsTwo() }
 
-// CompareNeedsTwo says "Hash comparison needs exactly two selected files"
+// CompareNeedsTwo says "Comparing hashes needs exactly two files"
 // in the language of msgs.
 func (msgs Messages) CompareNeedsTwo() string {
 	return Catalog.Format(msgs.locale, "compareNeedsTwo", nil)
@@ -752,11 +752,11 @@ func (msgs Messages) DeleteTemplateQuestion() string {
 	return Catalog.Format(msgs.locale, "deleteTemplateQuestion", nil)
 }
 
-// DeletedItems says "Deleted {count, plural, one {# item} other {# items}} permanently"
+// DeletedItems says "Permanently deleted {count, plural, one {# item} other {# items}}"
 // in the language the app shows.
 func DeletedItems(count int) string { return In(i18n.Locale()).DeletedItems(count) }
 
-// DeletedItems says "Deleted {count, plural, one {# item} other {# items}} permanently"
+// DeletedItems says "Permanently deleted {count, plural, one {# item} other {# items}}"
 // in the language of msgs.
 func (msgs Messages) DeletedItems(count int) string {
 	return Catalog.Format(msgs.locale, "deletedItems", map[string]any{"count": count})
@@ -908,11 +908,11 @@ func (msgs Messages) EditTemplate() string {
 	return Catalog.Format(msgs.locale, "editTemplate", nil)
 }
 
-// EditorsHint says "Check “Add to Menu” to show it as its own menu item. Arrange it in Context Menu. Delete only removes it from this…"
+// EditorsHint says "Turn on “Add to Menu” to give an app its own entry. Arrange entries in Context Menu. Removing an app here only ta…"
 // in the language the app shows.
 func EditorsHint() string { return In(i18n.Locale()).EditorsHint() }
 
-// EditorsHint says "Check “Add to Menu” to show it as its own menu item. Arrange it in Context Menu. Delete only removes it from this…"
+// EditorsHint says "Turn on “Add to Menu” to give an app its own entry. Arrange entries in Context Menu. Removing an app here only ta…"
 // in the language of msgs.
 func (msgs Messages) EditorsHint() string {
 	return Catalog.Format(msgs.locale, "editorsHint", nil)
@@ -928,11 +928,11 @@ func (msgs Messages) EnableLabel(name string) string {
 	return Catalog.Format(msgs.locale, "enableLabel", map[string]any{"name": name})
 }
 
-// EnableTypeHint says "When off, this type is hidden from the menu. Your settings are kept."
+// EnableTypeHint says "Turned off, this type is hidden from the menu. Its settings are kept."
 // in the language the app shows.
 func EnableTypeHint() string { return In(i18n.Locale()).EnableTypeHint() }
 
-// EnableTypeHint says "When off, this type is hidden from the menu. Your settings are kept."
+// EnableTypeHint says "Turned off, this type is hidden from the menu. Its settings are kept."
 // in the language of msgs.
 func (msgs Messages) EnableTypeHint() string {
 	return Catalog.Format(msgs.locale, "enableTypeHint", nil)
@@ -1566,11 +1566,11 @@ func (msgs Messages) MenuHash() string {
 	return Catalog.Format(msgs.locale, "menuHash", nil)
 }
 
-// MenuIntro says "Common actions stay in the Main Menu. The rest go in RightClick."
+// MenuIntro says "Common actions stay in the main menu; everything else goes in the RightClick submenu."
 // in the language the app shows.
 func MenuIntro() string { return In(i18n.Locale()).MenuIntro() }
 
-// MenuIntro says "Common actions stay in the Main Menu. The rest go in RightClick."
+// MenuIntro says "Common actions stay in the main menu; everything else goes in the RightClick submenu."
 // in the language of msgs.
 func (msgs Messages) MenuIntro() string {
 	return Catalog.Format(msgs.locale, "menuIntro", nil)
@@ -1624,16 +1624,6 @@ func MenuNewTemplate() string { return In(i18n.Locale()).MenuNewTemplate() }
 // in the language of msgs.
 func (msgs Messages) MenuNewTemplate() string {
 	return Catalog.Format(msgs.locale, "menuNewTemplate", nil)
-}
-
-// MenuOpenEditor says "Open with Default App"
-// in the language the app shows.
-func MenuOpenEditor() string { return In(i18n.Locale()).MenuOpenEditor() }
-
-// MenuOpenEditor says "Open with Default App"
-// in the language of msgs.
-func (msgs Messages) MenuOpenEditor() string {
-	return Catalog.Format(msgs.locale, "menuOpenEditor", nil)
 }
 
 // MenuOpenTerminal says "Open with Terminal"
@@ -1706,11 +1696,11 @@ func (msgs Messages) NeedOneItem() string {
 	return Catalog.Format(msgs.locale, "needOneItem", nil)
 }
 
-// NewIntro says "Create files in the current folder. Every type is in the New File menu."
+// NewIntro says "Create files in the current folder. All types sit under New File."
 // in the language the app shows.
 func NewIntro() string { return In(i18n.Locale()).NewIntro() }
 
-// NewIntro says "Create files in the current folder. Every type is in the New File menu."
+// NewIntro says "Create files in the current folder. All types sit under New File."
 // in the language of msgs.
 func (msgs Messages) NewIntro() string {
 	return Catalog.Format(msgs.locale, "newIntro", nil)
@@ -1878,11 +1868,11 @@ func (msgs Messages) OpenWithFailed(name string, app string, cause string) strin
 	return Catalog.Format(msgs.locale, "openWithFailed", map[string]any{"name": name, "app": app, "cause": cause})
 }
 
-// OpenersIntro says "The “Open with X” items in the menu come from this app list, where X is the app’s name. “Open with Terminal…"
+// OpenersIntro says "Each app in this list gets its own “Open with …” item. “Open with Terminal” always uses Terminal."
 // in the language the app shows.
 func OpenersIntro() string { return In(i18n.Locale()).OpenersIntro() }
 
-// OpenersIntro says "The “Open with X” items in the menu come from this app list, where X is the app’s name. “Open with Terminal…"
+// OpenersIntro says "Each app in this list gets its own “Open with …” item. “Open with Terminal” always uses Terminal."
 // in the language of msgs.
 func (msgs Messages) OpenersIntro() string {
 	return Catalog.Format(msgs.locale, "openersIntro", nil)
@@ -2058,11 +2048,11 @@ func (msgs Messages) RestartFinderFailed() string {
 	return Catalog.Format(msgs.locale, "restartFinderFailed", nil)
 }
 
-// RestartFinderHint says "Quits Finder, and the system reopens it. Try this if the menu does not appear."
+// RestartFinderHint says "Quits Finder; macOS reopens it. Try this if the menu does not appear."
 // in the language the app shows.
 func RestartFinderHint() string { return In(i18n.Locale()).RestartFinderHint() }
 
-// RestartFinderHint says "Quits Finder, and the system reopens it. Try this if the menu does not appear."
+// RestartFinderHint says "Quits Finder; macOS reopens it. Try this if the menu does not appear."
 // in the language of msgs.
 func (msgs Messages) RestartFinderHint() string {
 	return Catalog.Format(msgs.locale, "restartFinderHint", nil)
@@ -2228,11 +2218,11 @@ func (msgs Messages) StatusNeedsExtension() string {
 	return Catalog.Format(msgs.locale, "statusNeedsExtension", nil)
 }
 
-// StatusNoItems says "No items are on"
+// StatusNoItems says "No menu items are on"
 // in the language the app shows.
 func StatusNoItems() string { return In(i18n.Locale()).StatusNoItems() }
 
-// StatusNoItems says "No items are on"
+// StatusNoItems says "No menu items are on"
 // in the language of msgs.
 func (msgs Messages) StatusNoItems() string {
 	return Catalog.Format(msgs.locale, "statusNoItems", nil)
@@ -2298,11 +2288,11 @@ func (msgs Messages) TemplateNotFound(name string) string {
 	return Catalog.Format(msgs.locale, "templateNotFound", map[string]any{"name": name})
 }
 
-// TemplateNotText says "Not a text file, so it cannot be a template"
+// TemplateNotText says "Only text files can be templates."
 // in the language the app shows.
 func TemplateNotText() string { return In(i18n.Locale()).TemplateNotText() }
 
-// TemplateNotText says "Not a text file, so it cannot be a template"
+// TemplateNotText says "Only text files can be templates."
 // in the language of msgs.
 func (msgs Messages) TemplateNotText() string {
 	return Catalog.Format(msgs.locale, "templateNotText", nil)
@@ -2358,63 +2348,63 @@ func (msgs Messages) UnsupportedHash(name string) string {
 	return Catalog.Format(msgs.locale, "unsupportedHash", map[string]any{"name": name})
 }
 
-// UnzipPartial says "Wrote {count, plural, one {# file} other {# files}}, then failed: {cause}"
+// UnzipPartial says "Extracted {count, plural, one {# file} other {# files}}, then failed: {cause}"
 // in the language the app shows.
 func UnzipPartial(count int, cause string) string {
 	return In(i18n.Locale()).UnzipPartial(count, cause)
 }
 
-// UnzipPartial says "Wrote {count, plural, one {# file} other {# files}}, then failed: {cause}"
+// UnzipPartial says "Extracted {count, plural, one {# file} other {# files}}, then failed: {cause}"
 // in the language of msgs.
 func (msgs Messages) UnzipPartial(count int, cause string) string {
 	return Catalog.Format(msgs.locale, "unzipPartial", map[string]any{"count": count, "cause": cause})
 }
 
-// UnzipWritten says "Wrote {count, plural, one {# file} other {# files}}"
+// UnzipWritten says "Extracted {count, plural, one {# file} other {# files}}"
 // in the language the app shows.
 func UnzipWritten(count int) string { return In(i18n.Locale()).UnzipWritten(count) }
 
-// UnzipWritten says "Wrote {count, plural, one {# file} other {# files}}"
+// UnzipWritten says "Extracted {count, plural, one {# file} other {# files}}"
 // in the language of msgs.
 func (msgs Messages) UnzipWritten(count int) string {
 	return Catalog.Format(msgs.locale, "unzipWritten", map[string]any{"count": count})
 }
 
-// ArchiveStoppedAtLimit says "The archive unpacks to more than 2 GiB, so the extraction stopped there. Files written before that stay."
+// ArchiveStoppedAtLimit says "The archive expands to more than 2 GiB, so extraction stopped there. Files already written stay."
 // in the language the app shows.
 func ArchiveStoppedAtLimit() string { return In(i18n.Locale()).ArchiveStoppedAtLimit() }
 
-// ArchiveStoppedAtLimit says "The archive unpacks to more than 2 GiB, so the extraction stopped there. Files written before that stay."
+// ArchiveStoppedAtLimit says "The archive expands to more than 2 GiB, so extraction stopped there. Files already written stay."
 // in the language of msgs.
 func (msgs Messages) ArchiveStoppedAtLimit() string {
 	return Catalog.Format(msgs.locale, "archiveStoppedAtLimit", nil)
 }
 
-// ArchiveTooLarge says "The archive would unpack to more than 2 GiB, so nothing was unpacked."
+// ArchiveTooLarge says "The archive would expand to more than 2 GiB, so nothing was extracted."
 // in the language the app shows.
 func ArchiveTooLarge() string { return In(i18n.Locale()).ArchiveTooLarge() }
 
-// ArchiveTooLarge says "The archive would unpack to more than 2 GiB, so nothing was unpacked."
+// ArchiveTooLarge says "The archive would expand to more than 2 GiB, so nothing was extracted."
 // in the language of msgs.
 func (msgs Messages) ArchiveTooLarge() string {
 	return Catalog.Format(msgs.locale, "archiveTooLarge", nil)
 }
 
-// ArchiveTooManyItems says "The archive holds more than 10,000 items, so nothing was unpacked."
+// ArchiveTooManyItems says "The archive holds more than 10,000 items, so nothing was extracted."
 // in the language the app shows.
 func ArchiveTooManyItems() string { return In(i18n.Locale()).ArchiveTooManyItems() }
 
-// ArchiveTooManyItems says "The archive holds more than 10,000 items, so nothing was unpacked."
+// ArchiveTooManyItems says "The archive holds more than 10,000 items, so nothing was extracted."
 // in the language of msgs.
 func (msgs Messages) ArchiveTooManyItems() string {
 	return Catalog.Format(msgs.locale, "archiveTooManyItems", nil)
 }
 
-// ArchiveRatioTooHigh says "A file in the archive is far larger unpacked than packed, so nothing was unpacked."
+// ArchiveRatioTooHigh says "A file in the archive expands far beyond its packed size, so nothing was extracted."
 // in the language the app shows.
 func ArchiveRatioTooHigh() string { return In(i18n.Locale()).ArchiveRatioTooHigh() }
 
-// ArchiveRatioTooHigh says "A file in the archive is far larger unpacked than packed, so nothing was unpacked."
+// ArchiveRatioTooHigh says "A file in the archive expands far beyond its packed size, so nothing was extracted."
 // in the language of msgs.
 func (msgs Messages) ArchiveRatioTooHigh() string {
 	return Catalog.Format(msgs.locale, "archiveRatioTooHigh", nil)
@@ -2480,11 +2470,11 @@ func (msgs Messages) WhereAnywhere() string {
 	return Catalog.Format(msgs.locale, "whereAnywhere", nil)
 }
 
-// WhereBlankFolder says "Blank space, folders"
+// WhereBlankFolder says "Folders, blank space"
 // in the language the app shows.
 func WhereBlankFolder() string { return In(i18n.Locale()).WhereBlankFolder() }
 
-// WhereBlankFolder says "Blank space, folders"
+// WhereBlankFolder says "Folders, blank space"
 // in the language of msgs.
 func (msgs Messages) WhereBlankFolder() string {
 	return Catalog.Format(msgs.locale, "whereBlankFolder", nil)

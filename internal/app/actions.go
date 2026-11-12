@@ -122,7 +122,6 @@ func actionHandlers() map[string]actionHandler {
 			return files.Open(path)
 		},
 		"open-terminal": openTerminal,
-		"open-editor":   openEditor,
 		"open-with":     openWithApp,
 		"zip": func(_ url.Values, paths []string, _ config.Config) error {
 			return zipItems(paths)
@@ -377,15 +376,6 @@ func openTerminal(params url.Values, paths []string, _ config.Config) error {
 	return openEach(app, foldersOf(paths))
 }
 
-// openEditor opens the selection with its default application. A menu entry may
-// still name a program, which keeps older URLs working.
-func openEditor(params url.Values, paths []string, cfg config.Config) error {
-	if app := strings.TrimSpace(params.Get("app")); app != "" {
-		return openWithApp(params, paths, cfg)
-	}
-	return openDefaultEach(paths)
-}
-
 // openWithApp opens the selection in the named app. Terminal programs get the
 // folder that holds the selection, because they cannot open a file directly.
 func openWithApp(params url.Values, paths []string, _ config.Config) error {
@@ -413,26 +403,13 @@ func foldersOf(paths []string) []string {
 	return folders
 }
 
-// openWith and openDefault are the system open calls. Tests replace them.
+// openWith is the system open call. Tests replace it.
 var openWith = files.OpenWith
-var openDefault = files.Open
 
 // openEach opens each path with app. Every path is tried; the errors of the
 // failed ones are returned together.
 func openEach(app string, paths []string) error {
 	return openEachWith(openWith, app, paths)
-}
-
-// openDefaultEach opens each path with its default application. Every path is
-// tried; the errors of the failed ones are returned together.
-func openDefaultEach(paths []string) error {
-	var errs []error
-	for _, p := range paths {
-		if err := openDefault(p); err != nil {
-			errs = append(errs, errors.New(locales.OpenFailed(files.Name(p), err.Error())))
-		}
-	}
-	return errors.Join(errs...)
 }
 
 // openEachWith calls open for each path. It takes the open call as a parameter so

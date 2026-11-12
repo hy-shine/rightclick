@@ -79,15 +79,26 @@ type Config struct {
 var defaultMenuIDs = []string{
 	"new-file", "new-folder", "new-template",
 	"copy-path", "copy-name", "copy-basename", "copy-to", "move-to",
-	"open-terminal", "open-editor",
+	"open-terminal",
 	"zip", "unzip", "hash", "compare-hash",
 	"toggle-hidden", "delete-permanently",
 	"add-template",
 }
 
-// defaultOffMenuIDs lists the menu entries that start switched off. Deleting for good
-// and Open with Terminal stay out of the menu until the user turns them on.
-var defaultOffMenuIDs = map[string]bool{"delete-permanently": true, "open-terminal": true}
+// defaultOffMenuIDs lists the menu entries that start switched off. Deleting for
+// good, Open with Terminal and the template entries stay out of the menu until the
+// user turns them on.
+var defaultOffMenuIDs = map[string]bool{
+	"delete-permanently": true, "open-terminal": true, "new-template": true, "add-template": true,
+}
+
+// defaultOffFileTypeIDs lists the file types that start switched off: the programming
+// languages. They stay in the list, so the settings pane can turn them on, but a new
+// install shows only documents in New File.
+var defaultOffFileTypeIDs = map[string]bool{
+	"javascript": true, "typescript": true, "swift": true, "python": true, "go": true,
+	"rust": true, "java": true, "c": true, "cpp": true, "sql": true, "shell": true,
+}
 
 // defaultFileTypes lists the text files the New File submenu creates. Binary
 // document formats need real templates and are deliberately not included.
@@ -264,6 +275,10 @@ func (cfg *Config) normalize() {
 			// The Open With submenu is gone; app shortcut entries still use the
 			// URL action, so only the menu entry is dropped.
 			continue
+		case "open-editor":
+			// Open with Default App is gone; Finder already opens a double-click
+			// with the default app, so the entry is dropped on load.
+			continue
 		case "new-file":
 			insertNewFile = -1
 			migrated = append(migrated, item)
@@ -389,7 +404,7 @@ func (cfg *Config) addMissingMenuItems() {
 func DefaultFileTypes() []FileType {
 	types := slices.Clone(defaultFileTypes)
 	for index := range types {
-		types[index].Enabled = true
+		types[index].Enabled = !defaultOffFileTypeIDs[types[index].ID]
 	}
 	return types
 }

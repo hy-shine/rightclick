@@ -183,8 +183,6 @@ final class FinderSyncExtension: FIFinderSync {
             // Terminal opens folders. A selected file stands for the folder that holds it.
             let folders = target.items.map { $0.isDirectory ? $0.url : $0.url.deletingLastPathComponent() }
             return actionItem(title: title(for: id), urlAction: id, params: pathParams(folders))
-        case "open-editor":
-            return actionItem(title: title(for: id), urlAction: id, params: paths)
         case "hash":
             // SHA-256 is the default. The other two algorithms sit in the same submenu.
             let children = ["SHA-256", "SHA-1", "MD5"].map { algorithm in
@@ -211,7 +209,6 @@ final class FinderSyncExtension: FIFinderSync {
         case "copy-to": return Localized.text("finder.copyTo")
         case "move-to": return Localized.text("finder.moveTo")
         case "open-terminal": return Localized.text("finder.openTerminal")
-        case "open-editor": return Localized.text("finder.openEditor")
         case "zip": return Localized.text("finder.zip")
         case "unzip": return Localized.text("finder.unzip")
         case "hash": return Localized.text("finder.hash")
@@ -380,7 +377,7 @@ struct MenuTarget {
             return !isBlankArea
         case "open-terminal":
             return newItemFolder != nil
-        case "open-editor", "favorite-folders":
+        case "favorite-folders":
             return true
         case "zip":
             return !isBlankArea && !files.isEmpty

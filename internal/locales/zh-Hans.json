@@ -157,7 +157,6 @@
   "menuNewFileInside": "新建文件内",
   "menuNewFolder": "新建文件夹",
   "menuNewTemplate": "从模板新建",
-  "menuOpenEditor": "用默认应用打开",
   "menuOpenTerminal": "用终端打开",
   "menuPreview": "菜单预览",
   "menuToggleHidden": "显示/隐藏隐藏文件（⌘⇧.）",

@@ -13,7 +13,6 @@
 "finder.copyTo" = "Copy To…";
 "finder.moveTo" = "Move To…";
 "finder.openTerminal" = "Open with Terminal";
-"finder.openEditor" = "Open with Default App";
 "finder.openWithApp" = "Open with %@";
 "finder.zip" = "Compress to ZIP";
 "finder.unzip" = "Extract Here";
