@@ -1,0 +1,35 @@
+/* Finder menu text. Keep the keys in step with en.lproj/Localizable.strings. */
+
+"finder.appName" = "右鍵助手";
+"finder.favoriteFolders" = "常用資料夾";
+"finder.chooseFolder" = "選擇其他資料夾…";
+"finder.newFile" = "新增檔案";
+"finder.newFolder" = "新增資料夾";
+"finder.userTemplate" = "從範本新增";
+"finder.captureTemplate" = "新增為範本…";
+"finder.copyPath" = "複製路徑";
+"finder.copyName" = "複製檔名";
+"finder.copyBaseName" = "複製檔名（不含副檔名）";
+"finder.copyTo" = "複製到…";
+"finder.moveTo" = "移動到…";
+"finder.openTerminal" = "用終端機開啟";
+"finder.openEditor" = "用預設應用開啟";
+"finder.openWithApp" = "用 %@ 開啟";
+"finder.zip" = "壓縮為 ZIP";
+"finder.unzip" = "解壓縮到此處";
+"finder.hash" = "計算雜湊";
+"finder.compareHash" = "比較兩個檔案的雜湊";
+"finder.toggleHidden" = "顯示/隱藏隱藏檔案（⌘⇧.）";
+"finder.deletePermanently" = "徹底刪除";
+"finder.noTemplates" = "無範本";
+"finder.noFileTypes" = "無檔案類型";
+
+/* Built-in file types. A type with a stored label uses that label instead. */
+"finder.type.word" = "Word 文件";
+"finder.type.excel" = "Excel 工作簿";
+"finder.type.powerpoint" = "PowerPoint 演示";
+"finder.type.wpsDocument" = "WPS 文件";
+"finder.type.wpsSpreadsheet" = "WPS 表格";
+"finder.type.wpsPresentation" = "WPS 演示";
+"finder.type.rtf" = "富純文字文件";
+"finder.type.text" = "純文字檔案";

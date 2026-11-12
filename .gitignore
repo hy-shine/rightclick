@@ -25,7 +25,7 @@ xcuserdata/
 *.pem
 .env
 
-# The main binary that `go build .` writes into the repo root
+# The main binary that `go build ./cmd/rightclick` writes into the repo root
 /rightclick
 
 # Local agent and editor settings

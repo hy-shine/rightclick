@@ -1,31 +1,118 @@
-# 右键助手：agent 工作规则
+# AGENTS.md
 
-Finder 右键助手。主程序用 mygo v0.6.4 原生 UI，Finder 菜单是 Swift 写的 Finder Sync 扩展。构建和测试命令见 README.md。
+Instructions for AI coding agents working in this repository. Users and contributors should start with README.md.
 
-## 何时读哪份文档
+These rules apply to any clone of the repository. Do not rely on one machine's paths, installed apps, or local files.
 
-私有项目文档（决定记录、功能清单）不进 git，文件名按编号或主题命名。用 `find . -name '<文件名>'` 查找。找不到时，停下来问用户，不要凭记忆补写。
+## Project
 
-- 改 mygo 版本，或怀疑某个 mygo API 的行为：读 `0004-pin-mygo-v0.6.4.md`，改版本时同步更新它。
-- 改 Finder 扩展，或扩展与主程序之间的通信：读 `0002-finder-sync-extension.md`。
-- 做签名、公证、分发：读 `0003-distribution-channel.md`。
-- 增减功能或改优先级：读 `features.md`。
-- 改 `ui` 视图代码：读 `.agents/skills/mygo-maintenance/SKILL.md`。
+RightClick is a macOS Finder context-menu helper for everyday file actions.
 
-## 环境里查不到的规则
+- The app is written in Go and built with mygo. The version is pinned in `go.mod`. The UI is native, through mygo's `ui` package.
+- The Finder menu is a Swift Finder Sync extension in `extension/`. See "Finder extension" below.
+- Requirements: macOS, the Go version in `go.mod`, and the Xcode Command Line Tools (`swiftc`, `codesign`).
+- Do not publish, release, or add a git remote unless asked.
 
-- 依赖写固定版本，如 `@v0.6.4`。`mygo init` 会拉最新版，生成后要改回。
-- 主程序保持 `CGO_ENABLED=0` 可构建，mygo 本身也是这样。
-- `mygo.json` 的 `name` 和 `identifier` 是占位值，改之前先问用户。
-- 测试 UI 用 `ui.NewTester`，等待条件成立，不用固定时长的 sleep。
-- 代码注释用英文（Go、Swift、shell）。文件名和目录名也用英文，不用中文。
-- 图标不手绘：从 Lucide（ISC）取现成 SVG，放在 `extension/RightClickFinderSync/ActionIcons/`，许可文件随目录保留。图标要和动作的语义对得上；新增菜单项必须同时加图标，并让 `extension/tests/main.swift` 的图标断言通过。
+## Commands
 
-## 做完的标准
+Run from the repository root. Every Go check must exit 0 before you report a Go change as done.
 
-改了 Go 代码后，以下命令都退出 0：
+```sh
+go test ./...
+CGO_ENABLED=0 go test ./...
+go vet ./...
+go tool mygo vet .
+gofmt -l .        # must print nothing
+```
 
-- `go test ./...`
-- `CGO_ENABLED=0 go test ./...`
-- `go vet ./...`
-- `go tool mygo vet .`
+Finder extension tests. Run them after changing `extension/` or any menu action:
+
+```sh
+swiftc -application-extension -o "${TMPDIR:-/tmp}/rc_ext_test" \
+  extension/RightClickFinderSync/FinderSyncExtension.swift \
+  extension/RightClickFinderSync/MenuConfig.swift \
+  extension/RightClickFinderSync/Localized.swift \
+  extension/RightClickFinderSync/ActionIcons.swift \
+  extension/tests/main.swift
+"${TMPDIR:-/tmp}/rc_ext_test"
+```
+
+Other commands:
+
+- `go tool mygo dev`: run the app with hot reload.
+- `go tool mygo generate`: regenerate `internal/locales/catalog_gen.go` after editing the locale JSON.
+- `go tool mygo build -skip-dmg`: build the app bundle under `build/`.
+- `sh extension/build.sh <path to RightClick.app>`: build the Finder extension and install it into that bundle. Run it after `go tool mygo build`.
+
+Do not quit, restart or re-register the app or the Finder extension on your own. If the user asks for that, follow the steps under "Development" in README.md.
+
+## Layout
+
+```
+cmd/rightclick/                   app entry only: start-up and which window opens
+internal/app/                     menu action handlers, rightclick:// link parsing and the --action run, with their tests
+internal/config/                  saved settings, defaults and migrations
+internal/files/                   file operations; no UI code
+internal/finder/                  Finder helpers: restart, hidden files, the action script, extension registration
+internal/settings/                the settings window; one pane_*.go per sidebar pane
+internal/locales/                 en.json (source), zh-Hans.json, zh-Hant.json; catalog_gen.go is generated
+internal/actionicons/             Lucide icons for menu actions; bundled into the app and the extension
+internal/catalog/                 blank document templates for New File, with their icons and license files
+internal/update/                  update check against GitHub releases; never downloads
+extension/                        Finder Sync extension in Swift, build.sh, tests/main.swift
+scripts/                          document_templates.py regenerates the blank templates
+resources/                        app icon used by the README
+.agents/skills/mygo-maintenance/  mygo UI skill; read it before changing internal/settings/ UI code
+```
+
+- Put new Go code in a package directory, not in the repository root.
+- Do not depend on files that are not in git (local notes, scratch output, another machine's build). If a task needs such a file, ask for it.
+
+## Working rules
+
+- **Scope.** Change only what the task asks. Do not rename, reformat or tidy unrelated code. If the change needs something outside the request, ask first.
+- **Analysis means no edits.** When the request is to read, check, review or explain, change no files and leave no scratch files behind.
+- **Git.** Do not commit, push, tag or create a release unless asked. When you commit, use Conventional Commits with a scope where it fits, as the history does: `feat(settings): ...`, `refactor: ...`.
+- **Identity.** `mygo.json` `name` and `identifier` are placeholders. Ask before changing them.
+- **Generated files.** Do not hand-edit `internal/locales/catalog_gen.go`. Change the locale JSON, then run `go tool mygo generate`.
+- **Dependencies.** Pin exact versions, such as `@v0.6.4`. `mygo init` fetches the latest mygo; if you run it, restore the pinned version. Keep `CGO_ENABLED=0` builds working.
+- **Tests.** Wait on a condition, for example with `ui.NewTester`. Do not use fixed sleeps.
+
+## Language and copy
+
+- Code comments, test names and test strings are in English. The one exception is test data that checks a Chinese locale, such as `zh-Hans` or `zh-Hant` strings or Chinese file names.
+- Chinese text belongs in `internal/locales/zh-Hans.json`, `internal/locales/zh-Hant.json`, `README.zh-CN.md` and that test data. Nowhere else.
+- User-visible text goes in `internal/locales/en.json`, `zh-Hans.json` and `zh-Hant.json`, with the same keys in every file.
+- Finder extension text goes in the `*.lproj/Localizable.strings` files under `extension/RightClickFinderSync/`, one per language (en, zh-Hans, zh-Hant), with the same keys in each.
+
+## Icons
+
+- Do not hand-draw action icons. Use Lucide SVGs (ISC) from `internal/actionicons/icons/`, and keep the Lucide license with them.
+- A new menu action needs an icon whose meaning matches the action. Extension tests in `extension/tests/main.swift` must cover it.
+
+## Menu actions
+
+- An action's ID is defined in two places: `defaultMenuIDs` in `internal/config/config.go`, and `MenuActions` in `extension/RightClickFinderSync/MenuConfig.swift`. Change both together, and add or update a test on each side.
+- When an action is removed, drop it from both sides and add a migration in `internal/config/` so saved settings do not keep it.
+
+## Settings UI
+
+- Read `.agents/skills/mygo-maintenance/SKILL.md` before editing UI code.
+- Reuse the shared controls in `internal/settings/style.go`, such as `actionButton`, `iconButton`, `settingRow` and `itemRow`, before adding a new variant.
+- Check every layout visually. Render the pane to PNG with `ui.NewTester(...).Image()` in a temporary `_test.go` file, look at the image, then delete both the test file and the PNG. Judge the result as a designer would: hierarchy, spacing, alignment and wording. Compiling is not enough.
+
+## Finder extension
+
+- Keep menu behaviour in Swift. Keep file operations in Go. The extension only builds the menu. To run an action it calls the `rightclick-action` script in its Application Scripts folder. The app writes that script at every start, and the script starts the app's executable with `--action`, so no window opens.
+- An action's ID is defined in `MenuActions` (Swift) and `defaultMenuIDs` (Go); see "Menu actions" above.
+- Each menu action needs an icon in `internal/actionicons/icons/` whose meaning matches the action. `extension/tests/main.swift` must check it.
+- After changing the extension, run the Swift tests and `extension/build.sh`. Registration and restart steps are under "Development" in README.md. Do not run them unless asked.
+- The user must turn the extension on in System Settings. Do not assume it is on.
+
+## Done means
+
+Before you report success:
+
+1. Run the commands that match what you changed. Go changes need every Go check. Extension or menu changes need the Swift tests.
+2. For UI changes, look at a rendered image of the affected pane.
+3. Report failures with the actual output. Do not say a check passed unless you ran it in this session.

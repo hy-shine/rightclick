@@ -1,7 +1,7 @@
 import Foundation
 
-/// Menu text in the language Finder shows. The strings are in en.lproj and
-/// zh-Hans.lproj next to this file; build.sh copies both into the extension.
+/// Menu text in the language Finder shows. The strings are in the .lproj folders
+/// next to this file; build.sh copies them all into the extension.
 enum Localized {
     /// The bundle that holds the strings. The extension uses the main bundle, which
     /// is the extension itself. Tests point it at one language.

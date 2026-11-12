@@ -3,18 +3,16 @@
 "finder.appName" = "RightClick";
 "finder.favoriteFolders" = "Favorite Folders";
 "finder.chooseFolder" = "Choose Another Folder…";
-"finder.newShortcut" = "New %@";
 "finder.newFile" = "New File";
-"finder.newFolder" = "Folder";
-"finder.userTemplate" = "User Template";
+"finder.newFolder" = "New Folder";
+"finder.userTemplate" = "New from Template";
 "finder.captureTemplate" = "Add as Template…";
 "finder.copyPath" = "Copy Path";
 "finder.copyName" = "Copy Name";
-"finder.copyBaseName" = "Copy Name Without Extension";
-"finder.copyExtension" = "Copy Extension";
+"finder.copyBaseName" = "Copy Name (Without Extension)";
 "finder.copyTo" = "Copy To…";
 "finder.moveTo" = "Move To…";
-"finder.openTerminal" = "Open in Terminal";
+"finder.openTerminal" = "Open with Terminal";
 "finder.openEditor" = "Open with Default App";
 "finder.openWithApp" = "Open with %@";
 "finder.zip" = "Compress to ZIP";
@@ -24,7 +22,6 @@
 "finder.toggleHidden" = "Show or Hide Hidden Files (⌘⇧.)";
 "finder.deletePermanently" = "Delete Permanently";
 "finder.noTemplates" = "No Templates";
-"finder.noEditors" = "No Editors";
 "finder.noFileTypes" = "No File Types";
 
 /* Built-in file types. A type with a stored label uses that label instead. */

@@ -25,7 +25,6 @@ var Names = map[string]string{
 	"copy-path":          "copy-path",
 	"copy-name":          "copy-name",
 	"copy-basename":      "copy-basename",
-	"copy-extension":     "copy-extension",
 	"copy-to":            "copy-to",
 	"move-to":            "move-to",
 	"open-terminal":      "open-terminal",

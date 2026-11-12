@@ -1,22 +1,22 @@
 import Cocoa
 import FinderSync
 
-/// Finder Sync extension. It shows the app's submenu, built from config.json, and passes
-/// each chosen action to the main app as a rightclick:// URL. It does no file work itself.
+/// Finder Sync extension. It shows the app's submenu, built from config.json. Each chosen
+/// action runs through a script that the app installs; the script starts the app in the
+/// background, so no window opens. The extension does no file work itself.
 final class FinderSyncExtension: FIFinderSync {
     private let mainScheme = "rightclick"
+    /// The script the app installs in this extension's Application Scripts folder. The name
+    /// must match finder.ActionScriptName in internal/finder.
+    private let actionScriptName = "rightclick-action"
     /// The rightclick:// URL of each action item in the menu that buildMenu built last.
     /// Finder copies menu items and drops representedObject, so an item carries its index here in tag.
     private var actionURLs: [URL] = []
 
     override init() {
         super.init()
-        // Finder shows the menu only inside these folders. Read once when the extension starts.
-        // With no watch folders configured the set is empty, so Finder shows no menu.
-        let folders = AppConfig.load()?.watchFolders ?? []
-        FIFinderSyncController.default().directoryURLs = Set(folders.map {
-            URL(fileURLWithPath: $0, isDirectory: true)
-        })
+        // Finder shows the menu in every folder.
+        FIFinderSyncController.default().directoryURLs = [URL(fileURLWithPath: "/")]
         // The menu must not load icons on the main thread, so they warm up here.
         DispatchQueue.global(qos: .utility).async { ActionIcons.warm() }
     }
@@ -40,13 +40,12 @@ final class FinderSyncExtension: FIFinderSync {
         // config.json is read on every menu open, so edits in the main app apply without restarting the extension.
         let config = AppConfig.load()
         Localized.select(language: config?.language)
-        if let config, !config.contains(target) { return nil }
         return buildMenu(target: target, config: config, templates: Templates.load())
     }
 
     func buildMenu(target: MenuTarget, config: AppConfig?, templates: [TemplateEntry]) -> NSMenu? {
         actionURLs = []
-        var enabled = MenuActions.enabledIDs(from: config?.menuItems)
+        let enabled = MenuActions.enabledIDs(from: config?.menuItems)
         let fileTypes = FileTypes.resolved(from: config?.fileTypes)
         // Older files kept editors and terminals separately; merge them until the
         // app rewrites the file with one program list.
@@ -57,13 +56,20 @@ final class FinderSyncExtension: FIFinderSync {
         let menu = NSMenu(title: "")
         let submenu = NSMenu(title: Localized.text("finder.appName"))
         var nestedFiles: [NSMenuItem] = []
-        if let folder = target.newItemFolder {
+        if let folder = target.newItemFolder, enabled.contains("new-file") {
             let folderPaths = pathParams([folder])
-            if enabled.contains("new-file") {
-                nestedFiles += FileTypes.enabled(fileTypes).map {
+            if enabled.contains("new-folder"), target.allows("new-folder") {
+                let folderItem = menuItem(for: "new-folder", target: target, programs: programs)
+                if let icon = ActionIcons.image(for: "new-folder") { folderItem.image = icon }
+                let folderSetting = config?.menuItems?.first(where: { $0.id == "new-folder" })
+                if let label = folderSetting?.label, !label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    folderItem.title = label
+                }
+                nestedFiles.append(folderItem)
+            }
+            nestedFiles += FileTypes.enabled(fileTypes).map {
                     fileTypeItem($0, title: $0.displayLabel, folderPaths: folderPaths)
                 }
-            }
             if enabled.contains("new-template") {
                 for template in visibleTemplates {
                     let label = template.label ?? template.name
@@ -74,17 +80,13 @@ final class FinderSyncExtension: FIFinderSync {
                 }
             }
         }
-        if !enabled.contains("new-file"), !nestedFiles.isEmpty {
-            enabled.insert("new-file", at: enabled.firstIndex(of: "new-template") ?? 0)
-        }
         for id in enabled {
             let item: NSMenuItem
             if id.contains(":") {
-                guard let shortcut = shortcutItem(id, target: target, fileTypes: fileTypes,
-                                                 templates: visibleTemplates, programs: programs, favorites: favorites) else { continue }
+                guard let shortcut = shortcutItem(id, target: target, programs: programs, favorites: favorites) else { continue }
                 item = shortcut
             } else {
-                guard target.allows(id), id != "new-template" else { continue }
+                guard target.allows(id), id != "new-template", id != "new-folder" else { continue }
                 switch id {
                 case "new-file":
                     guard !nestedFiles.isEmpty else { continue }
@@ -133,36 +135,25 @@ final class FinderSyncExtension: FIFinderSync {
             let parent = NSMenuItem(title: Localized.text("finder.appName"), action: nil, keyEquivalent: "")
             parent.submenu = submenu
             parent.image = ActionIcons.image(for: "menu")
-            menu.addItem(parent)
+            // The group sits above the rows of the menu, so it is the first item.
+            menu.insertItem(parent, at: 0)
         }
         return menu.items.isEmpty ? nil : menu
     }
 
-    private func shortcutItem(_ id: String, target: MenuTarget, fileTypes: [FileTypeSetting],
-                              templates: [TemplateEntry], programs: [String],
+    private func shortcutItem(_ id: String, target: MenuTarget, programs: [String],
                               favorites: [FavoriteFolderSetting]) -> NSMenuItem? {
         let parts = id.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
         guard parts.count == 2 else { return nil }
         let reference = String(parts[1])
         switch parts[0] {
-        case "type":
-            guard let folder = target.newItemFolder,
-                  let fileType = FileTypes.enabled(fileTypes).first(where: { $0.id == reference }) else { return nil }
-            return fileTypeItem(fileType, title: Localized.text("finder.newShortcut", fileType.displayLabel), folderPaths: pathParams([folder]))
-        case "template":
-            guard let folder = target.newItemFolder,
-                  let template = templates.first(where: { $0.name == reference }) else { return nil }
-            let item = actionItem(title: Localized.text("finder.newShortcut", template.label ?? template.name), urlAction: "new-template",
-                                  params: [("name", template.name)] + pathParams([folder]))
-            item.image = fileTypeImage(URL(fileURLWithPath: template.name).pathExtension)
-            return item
         case "app":
             // One program list: the app decides whether it sees a file or a
             // folder, and the action routes it.
             guard programs.contains(reference) else { return nil }
             let item = actionItem(title: Localized.text("finder.openWithApp", reference), urlAction: "open-with",
                                   params: [("app", reference)] + pathParams(target.items.map(\.url)))
-            item.image = ActionIcons.image(for: "app")
+            item.image = ProgramIcons.image(for: reference) ?? ActionIcons.image(for: "app")
             return item
         case "folder":
             guard let folder = favorites.first(where: { $0.id == reference }) else { return nil }
@@ -194,6 +185,14 @@ final class FinderSyncExtension: FIFinderSync {
             return actionItem(title: title(for: id), urlAction: id, params: pathParams(folders))
         case "open-editor":
             return actionItem(title: title(for: id), urlAction: id, params: paths)
+        case "hash":
+            // SHA-256 is the default. The other two algorithms sit in the same submenu.
+            let children = ["SHA-256", "SHA-1", "MD5"].map { algorithm in
+                let child = actionItem(title: algorithm, urlAction: id, params: [("algo", algorithm)] + paths)
+                child.image = ActionIcons.image(for: id)
+                return child
+            }
+            return submenuItem(title: title(for: id), children: children, emptyTitle: title(for: id))
         default:
             return actionItem(title: title(for: id), urlAction: id, params: paths)
         }
@@ -209,7 +208,6 @@ final class FinderSyncExtension: FIFinderSync {
         case "copy-path": return Localized.text("finder.copyPath")
         case "copy-name": return Localized.text("finder.copyName")
         case "copy-basename": return Localized.text("finder.copyBaseName")
-        case "copy-extension": return Localized.text("finder.copyExtension")
         case "copy-to": return Localized.text("finder.copyTo")
         case "move-to": return Localized.text("finder.moveTo")
         case "open-terminal": return Localized.text("finder.openTerminal")
@@ -287,12 +285,26 @@ final class FinderSyncExtension: FIFinderSync {
 
     @objc private func runAction(_ sender: NSMenuItem) {
         guard let url = menuURL(for: sender) else { return }
-        // Run the action without bringing the app forward. An activating open
-        // would make macOS reopen the main window whenever it was closed.
-        let configuration = NSWorkspace.OpenConfiguration()
-        configuration.activates = false
-        configuration.addsToRecentItems = false
-        NSWorkspace.shared.open(url, configuration: configuration)
+        runScript(url)
+    }
+
+    /// Runs one action through the script in this extension's Application Scripts folder.
+    /// macOS runs that script outside the sandbox. The script starts the app's executable
+    /// with --action, so no window or Dock icon appears.
+    private func runScript(_ url: URL) {
+        do {
+            let folder = try FileManager.default.url(
+                for: .applicationScriptsDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+            let task = try NSUserUnixTask(url: folder.appendingPathComponent(actionScriptName))
+            task.execute(withArguments: [url.absoluteString]) { error in
+                _ = task // keeps the task alive until the script finishes
+                if let error {
+                    NSLog("RightClick action failed: %@", error.localizedDescription)
+                }
+            }
+        } catch {
+            NSLog("RightClick could not start an action: %@", error.localizedDescription)
+        }
     }
 
     /// The URL for an item from the menu built last, found by its tag. Nil for any other item.
@@ -361,11 +373,11 @@ struct MenuTarget {
         switch id {
         case "new-file", "new-folder", "new-template":
             return newItemFolder != nil
-        case "copy-path", "copy-name", "copy-basename", "copy-to", "move-to", "delete-permanently":
+        case "copy-path", "copy-name", "copy-basename":
+            // On the blank area these copy the current folder itself, as a selected folder would.
+            return true
+        case "copy-to", "move-to", "delete-permanently":
             return !isBlankArea
-        case "copy-extension":
-            // Nothing to copy when no selected item has an extension.
-            return !isBlankArea && items.contains { !$0.url.pathExtension.isEmpty }
         case "open-terminal":
             return newItemFolder != nil
         case "open-editor", "favorite-folders":

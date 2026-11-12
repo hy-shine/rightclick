@@ -18,7 +18,7 @@ mkdir -p "$out/Contents/Resources/FileIcons"
 cp "$here/../internal/catalog/icons/"*.svg "$out/Contents/Resources/FileIcons/"
 cp "$here/../internal/catalog/icons/"*.txt "$out/Contents/Resources/FileIcons/"
 # The menu text: one .lproj folder per language, read through Bundle.main.
-for lproj in en.lproj zh-Hans.lproj; do
+for lproj in en.lproj zh-Hans.lproj zh-Hant.lproj; do
   cp -R "$here/$name/$lproj" "$out/Contents/Resources/"
 done
 # Action icons, collected from the Lucide set (ISC); see ActionIcons/LICENSE.txt.

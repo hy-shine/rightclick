@@ -1,20 +1,18 @@
 /* Finder menu text. Keep the keys in step with en.lproj/Localizable.strings. */
 
 "finder.appName" = "右键助手";
-"finder.favoriteFolders" = "常用目录";
+"finder.favoriteFolders" = "常用文件夹";
 "finder.chooseFolder" = "选择其他文件夹…";
-"finder.newShortcut" = "新建 %@";
 "finder.newFile" = "新建文件";
-"finder.newFolder" = "文件夹";
-"finder.userTemplate" = "用户模板";
+"finder.newFolder" = "新建文件夹";
+"finder.userTemplate" = "从模板新建";
 "finder.captureTemplate" = "添加为模板…";
 "finder.copyPath" = "拷贝路径";
 "finder.copyName" = "拷贝文件名";
-"finder.copyBaseName" = "拷贝不含扩展名的名字";
-"finder.copyExtension" = "拷贝扩展名";
+"finder.copyBaseName" = "拷贝文件名（不含扩展名）";
 "finder.copyTo" = "复制到…";
 "finder.moveTo" = "移动到…";
-"finder.openTerminal" = "在终端打开";
+"finder.openTerminal" = "用终端打开";
 "finder.openEditor" = "用默认应用打开";
 "finder.openWithApp" = "用 %@ 打开";
 "finder.zip" = "压缩为 ZIP";
@@ -24,7 +22,6 @@
 "finder.toggleHidden" = "显示/隐藏隐藏文件（⌘⇧.）";
 "finder.deletePermanently" = "彻底删除";
 "finder.noTemplates" = "无模板";
-"finder.noEditors" = "无编辑器";
 "finder.noFileTypes" = "无文件类型";
 
 /* Built-in file types. A type with a stored label uses that label instead. */

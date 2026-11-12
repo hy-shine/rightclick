@@ -2,10 +2,11 @@
   "name": "RightClick",
   "identifier": "com.example.rightclick",
   "version": "0.1.0",
+  "main": "./cmd/rightclick",
   "out": "build",
   "urlSchemes": ["rightclick"],
   "i18n": {
-    "dir": "locales",
+    "dir": "internal/locales",
     "source": "en"
   }
 }

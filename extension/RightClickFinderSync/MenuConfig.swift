@@ -140,11 +140,10 @@ enum FileTypes {
 
 /// The parts of config.json that the extension reads. Other keys are ignored.
 struct AppConfig: Decodable {
-    /// "en", "zh-Hans", or nil and empty for the system language.
+    /// "en", "zh-Hans", "zh-Hant", or nil and empty for the system language.
     let language: String?
     let menuItems: [MenuItemSetting]?
     let fileTypes: [FileTypeSetting]?
-    let watchFolders: [String]?
     let editors: [String]?
     let programs: [String]?
     let terminals: [String]?
@@ -155,23 +154,6 @@ struct AppConfig: Decodable {
         guard let url = AppSupportFiles.directory?.appendingPathComponent("config.json"),
               let data = try? Data(contentsOf: url) else { return nil }
         return try? JSONDecoder().decode(AppConfig.self, from: data)
-    }
-}
-
-extension AppConfig {
-    /// Whether every target lies inside the current folder whitelist. Finder can
-    /// keep an old directory list until it restarts; this check makes the menu
-    /// agree with the main app even then.
-    func contains(_ target: MenuTarget) -> Bool {
-        let roots = (watchFolders ?? []).map {
-            URL(fileURLWithPath: $0, isDirectory: true).resolvingSymlinksInPath().standardizedFileURL.path
-        }
-        guard !roots.isEmpty else { return false }
-        return target.items.allSatisfy { item in
-            let folder = item.isDirectory ? item.url : item.url.deletingLastPathComponent()
-            let path = folder.resolvingSymlinksInPath().standardizedFileURL.path
-            return roots.contains { path == $0 || path.hasPrefix($0 + "/") }
-        }
     }
 }
 
@@ -199,7 +181,7 @@ enum MenuActions {
     /// Groups in the order they appear in the submenu. Within a group, config order applies.
     static let groups: [[String]] = [
         ["new-file", "new-folder", "new-template"],
-        ["copy-path", "copy-name", "copy-basename", "copy-extension", "copy-to", "move-to"],
+        ["copy-path", "copy-name", "copy-basename", "copy-to", "move-to"],
         ["open-terminal", "open-editor"],
         ["zip", "unzip", "hash"],
         ["compare-hash"],
@@ -211,9 +193,9 @@ enum MenuActions {
     /// Every ID in default order. It is also the order used when config.json is missing.
     static let defaultOrder: [String] = MenuActions.groups.flatMap { $0 }
 
-    /// Actions that start switched off because they cannot be undone. Like the Go side's
-    /// defaultOffMenuIDs, they stay out of the menu until the user turns them on.
-    static let defaultOff: Set<String> = ["delete-permanently"]
+    /// Actions that start switched off. Like the Go side's defaultOffMenuIDs, they stay out of
+    /// the menu until the user turns them on.
+    static let defaultOff: Set<String> = ["delete-permanently", "open-terminal"]
 
     /// The IDs to show, in display order, from the menuItems array. Entries with enabled = false
     /// are dropped. An ID missing from the array (for example, one added in a later version)

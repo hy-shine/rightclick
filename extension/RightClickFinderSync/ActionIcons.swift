@@ -16,7 +16,6 @@ enum ActionIcons {
         "copy-path": "copy-path",
         "copy-name": "copy-name",
         "copy-basename": "copy-basename",
-        "copy-extension": "copy-extension",
         "copy-to": "copy-to",
         "move-to": "move-to",
         "open-terminal": "open-terminal",
@@ -65,5 +64,29 @@ enum ActionIcons {
         lock.lock()
         defer { lock.unlock() }
         return cache[name]
+    }
+}
+
+/// The icons of the apps that the "Open With" items name. Each app's own artwork
+/// is used, not a generic glyph, so the menu matches the app list in settings.
+/// Looked up once per app, found or not; an app that is not installed keeps the
+/// generic icon.
+enum ProgramIcons {
+    /// nil records an app that was looked up and not found.
+    private static var cache: [String: NSImage?] = [:]
+    private static let lock = NSLock()
+
+    static func image(for program: String) -> NSImage? {
+        lock.lock()
+        defer { lock.unlock() }
+        if let known = cache[program] { return known }
+        var found: NSImage?
+        if let path = NSWorkspace.shared.fullPath(forApplication: program) {
+            let icon = NSWorkspace.shared.icon(forFile: path)
+            icon.size = NSSize(width: 16, height: 16)
+            found = icon
+        }
+        cache[program] = found
+        return found
     }
 }
