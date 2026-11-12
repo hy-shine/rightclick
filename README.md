@@ -8,7 +8,7 @@ Make the Finder right-click menu do more: create files from types and templates,
 
 English | [简体中文](README.zh-CN.md)
 
-> **Status: early development.** There is no released build yet. You build the app from source, and it is not signed or notarized. The app name and bundle identifier are placeholders until the first release.
+> **Status: first release, 0.1.0.** The app is not signed with an Apple Developer ID and is not notarized, so macOS asks you to allow it the first time you open it. The bundle identifier `com.example.rightclick` is still a placeholder.
 
 ## Features
 

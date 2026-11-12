@@ -20,3 +20,5 @@ The first release.
 - Requires macOS 15.0 or later.
 - Two disk images: `RightClick-0.1.0-arm64.dmg` for Apple silicon Macs, and `RightClick-0.1.0-x86_64.dmg` for Intel Macs.
 - The app is not notarized. The first time you open it, allow it under Privacy & Security, with Open Anyway.
+- Files are copied, archived and unpacked with their download mark, so macOS still asks before a downloaded app runs.
+- Unpacking refuses an archive that would unpack to more than 2 GiB or hold more than 10,000 items, and a file of 10 MiB or more that unpacks to over 200 times its packed size. If the data written reaches 2 GiB, unpacking stops and keeps the files already written.
