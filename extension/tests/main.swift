@@ -225,6 +225,68 @@ precondition(hashURL.host == "hash", "Compute Hash routes to \(hashURL.host ?? "
 precondition(hashURL.query?.contains("algo=") != true, "Compute Hash still sends an algorithm")
 print("Compute Hash is one entry and sends no algorithm")
 
+precondition(!MenuActions.enabledIDs(from: nil).contains("copy-terminal-path"), "terminal path is on by default")
+let terminalPathConfig = try JSONDecoder().decode(AppConfig.self, from: Data(#"{"menuItems":[{"id":"copy-terminal-path","enabled":true,"location":"submenu"}]}"#.utf8))
+for selection in [target, fileTarget, multipleFiles] {
+    guard let terminalMenu = provider.buildMenu(target: selection, config: terminalPathConfig, templates: []),
+          let terminalItem = firstItem(terminalMenu, title: "Copy as Terminal Path"),
+          let terminalURL = provider.menuURL(for: terminalItem) else { fatalError("terminal path action missing") }
+    let paths = URLComponents(url: terminalURL, resolvingAgainstBaseURL: false)?.queryItems?.filter { $0.name == "path" }.compactMap(\.value)
+    precondition(terminalURL.host == "copy-terminal-path" && paths == selection.items.map { $0.url.path }, "terminal path lost selection")
+    precondition(terminalItem.image != nil, "terminal path has no icon")
+}
+print("Terminal path default, contexts, icon, and selection routing verified")
+
+precondition(!MenuActions.enabledIDs(from: nil).contains("copy-relative-path"), "relative path is on by default")
+let relativePathConfig = try JSONDecoder().decode(AppConfig.self, from: Data(#"{"menuItems":[{"id":"copy-relative-path","enabled":true,"location":"submenu"}]}"#.utf8))
+for selection in [target, fileTarget, multipleFiles] {
+    guard let relativeMenu = provider.buildMenu(target: selection, config: relativePathConfig, templates: []),
+          let relativeItem = firstItem(relativeMenu, title: "Copy Relative Path…"),
+          let relativeURL = provider.menuURL(for: relativeItem) else { fatalError("relative path action missing") }
+    let paths = URLComponents(url: relativeURL, resolvingAgainstBaseURL: false)?.queryItems?.filter { $0.name == "path" }.compactMap(\.value)
+    precondition(relativeURL.host == "copy-relative-path" && paths == selection.items.map { $0.url.path }, "relative path lost selection")
+    precondition(relativeItem.image != nil, "relative path has no icon")
+}
+print("Relative path default, contexts, icon, and selection routing verified")
+
+precondition(!MenuActions.enabledIDs(from: nil).contains("copy-markdown-link"), "Markdown link is on by default")
+let markdownLinkConfig = try JSONDecoder().decode(AppConfig.self, from: Data(#"{"menuItems":[{"id":"copy-markdown-link","enabled":true,"location":"submenu"}]}"#.utf8))
+for selection in [target, fileTarget, multipleFiles] {
+    guard let markdownMenu = provider.buildMenu(target: selection, config: markdownLinkConfig, templates: []),
+          let markdownItem = firstItem(markdownMenu, title: "Copy Markdown File Link…"),
+          let markdownURL = provider.menuURL(for: markdownItem) else { fatalError("Markdown link action missing") }
+    let paths = URLComponents(url: markdownURL, resolvingAgainstBaseURL: false)?.queryItems?.filter { $0.name == "path" }.compactMap(\.value)
+    precondition(markdownURL.host == "copy-markdown-link" && paths == selection.items.map { $0.url.path }, "Markdown link lost selection")
+    precondition(markdownItem.image != nil, "Markdown link has no icon")
+}
+print("Markdown link default, contexts, icon, and selection routing verified")
+
+let selectedFolder = MenuTarget(items: target.items, isBlankArea: false)
+precondition(selectedFolder.allows("zip"), "Compress to ZIP is missing for a selected folder")
+let selectedFolders = MenuTarget(items: target.items + outsideTarget.items, isBlankArea: false)
+let mixedSelection = MenuTarget(items: target.items + fileTarget.items, isBlankArea: false)
+let folderZipConfig = try JSONDecoder().decode(AppConfig.self, from: Data(#"{"menuItems":[{"id":"zip","enabled":true,"location":"submenu"}]}"#.utf8))
+for selection in [selectedFolder, selectedFolders, mixedSelection] {
+    guard let folderZipMenu = provider.buildMenu(target: selection, config: folderZipConfig, templates: []),
+          let folderZipItem = firstItem(folderZipMenu, title: "Compress to ZIP"),
+          let folderZipURL = provider.menuURL(for: folderZipItem) else { fatalError("folder ZIP action missing") }
+    let paths = URLComponents(url: folderZipURL, resolvingAgainstBaseURL: false)?.queryItems?.filter { $0.name == "path" }.compactMap(\.value)
+    precondition(folderZipURL.host == "zip" && paths == selection.items.map { $0.url.path }, "folder ZIP lost selection")
+}
+precondition(!target.allows("zip"), "ZIP is visible on a blank area")
+print("Folder ZIP selections and action parameters verified")
+
+let zipFileTarget = MenuTarget(items: [MenuTarget.Item(url: URL(fileURLWithPath: "/private/tmp/bundle.ZIP"))], isBlankArea: false)
+precondition(zipFileTarget.allows("unzip-to-folder"), "named-folder extraction is missing for ZIP")
+precondition(!target.allows("unzip-to-folder") && !fileTarget.allows("unzip-to-folder") && !multipleFiles.allows("unzip-to-folder"), "named-folder extraction has the wrong contexts")
+guard let extractionMenu = provider.buildMenu(target: zipFileTarget, config: nil, templates: []),
+      let extractionItem = firstItem(extractionMenu, title: "Extract to Folder"),
+      let extractionURL = provider.menuURL(for: extractionItem) else { fatalError("named-folder extraction action missing") }
+precondition(extractionItem.image != nil && extractionURL.host == "unzip-to-folder", "named-folder extraction icon or route is wrong")
+precondition(URLComponents(url: extractionURL, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "path" }?.value == "/private/tmp/bundle.ZIP", "named-folder extraction lost the archive path")
+precondition(firstItem(extractionMenu, title: "Extract Here") != nil, "Extract Here was removed")
+print("Both extraction menus, archive context, icons, and routes verified")
+
 // An app's item shows that app's own icon. An app that is not installed has none.
 let programConfig = try JSONDecoder().decode(AppConfig.self, from: Data(#"{"programs":["Finder"],"menuItems":[{"id":"app:Finder","enabled":true,"location":"main"}]}"#.utf8))
 guard let programMenu = provider.buildMenu(target: fileTarget, config: programConfig, templates: []) else {

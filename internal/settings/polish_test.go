@@ -10,12 +10,12 @@ import (
 	"github.com/hy-shine/rightclick/internal/locales"
 )
 
-func TestDiagnosticsCheckingDoesNotClaimSuccess(t *testing.T) {
+func TestFinderStatusCheckingDoesNotClaimSuccess(t *testing.T) {
 	for _, language := range []string{"zh-Hans", "zh-Hant", "en"} {
 		t.Run(language, func(t *testing.T) {
 			useLocale(t, language)
 			model := readyApp(t)
-			selectDiagnostics(model)
+			selectGeneral(model)
 			model.finder = finderChecking
 			tester := ui.NewTester(model.view, mainWidth, mainHeight)
 			texts := tester.Texts()

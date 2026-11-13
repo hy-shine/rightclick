@@ -13,17 +13,14 @@ import (
 	"github.com/hy-shine/rightclick/internal/files"
 )
 
-// version is the app version that the general pane shows.
-const version = "0.1.0"
-
 // Pane IDs. Each pane is one section of the main window, chosen in the sidebar.
 const (
-	paneMenu        = "menu"
-	paneTemplates   = "templates"
-	paneFolders     = "folders"
-	paneOpeners     = "openers"
-	paneDiagnostics = "diagnostics"
-	paneGeneral     = "general"
+	paneMenu      = "menu"
+	paneTemplates = "templates"
+	paneFolders   = "folders"
+	paneOpeners   = "openers"
+	paneDefaults  = "defaults"
+	paneGeneral   = "general"
 )
 
 // paneTab is one pane of the main window: its ID and its name in the sidebar.
@@ -37,7 +34,7 @@ func paneTabs() []paneTab {
 		{paneTemplates, locales.PaneNew()},
 		{paneFolders, locales.PaneFolders()},
 		{paneOpeners, locales.PaneOpeners()},
-		{paneDiagnostics, locales.PaneDiagnostics()},
+		{paneDefaults, locales.PaneDefaults()},
 		{paneGeneral, locales.PaneGeneral()},
 	}
 }
@@ -240,17 +237,17 @@ func (m *app) paneContent(c *ui.Context) {
 		m.foldersPane(c)
 	case paneOpeners:
 		m.openersPane(c)
-	case paneDiagnostics:
-		m.diagnosticsPane(c)
+	case paneDefaults:
+		m.defaultsPane(c)
 	case paneGeneral:
 		m.generalPane(c)
 	}
 }
 
-// paneChanged runs when a pane is chosen. The diagnostics pane checks the Finder
-// extension each time it is shown.
+// paneChanged runs when a pane is chosen. General checks the Finder extension
+// each time it is shown.
 func (m *app) paneChanged() {
-	if m.currentPane() == paneDiagnostics {
+	if m.currentPane() == paneGeneral && m.win != nil {
 		m.checkFinder()
 	}
 }
@@ -260,7 +257,11 @@ func (m *app) paneChanged() {
 // the window shows the values that the Finder extension and the actions read.
 func (m *app) saveConfig() {
 	m.cfg.GroupMenuByLocation()
-	err := config.Save(m.store.ConfigPath, m.cfg)
+	latest, err := config.Load(m.store.ConfigPath)
+	if err == nil {
+		m.cfg.CopyBaseFolder = latest.CopyBaseFolder
+		err = config.Save(m.store.ConfigPath, m.cfg)
+	}
 	if err != nil {
 		saved, loadErr := config.Load(m.store.ConfigPath)
 		if loadErr != nil {

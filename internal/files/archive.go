@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/hy-shine/rightclick/internal/locales"
@@ -38,7 +39,7 @@ const (
 // built in a temporary file and renamed only when complete, so a failure leaves
 // no partial archive behind. When an archived file or folder is quarantined
 // (downloaded), the archive is quarantined too, so that Unzip can pass it on.
-func Zip(paths []string, dir, name string) (string, error) {
+func Zip(paths []string, dir, name string, exclusions ...string) (string, error) {
 	target, err := reserveFile(dir, name)
 	if err != nil {
 		return "", err
@@ -53,7 +54,7 @@ func Zip(paths []string, dir, name string) (string, error) {
 				return err
 			}
 			top := uniqueTop(filepath.Base(p), info.IsDir(), used)
-			if err := addToZip(zw, p, top, &origin); err != nil {
+			if err := addToZip(zw, p, top, &origin, exclusions); err != nil {
 				return err
 			}
 		}
@@ -87,7 +88,7 @@ func uniqueTop(name string, isDir bool, used map[string]bool) string {
 // addToZip adds the file, symbolic link or folder at path to zw under entry, its
 // name inside the archive. A folder's contents follow its own entry. origin notes
 // the quarantine of the folders and files it adds.
-func addToZip(zw *zip.Writer, path, entry string, origin *quarantineOrigin) error {
+func addToZip(zw *zip.Writer, path, entry string, origin *quarantineOrigin, exclusions []string) error {
 	info, err := os.Lstat(path)
 	if err != nil {
 		return err
@@ -111,7 +112,10 @@ func addToZip(zw *zip.Writer, path, entry string, origin *quarantineOrigin) erro
 			return err
 		}
 		for _, c := range children {
-			if err := addToZip(zw, filepath.Join(path, c.Name()), entry+"/"+c.Name(), origin); err != nil {
+			if slices.Contains(exclusions, c.Name()) {
+				continue
+			}
+			if err := addToZip(zw, filepath.Join(path, c.Name()), entry+"/"+c.Name(), origin, exclusions); err != nil {
 				return err
 			}
 		}
@@ -158,57 +162,81 @@ func addToZip(zw *zip.Writer, path, entry string, origin *quarantineOrigin) erro
 // extraction stops there. In both error cases, files written before the error stay
 // in place. Nothing is written through a symbolic link in the folder.
 func Unzip(path string) (written, skipped int, err error) {
+	_, written, skipped, err = unzip(path, false)
+	return written, skipped, err
+}
+
+func UnzipToFolder(path string) (folder string, written, skipped int, err error) {
+	return unzip(path, true)
+}
+
+func unzip(path string, toFolder bool) (folder string, written, skipped int, err error) {
 	r, err := zip.OpenReader(path)
 	if err != nil {
-		return 0, 0, err
+		return "", 0, 0, err
 	}
 	defer r.Close()
 	if err := checkUnzipLimits(r.File); err != nil {
-		return 0, 0, err
+		return "", 0, 0, err
 	}
 	dir, err := filepath.Abs(filepath.Dir(path))
 	if err != nil {
-		return 0, 0, err
+		return "", 0, 0, err
 	}
 	// An archive from the internet passes its quarantine to every folder and file it
 	// unpacks, as Archive Utility does.
 	var origin quarantineOrigin
 	if err := origin.note(path); err != nil {
-		return 0, 0, err
+		return "", 0, 0, err
+	}
+	if toFolder {
+		name := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+		if name == "" || name == "." || name == ".." {
+			name = strings.TrimSuffix(locales.DefaultArchiveName(), ".zip")
+		}
+		dir, err = CreateFolder(dir, name)
+		if err != nil {
+			return "", 0, 0, err
+		}
+		if origin.found {
+			if err := writeQuarantine(dir, origin.value); err != nil {
+				return dir, 0, 0, err
+			}
+		}
 	}
 	root, err := os.OpenRoot(dir)
 	if err != nil {
-		return 0, 0, err
+		return dir, 0, 0, err
 	}
 	defer root.Close()
 	left := maxUnzipBytes
 	for _, f := range r.File {
 		name := filepath.FromSlash(f.Name)
 		if !filepath.IsLocal(name) {
-			return written, skipped, fmt.Errorf("archive entry leaves the folder: %s", f.Name)
+			return dir, written, skipped, fmt.Errorf("archive entry leaves the folder: %s", f.Name)
 		}
 		mode := f.Mode()
 		switch {
 		case mode.IsDir():
 			if err := mkdirAllIn(root, dir, name, &origin); err != nil {
-				return written, skipped, err
+				return dir, written, skipped, err
 			}
 		case mode.IsRegular():
 			rc, err := f.Open()
 			if err != nil {
-				return written, skipped, err
+				return dir, written, skipped, err
 			}
 			err = extractFile(root, dir, f.Mode().Perm(), rc, name, &left, &origin)
 			rc.Close()
 			if err != nil {
-				return written, skipped, err
+				return dir, written, skipped, err
 			}
 			written++
 		default:
 			skipped++
 		}
 	}
-	return written, skipped, nil
+	return dir, written, skipped, nil
 }
 
 // checkUnzipLimits refuses an archive that is too large or has too many items,

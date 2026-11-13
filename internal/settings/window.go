@@ -79,15 +79,14 @@ func setMainWindowTitle(title string) {
 	}
 }
 
-// OpenDiagnostics shows the main window on the diagnostics pane, where the
-// Finder extension state and the steps to enable it are. Call it on the main
-// thread, like Open.
+// OpenDiagnostics shows the main window on General, where the Finder extension
+// state and the steps to enable it are. Call it on the main thread, like Open.
 func OpenDiagnostics() {
 	Open()
 	if openApp == nil {
 		return // Open could not create the window and has already reported why
 	}
-	openApp.selectPane(paneDiagnostics)
+	openApp.selectPane(paneGeneral)
 }
 
 func OpenTemplateDraft(template files.Template) error {

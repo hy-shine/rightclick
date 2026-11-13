@@ -23,8 +23,8 @@ func TestPlaceSwitchChangesPreview(t *testing.T) {
 	if err := tt.Click("Preview"); err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Contains(tt.Texts(), "Shows 8 items") {
-		t.Fatalf("a file shows 8 entries; texts %q", tt.Texts())
+	if !slices.Contains(tt.Texts(), "Shows 9 items") {
+		t.Fatalf("a file shows 9 entries; texts %q", tt.Texts())
 	}
 	tt.Frame()
 	if err := tt.Click("Blank Space"); err != nil {
@@ -155,8 +155,8 @@ func TestMenuSearchFiltersAndKeepsContextVisible(t *testing.T) {
 	if !slices.Contains(texts, "Only .zip files") {
 		t.Errorf("matching action does not show its context: %q", texts)
 	}
-	if rows := m.menuDisplayRows(3); len(rows) != 2 {
-		t.Errorf("zip search returned %d editable rows, want 2", len(rows))
+	if rows := m.menuDisplayRows(3); len(rows) != 3 {
+		t.Errorf("zip search returned %d editable rows, want 3", len(rows))
 	}
 	m.menuSearch = "not-an-action"
 	texts = ui.NewTester(m.view, minWidth, minHeight).Texts()
@@ -195,7 +195,7 @@ func TestPreviewCountFitsItsColumn(t *testing.T) {
 	if err := tt.Click("Preview"); err != nil {
 		t.Fatal(err)
 	}
-	count, ok := tt.Find("Shows 8 items")
+	count, ok := tt.Find("Shows 9 items")
 	if !ok {
 		t.Fatal("the entry count is not on the pane")
 	}

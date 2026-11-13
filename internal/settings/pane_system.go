@@ -16,39 +16,36 @@ const (
 	finderOff
 )
 
-// diagnosticsPane lists the steps that the Finder menu needs, each with the
-// action that completes it. The conclusion is shown only when they all pass.
-// The restart row is the one place that asks for a restart: after a folder
-// change it shows the pending state, otherwise it is the manual restart.
-func (m *app) diagnosticsPane(c *ui.Context) {
+// finderSection lists the Finder extension status and the action that completes
+// setup. The restart row is the manual way to reload the Finder menu.
+func (m *app) finderSection(c *ui.Context) {
 	t := c.Theme()
-	paneHeader(c, locales.PaneDiagnostics(), locales.DiagnosticsIntro())
-	if m.setupStep() == stepReady {
-		banner(c, t.Success, iconCheck, locales.ReadyInFinder(), locales.ReadyInFinderBody(), "")
-	}
-	ledger(c, ui.Column(c)).Children(func() {
-		extensionTitle := locales.BannerExtensionOff()
-		extension, extensionAction := locales.ExtensionOpenHint(), locales.GoEnable()
-		extensionIcon, extensionTone := iconAlert, t.Warning
-		switch m.finder {
-		case finderChecking:
-			extensionTitle, extension, extensionAction = locales.FinderExtension(), locales.CheckingItem(), ""
-			extensionIcon, extensionTone = iconInfo, t.TextMuted
-		case finderOn:
-			extensionTitle = locales.CheckExtension()
-			extension, extensionAction = locales.ExtensionEnabledHint(), ""
-			extensionIcon, extensionTone = iconCheck, t.Success
-		}
-		if diagnosticRow(c, extensionTitle, extension, extensionAction, extensionIcon, extensionTone) {
-			m.enableFinderExtension()
-		}
-
-	})
-	ledger(c, ui.Column(c)).Children(func() {
-		settingRow(c, nil, ui.Color{}, locales.RestartFinder(), locales.RestartFinderHint(), func() {
-			if quietButton(c, iconRestart, locales.Restart()) {
-				m.confirmRestart = true
+	ui.Column(c).Gap(10).Children(func() {
+		sectionTitle(c, locales.PaneDiagnostics())
+		ledger(c, ui.Column(c)).Children(func() {
+			extensionTitle := locales.BannerExtensionOff()
+			extension, extensionAction := locales.ExtensionOpenHint(), locales.GoEnable()
+			extensionIcon, extensionTone := iconAlert, t.Warning
+			switch m.finder {
+			case finderChecking:
+				extensionTitle, extension, extensionAction = locales.FinderExtension(), locales.CheckingItem(), ""
+				extensionIcon, extensionTone = iconInfo, t.TextMuted
+			case finderOn:
+				extensionTitle = locales.CheckExtension()
+				extension, extensionAction = locales.ExtensionEnabledHint(), ""
+				extensionIcon, extensionTone = iconCheck, t.Success
+				if m.setupStep() == stepReady {
+					extensionTitle, extension = locales.ReadyInFinder(), locales.ReadyInFinderBody()
+				}
 			}
+			if m.setupStep() != stepExtension && diagnosticRow(c, extensionTitle, extension, extensionAction, extensionIcon, extensionTone) {
+				m.enableFinderExtension()
+			}
+			settingRow(c, nil, ui.Color{}, locales.RestartFinder(), locales.RestartFinderHint(), func() {
+				if quietButton(c, iconRestart, locales.Restart()) {
+					m.confirmRestart = true
+				}
+			})
 		})
 	})
 }
@@ -127,30 +124,41 @@ func (m *app) restartFinder() {
 	}()
 }
 
-// generalPane holds the switch for starting the app at login, and below it the
-// app's name and version, so that the sidebar needs no separate About pane.
+// generalPane holds the application settings and product information.
 func (m *app) generalPane(c *ui.Context) {
-	t := c.Theme()
 	paneHeader(c, locales.PaneGeneral(), "")
+	step := m.setupStep()
+	if step.blocked() {
+		title, note, action := locales.PaneDiagnostics(), step.summary(), ""
+		if step == stepExtension {
+			title, note, action = locales.BannerExtensionOff(), locales.ExtensionOpenHint(), locales.GoEnable()
+		}
+		if banner(c, c.Theme().Warning, iconAlert, title, note, action) {
+			m.enableFinderExtension()
+		}
+	}
 	ledger(c, ui.Column(c)).Children(func() {
-		settingRow(c, nil, ui.Color{}, locales.LanguageSetting(), locales.LanguageHint(), func() {
+		settingRow(c, nil, ui.Color{}, locales.LanguageSetting(), "", func() {
 			locationSelect(c, &m.cfg.Language, "language", locales.LanguageSetting(), config.Languages, languageLabels(), true, m.applyLanguage)
-		})
-		settingRow(c, nil, ui.Color{}, locales.LaunchAtLogin(), locales.LaunchAtLoginHint(), func() {
+		}).Padding(8, 16)
+		settingRow(c, nil, ui.Color{}, locales.AppearanceSetting(), "", func() {
+			locationSelect(c, &m.cfg.Appearance, "appearance", locales.AppearanceSetting(), config.Appearances, appearanceLabels(), true, m.applyAppearance)
+		}).Padding(8, 16)
+		settingRow(c, nil, ui.Color{}, locales.LaunchAtLogin(), "", func() {
 			ui.Switch(c, &m.openAtLogin).Label(locales.LaunchAtLogin()).OnChange(m.applyOpenAtLogin)
-		})
-		m.updateRow(c)
+		}).Padding(8, 16).MinHeight(46)
 	})
-	sectionTitle(c, locales.About())
-	ui.Row(c).Gap(16).AlignItems(ui.Center).Children(func() {
-		mark(c, 56)
-		ui.Column(c).Gap(4).Children(func() {
-			ui.Text(c, locales.AppName()).FontSize(22).FontWeight(700)
-			ui.Text(c, locales.VersionLine(version)).FontSize(sizeBody).TextColor(t.TextMuted)
-		})
-	})
-	ui.Text(c, locales.AboutBlurb()).
-		FontSize(sizeBody).LineHeight(1.6).TextColor(t.TextMuted)
+	m.finderSection(c)
+	m.aboutSection(c)
+}
+
+func appearanceLabels() []string {
+	return []string{locales.AppearanceSystem(), locales.AppearanceLight(), locales.AppearanceDark()}
+}
+
+func (model *app) applyAppearance() {
+	model.saveConfig()
+	model.env.setAppearance(model.cfg.Appearance)
 }
 
 // languageLabels returns the picker text for each tag in config.Languages, in the

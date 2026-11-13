@@ -41,6 +41,26 @@ type FavoriteFolder struct {
 	Enabled bool   `json:"enabled"`
 }
 
+type ZipExclusions struct {
+	DSStore     bool `json:"dsStore"`
+	Git         bool `json:"git"`
+	NodeModules bool `json:"nodeModules"`
+}
+
+func (options ZipExclusions) Names() []string {
+	var names []string
+	if options.DSStore {
+		names = append(names, ".DS_Store")
+	}
+	if options.Git {
+		names = append(names, ".git")
+	}
+	if options.NodeModules {
+		names = append(names, "node_modules")
+	}
+	return names
+}
+
 // FileType is one file the New File submenu can create.
 type FileType struct {
 	ID           string `json:"id"`
@@ -59,28 +79,37 @@ type FileType struct {
 // the others are catalog tags.
 var Languages = []string{"", "zh-Hans", "zh-Hant", "en"}
 
+var Appearances = []string{"", "light", "dark"}
+
+var HashAlgorithms = []string{"SHA-256", "SHA-1", "MD5"}
+
 // Config is the saved settings.
 type Config struct {
 	// Language is the language the app shows, one of Languages.
-	Language  string     `json:"language,omitempty"`
-	Version   int        `json:"version"`
-	MenuItems []MenuItem `json:"menuItems"`
-	FileTypes []FileType `json:"fileTypes"`
-	Programs  []string   `json:"programs"`
+	Language             string     `json:"language,omitempty"`
+	Appearance           string     `json:"appearance,omitempty"`
+	DefaultHashAlgorithm string     `json:"defaultHashAlgorithm"`
+	Version              int        `json:"version"`
+	MenuItems            []MenuItem `json:"menuItems"`
+	FileTypes            []FileType `json:"fileTypes"`
+	Programs             []string   `json:"programs"`
 	// Legacy lists, read once during migration and dropped on the next save.
 	Terminal        string           `json:"terminal,omitempty"`
 	Terminals       []string         `json:"terminals,omitempty"`
 	Editors         []string         `json:"editors,omitempty"`
 	OpenAfterCreate bool             `json:"openAfterCreate"`
 	FavoriteFolders []FavoriteFolder `json:"favoriteFolders,omitempty"`
+	CopyBaseFolder  string           `json:"copyBaseFolder,omitempty"`
+	ZipExclusions   ZipExclusions    `json:"zipExclusions"`
 }
 
 // defaultMenuIDs lists the menu entries in their default order, as in ui.md section 2.
 var defaultMenuIDs = []string{
 	"new-file", "new-folder", "new-template",
 	"copy-path", "copy-name", "copy-basename", "copy-to", "move-to",
+	"copy-terminal-path", "copy-relative-path", "copy-markdown-link",
 	"open-terminal",
-	"zip", "unzip", "hash", "compare-hash",
+	"zip", "unzip", "unzip-to-folder", "hash", "compare-hash",
 	"toggle-hidden", "delete-permanently",
 	"add-template",
 }
@@ -90,6 +119,7 @@ var defaultMenuIDs = []string{
 // user turns them on.
 var defaultOffMenuIDs = map[string]bool{
 	"delete-permanently": true, "open-terminal": true, "new-template": true, "add-template": true,
+	"copy-terminal-path": true, "copy-relative-path": true, "copy-markdown-link": true,
 }
 
 // defaultOffFileTypeIDs lists the file types that start switched off: the programming
@@ -190,9 +220,11 @@ func Default() Config {
 		items = append(items, MenuItem{ID: id, Enabled: !defaultOffMenuIDs[id], Location: DefaultMenuLocation(id)})
 	}
 	return Config{
-		Version:   Version,
-		MenuItems: items,
-		FileTypes: DefaultFileTypes(),
+		Version:              Version,
+		MenuItems:            items,
+		FileTypes:            DefaultFileTypes(),
+		ZipExclusions:        ZipExclusions{DSStore: true},
+		DefaultHashAlgorithm: "SHA-256",
 		// No app is added for the user: the Open With list is theirs to fill.
 		Programs: []string{},
 	}
@@ -220,7 +252,7 @@ func Load(path string) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	cfg := Config{}
+	cfg := Config{ZipExclusions: ZipExclusions{DSStore: true}, DefaultHashAlgorithm: "SHA-256"}
 	if err := json.Unmarshal(data, &cfg); err != nil {
 		return Config{}, errors.New(locales.ConfigReadFailed(err.Error()))
 	}
@@ -302,6 +334,12 @@ func (cfg *Config) normalize() {
 	}
 	if !slices.Contains(Languages, cfg.Language) {
 		cfg.Language = ""
+	}
+	if !slices.Contains(Appearances, cfg.Appearance) {
+		cfg.Appearance = ""
+	}
+	if !slices.Contains(HashAlgorithms, cfg.DefaultHashAlgorithm) {
+		cfg.DefaultHashAlgorithm = "SHA-256"
 	}
 	cfg.Version = Version
 	cfg.GroupMenuByLocation()

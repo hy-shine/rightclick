@@ -8,6 +8,9 @@
 "finder.userTemplate" = "從範本新增";
 "finder.captureTemplate" = "新增為範本…";
 "finder.copyPath" = "複製路徑";
+"finder.copyTerminalPath" = "複製為終端機路徑";
+"finder.copyRelativePath" = "複製相對路徑…";
+"finder.copyMarkdownLink" = "複製 Markdown 檔案連結…";
 "finder.copyName" = "複製檔名";
 "finder.copyBaseName" = "複製檔名（不含副檔名）";
 "finder.copyTo" = "複製到…";
@@ -16,6 +19,7 @@
 "finder.openWithApp" = "用 %@ 開啟";
 "finder.zip" = "壓縮為 ZIP";
 "finder.unzip" = "解壓縮到此處";
+"finder.unzipToFolder" = "解壓縮到同名資料夾";
 "finder.hash" = "計算雜湊";
 "finder.compareHash" = "比較兩個檔案的雜湊";
 "finder.toggleHidden" = "顯示/隱藏隱藏檔案（⌘⇧.）";

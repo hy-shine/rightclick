@@ -1,9 +1,19 @@
 package app
 
 import (
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 )
+
+func TestCopyBasePickerScriptCompiles(test *testing.T) {
+	command := exec.CommandContext(test.Context(), "/usr/bin/osacompile", "-o", filepath.Join(test.TempDir(), "copy-base.scpt"))
+	command.Stdin = strings.NewReader(chooseCopyBaseScript)
+	if output, err := command.CombinedOutput(); err != nil {
+		test.Fatalf("compile base-folder picker: %v: %s", err, output)
+	}
+}
 
 // TestAppleScriptReceivesArgumentsAsText checks that the text reaches a script
 // unchanged, with a leading dash and non-ASCII characters. The clipboard, the

@@ -57,6 +57,7 @@ func useBackgroundInterface() {
 	copyText = setClipboard
 	notify = notifyWithAppleScript
 	chooseFolder = chooseFolderWithAppleScript
+	chooseCopyBaseFolder = chooseCopyBaseWithAppleScript
 	confirmDelete = confirmDeleteWithAppleScript
 }
 
@@ -83,6 +84,18 @@ func chooseFolderWithAppleScript(_ string) (string, error) {
 		return "", err
 	}
 	path := strings.TrimSpace(out)
+	if path == "" {
+		return "", nil
+	}
+	return filepath.Clean(path), nil
+}
+
+func chooseCopyBaseWithAppleScript(start string) (string, error) {
+	out, err := runAppleScript(chooseCopyBaseScript, locales.CopyBaseHint(), start)
+	if err != nil {
+		return "", err
+	}
+	path := strings.TrimSuffix(out, "\n")
 	if path == "" {
 		return "", nil
 	}
@@ -140,6 +153,20 @@ end run`
 const chooseFolderScript = `on run argv
 	try
 		set chosen to choose folder with prompt (item 1 of argv)
+	on error number -128
+		return ""
+	end try
+	return POSIX path of chosen
+end run`
+
+const chooseCopyBaseScript = `on run argv
+	try
+		if (item 2 of argv) is "" then
+			set chosen to choose folder with prompt (item 1 of argv)
+		else
+			set startFolder to POSIX file (item 2 of argv) as alias
+			set chosen to choose folder with prompt (item 1 of argv) default location startFolder
+		end if
 	on error number -128
 		return ""
 	end try

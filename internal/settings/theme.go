@@ -1,6 +1,20 @@
 package settings
 
-import "github.com/egoist/mygo/ui"
+import (
+	"github.com/egoist/mygo"
+	"github.com/egoist/mygo/ui"
+)
+
+func SetAppearance(mode string) {
+	source := mygo.ThemeSystem
+	switch mode {
+	case "light":
+		source = mygo.ThemeLight
+	case "dark":
+		source = mygo.ThemeDark
+	}
+	mygo.Theme.SetSource(source)
+}
 
 // The look uses neutral gray surfaces and system accents in the system's own font.
 // Primary actions use solid blue; selected navigation and table rows use a

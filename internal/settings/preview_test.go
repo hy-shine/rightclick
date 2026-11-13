@@ -41,7 +41,7 @@ func TestPreviewFollowsContext(t *testing.T) {
 		{ctxBlank, "New File", true},
 		{ctxBlank, "Copy Path", true},
 		{ctxFolder, "Open with Terminal", true},
-		{ctxFolder, "Compress to ZIP", false}, // zip needs files, not only a folder
+		{ctxFolder, "Compress to ZIP", true},
 		{ctxFile, "Compute Hash", true},
 		{ctxFile, "Compare File Hashes", false},
 		{ctxFile, "Extract Here", true},

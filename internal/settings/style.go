@@ -311,9 +311,10 @@ func emptyState(c *ui.Context, s *ui.SVG, title, note string) {
 // settingRow is one row of a ledger: a title and a note on the left, with the
 // control that sets it on the right, inside trailing. icon, when not nil, sits
 // before the text in iconColor. Setting rows and status rows share this layout.
-func settingRow(c *ui.Context, icon *ui.SVG, iconColor ui.Color, title, note string, trailing func()) {
+func settingRow(c *ui.Context, icon *ui.SVG, iconColor ui.Color, title, note string, trailing func()) ui.Element {
 	t := c.Theme()
-	ui.Row(c).Gap(14).Padding(14, 16).AlignItems(ui.Center).Children(func() {
+	row := ui.Row(c).Gap(14).Padding(14, 16).AlignItems(ui.Center)
+	row.Children(func() {
 		if icon != nil {
 			glyph(c, icon, 17, iconColor)
 		}
@@ -325,4 +326,5 @@ func settingRow(c *ui.Context, icon *ui.SVG, iconColor ui.Color, title, note str
 		})
 		trailing()
 	})
+	return row
 }

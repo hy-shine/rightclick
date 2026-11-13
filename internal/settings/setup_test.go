@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/egoist/mygo/ui"
+
+	"github.com/hy-shine/rightclick/internal/locales"
 )
 
 // readyApp returns an app whose steps all pass: the extension is on and an entry is
@@ -19,11 +21,11 @@ func readyApp(t *testing.T) *app {
 	return m
 }
 
-// selectDiagnostics shows the diagnostics pane. It sets the tab directly, because
-// selectPane would start a Finder check, which needs a window.
-func selectDiagnostics(m *app) {
+// selectGeneral shows General without starting a Finder check, which needs a
+// window.
+func selectGeneral(m *app) {
 	for i, p := range paneTabs() {
-		if p.id == paneDiagnostics {
+		if p.id == paneGeneral {
 			m.tab = i
 		}
 	}
@@ -74,38 +76,38 @@ func TestMenuPageOmitsSetupWarnings(t *testing.T) {
 	}
 }
 
-// TestDiagnosticsSaysReadyOnlyWhenEveryStepPasses uses one window per app, as the
+// TestGeneralSaysReadyOnlyWhenEveryStepPasses uses one window per app, as the
 // app does: a second tester on the same app would show its lists twice.
-func TestDiagnosticsSaysReadyOnlyWhenEveryStepPasses(t *testing.T) {
+func TestGeneralSaysReadyOnlyWhenEveryStepPasses(t *testing.T) {
 	m := readyApp(t)
-	selectDiagnostics(m)
+	selectGeneral(m)
 	if !slices.Contains(ui.NewTester(m.view, mainWidth, mainHeight).Texts(), "Available in Finder") {
-		t.Error("all steps pass, but the diagnostics pane does not say the menu is usable")
+		t.Error("all steps pass, but General does not say the menu is usable")
 	}
 }
 
-// TestSidebarMarksDiagnosticsWhenBlocked checks that the sidebar diagnostics
-// item displays an alert indicator only while a setup prerequisite is missing.
-func TestSidebarMarksDiagnosticsWhenBlocked(t *testing.T) {
+// TestSidebarMarksGeneralWhenBlocked checks that General displays an alert
+// indicator only while a setup prerequisite is missing.
+func TestSidebarMarksGeneralWhenBlocked(t *testing.T) {
 	blocked := readyApp(t)
 	blocked.finder = finderOff
 	tt := ui.NewTester(blocked.view, mainWidth, mainHeight)
-	if _, ok := tt.Find("Finder Extension The extension must be turned on"); !ok {
-		t.Fatal("sidebar diagnostics row does not show warning mark when extension is off")
+	if _, ok := tt.Find(locales.PaneGeneral() + " " + locales.StatusNeedsExtension()); !ok {
+		t.Fatal("sidebar General row does not show warning mark when extension is off")
 	}
 
 	ready := readyApp(t)
 	ttReady := ui.NewTester(ready.view, mainWidth, mainHeight)
-	if _, ok := ttReady.Find("Finder Extension The extension must be turned on"); ok {
-		t.Fatal("sidebar diagnostics row still shows warning mark when all steps pass")
+	if _, ok := ttReady.Find(locales.PaneGeneral() + " " + locales.StatusNeedsExtension()); ok {
+		t.Fatal("sidebar General row still shows warning mark when all steps pass")
 	}
 }
 
-// TestRestartFromDiagnosticsAsksFirst checks that the restart button on the
-// diagnostics pane opens the confirmation dialog, which lives at the window level.
-func TestRestartFromDiagnosticsAsksFirst(t *testing.T) {
+// TestRestartFromGeneralAsksFirst checks that the restart button on General
+// opens the confirmation dialog, which lives at the window level.
+func TestRestartFromGeneralAsksFirst(t *testing.T) {
 	m := readyApp(t)
-	selectDiagnostics(m)
+	selectGeneral(m)
 	tt := ui.NewTester(m.view, mainWidth, mainHeight)
 	if err := tt.Click("Restart"); err != nil {
 		t.Fatal(err)

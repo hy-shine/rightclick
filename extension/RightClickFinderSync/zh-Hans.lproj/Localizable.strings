@@ -8,6 +8,9 @@
 "finder.userTemplate" = "从模板新建";
 "finder.captureTemplate" = "添加为模板…";
 "finder.copyPath" = "拷贝路径";
+"finder.copyTerminalPath" = "拷贝为终端路径";
+"finder.copyRelativePath" = "拷贝相对路径…";
+"finder.copyMarkdownLink" = "拷贝 Markdown 文件链接…";
 "finder.copyName" = "拷贝文件名";
 "finder.copyBaseName" = "拷贝文件名（不含扩展名）";
 "finder.copyTo" = "复制到…";
@@ -16,6 +19,7 @@
 "finder.openWithApp" = "用 %@ 打开";
 "finder.zip" = "压缩为 ZIP";
 "finder.unzip" = "解压到此处";
+"finder.unzipToFolder" = "解压到同名文件夹";
 "finder.hash" = "计算哈希";
 "finder.compareHash" = "比较两个文件的哈希";
 "finder.toggleHidden" = "显示/隐藏隐藏文件（⌘⇧.）";

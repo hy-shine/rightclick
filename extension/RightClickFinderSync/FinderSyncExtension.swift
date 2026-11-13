@@ -200,6 +200,9 @@ final class FinderSyncExtension: FIFinderSync {
         case "new-template": return Localized.text("finder.userTemplate")
         case "add-template": return Localized.text("finder.captureTemplate")
         case "copy-path": return Localized.text("finder.copyPath")
+        case "copy-terminal-path": return Localized.text("finder.copyTerminalPath")
+        case "copy-relative-path": return Localized.text("finder.copyRelativePath")
+        case "copy-markdown-link": return Localized.text("finder.copyMarkdownLink")
         case "copy-name": return Localized.text("finder.copyName")
         case "copy-basename": return Localized.text("finder.copyBaseName")
         case "copy-to": return Localized.text("finder.copyTo")
@@ -207,6 +210,7 @@ final class FinderSyncExtension: FIFinderSync {
         case "open-terminal": return Localized.text("finder.openTerminal")
         case "zip": return Localized.text("finder.zip")
         case "unzip": return Localized.text("finder.unzip")
+        case "unzip-to-folder": return Localized.text("finder.unzipToFolder")
         case "hash": return Localized.text("finder.hash")
         case "compare-hash": return Localized.text("finder.compareHash")
         case "toggle-hidden": return Localized.text("finder.toggleHidden")
@@ -366,7 +370,7 @@ struct MenuTarget {
         switch id {
         case "new-file", "new-folder", "new-template":
             return newItemFolder != nil
-        case "copy-path", "copy-name", "copy-basename":
+        case "copy-path", "copy-name", "copy-basename", "copy-terminal-path", "copy-relative-path", "copy-markdown-link":
             // On the blank area these copy the current folder itself, as a selected folder would.
             return true
         case "copy-to", "move-to", "delete-permanently":
@@ -376,8 +380,8 @@ struct MenuTarget {
         case "favorite-folders":
             return true
         case "zip":
-            return !isBlankArea && !files.isEmpty
-        case "unzip":
+            return !isBlankArea && !items.isEmpty
+        case "unzip", "unzip-to-folder":
             return singleFile?.pathExtension.lowercased() == "zip"
         case "hash":
             return singleFile != nil

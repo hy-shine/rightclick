@@ -52,12 +52,13 @@ func main() {
 	mygo.App.WhenReady(func() {
 		// The saved language applies before any text is read. MYGO_LOCALE, set by
 		// mygo dev -lang, takes precedence for one run.
-		if os.Getenv("MYGO_LOCALE") == "" {
-			if cfg, err := app.LoadConfig(); err != nil {
-				log.Printf("settings: %v", err)
-			} else {
+		if cfg, err := app.LoadConfig(); err != nil {
+			log.Printf("settings: %v", err)
+		} else {
+			if os.Getenv("MYGO_LOCALE") == "" {
 				mygo.App.SetLocale(cfg.Language)
 			}
+			settings.SetAppearance(cfg.Appearance)
 		}
 		// After the language is set, so that the menu's own labels are in it.
 		settings.InstallAppMenu()

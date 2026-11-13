@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"github.com/hy-shine/rightclick/internal/actionicons"
 	"github.com/hy-shine/rightclick/internal/locales"
 
 	"github.com/egoist/mygo/ui"
@@ -10,12 +11,12 @@ import (
 
 // paneIcons are the icons of the sidebar rows, by pane ID.
 var paneIcons = map[string]*ui.SVG{
-	paneMenu:        iconMenu,
-	paneTemplates:   iconNew,
-	paneFolders:     iconDir,
-	paneOpeners:     iconOpen,
-	paneDiagnostics: iconShield,
-	paneGeneral:     iconGeneral,
+	paneMenu:      iconMenu,
+	paneTemplates: iconNew,
+	paneFolders:   iconDir,
+	paneOpeners:   iconOpen,
+	paneDefaults:  actionicons.Icon("menu"),
+	paneGeneral:   iconGeneral,
 }
 
 // sidebarWidth is the width of the pane list, in points.
@@ -34,10 +35,11 @@ func (m *app) sidebar(c *ui.Context) {
 			ui.Text(c, locales.AppName()).FontSize(14).FontWeight(600)
 		})
 		ui.Column(c).Grow(1).Gap(3).Children(func() {
-			for index := range paneTabs() {
+			for index := range len(paneTabs()) - 1 {
 				m.navRow(c, index)
 			}
 		})
+		m.navRow(c, len(paneTabs())-1)
 	})
 }
 
@@ -59,7 +61,7 @@ func (m *app) navRow(c *ui.Context, i int) {
 		}
 	}
 	step := m.setupStep()
-	alert := p.id == paneDiagnostics && step.blocked()
+	alert := p.id == paneGeneral && step.blocked()
 	btn := ui.ButtonBase(c.Key("nav:"+p.id)).Gap(9).Padding(8, 10).AlignItems(ui.Center).Justify(ui.Start).Radius(t.Radius).Background(bg).
 		Role(ui.RoleTab).Checked(selected).Label(p.label).
 		OnClick(func() { m.selectPane(p.id) }).

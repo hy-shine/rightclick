@@ -12,6 +12,7 @@ import (
 
 	"github.com/hy-shine/rightclick/internal/config"
 	"github.com/hy-shine/rightclick/internal/files"
+	"github.com/hy-shine/rightclick/internal/locales"
 )
 
 // testEnv replaces every system call, so that the tests change no system state.
@@ -25,7 +26,9 @@ func testEnv() env {
 		restartFinder:      func() error { return nil },
 		openDialog:         func(mygo.OpenDialogOptions) ([]string, error) { return nil, nil },
 		setLocale:          func(string) {},
+		setAppearance:      func(string) {},
 		setWindowTitle:     func(string) {},
+		openURL:            func(string) error { return nil },
 		checkForUpdates:    func() {},
 	}
 }
@@ -61,13 +64,22 @@ func TestSwitchSavesMenuItem(t *testing.T) {
 }
 
 func TestTabOrder(t *testing.T) {
+	wantIDs := []string{paneMenu, paneTemplates, paneFolders, paneOpeners, paneDefaults, paneGeneral}
+	tabs := paneTabs()
+	var gotIDs []string
+	for _, tab := range tabs {
+		gotIDs = append(gotIDs, tab.id)
+	}
+	if !slices.Equal(gotIDs, wantIDs) {
+		t.Fatalf("pane IDs = %q, want %q", gotIDs, wantIDs)
+	}
 	m, err := newApp(testStore(t), testEnv())
 	if err != nil {
 		t.Fatal(err)
 	}
 	texts := ui.NewTester(m.view, 760, 560).Texts()
 	last := -1
-	for _, p := range paneTabs() {
+	for _, p := range tabs {
 		i := slices.Index(texts, p.label)
 		if i <= last {
 			t.Fatalf("tab %q at text %d, want after text %d; texts %q", p.label, i, last, texts)
@@ -97,19 +109,27 @@ func TestGeneralPaneShowsVersion(t *testing.T) {
 	}
 	m.selectPane(paneGeneral)
 	texts := ui.NewTester(m.view, mainWidth, mainHeight).Texts()
-	if !slices.Contains(texts, "Version "+version) {
+	if !slices.Contains(texts, locales.VersionLine(appVersion())) {
 		t.Errorf("general pane does not show the version; texts %q", texts)
 	}
 }
 
-func TestSidebarHasNoAboutPane(t *testing.T) {
+func TestGeneralPaneContainsAppSettingsAndAbout(t *testing.T) {
 	m, err := newApp(testStore(t), testEnv())
 	if err != nil {
 		t.Fatal(err)
 	}
+	m.selectPane(paneGeneral)
 	texts := ui.NewTester(m.view, mainWidth, mainHeight).Texts()
-	if slices.Contains(texts, "About") {
-		t.Errorf("sidebar still has a About pane; texts %q", texts)
+	for _, setting := range []string{locales.LanguageSetting(), locales.LaunchAtLogin(), locales.VersionLine(appVersion()), locales.CheckUpdate()} {
+		if !slices.Contains(texts, setting) {
+			t.Errorf("general pane is missing %q; texts %q", setting, texts)
+		}
+	}
+	for _, archiveSetting := range []string{locales.ZipSettings(), locales.ZipExclude(".DS_Store"), locales.ZipExclude(".git"), locales.ZipExclude("node_modules")} {
+		if slices.Contains(texts, archiveSetting) {
+			t.Errorf("general pane still shows %q; texts %q", archiveSetting, texts)
+		}
 	}
 }
 
@@ -238,7 +258,7 @@ func TestReorderStopsAtTheMainEntries(t *testing.T) {
 	for _, i := range m.groupRows(1) {
 		got = append(got, m.cfg.MenuItems[i].ID)
 	}
-	want := []string{"copy-path", "copy-to", "copy-name", "copy-basename", "move-to"}
+	want := []string{"copy-path", "copy-to", "copy-name", "copy-basename", "move-to", "copy-terminal-path", "copy-relative-path", "copy-markdown-link"}
 	if !slices.Equal(got, want) {
 		t.Errorf("group order = %q, want %q", got, want)
 	}

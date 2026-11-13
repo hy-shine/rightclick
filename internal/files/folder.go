@@ -9,7 +9,7 @@ import (
 
 // sameFolder reports whether a and b are the same folder on disk. The folders are
 // compared by identity, not by spelling: APFS is case-insensitive by default, so
-// /USERS/JESSY is the same folder as /Users/jessy. When either folder does not exist,
+// /USERS/ALICE is the same folder as /Users/alice. When either folder does not exist,
 // the paths are compared as text without case. That can only refuse more, never less.
 func sameFolder(a, b string) bool {
 	if infoA, errA := os.Stat(a); errA == nil {

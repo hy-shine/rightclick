@@ -67,10 +67,10 @@ var (
 	hashApp    *hashModel
 )
 
-// OpenHashWindow shows the digest of path, computed with algoName. An empty name
-// asks for the default, SHA-256, which the Finder menu sends: the window offers the
-// other algorithms itself. The window is reused, so a second request replaces what
-// it shows. Call it on the main thread.
+// OpenHashWindow shows the digest of path, computed with algoName. Finder actions
+// supply the saved default algorithm; an empty name falls back to SHA-256.
+// The window is reused, so a second request replaces what it shows.
+// Call it on the main thread.
 func OpenHashWindow(path, algoName string) error {
 	algo, ok := windowAlgorithm(algoName)
 	if !ok {
@@ -97,9 +97,8 @@ func OpenHashWindow(path, algoName string) error {
 	return nil
 }
 
-// windowAlgorithm maps the algorithm a link names to its constant. An empty name
-// asks for the default, SHA-256, which is what the Finder menu sends: it offers one
-// Compute Hash entry, and the window offers the other algorithms itself.
+// windowAlgorithm maps the requested algorithm to its constant, with SHA-256
+// as the fallback when no algorithm is supplied.
 func windowAlgorithm(name string) (files.Algorithm, bool) {
 	if name == "" {
 		return files.SHA256, true

@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/egoist/mygo"
@@ -78,6 +79,15 @@ func actionHandlers() map[string]actionHandler {
 		"copy-path": func(_ url.Values, paths []string, _ config.Config) error {
 			return copyText(joinLines(paths))
 		},
+		"copy-terminal-path": func(_ url.Values, paths []string, _ config.Config) error {
+			return copyText(files.TerminalPaths(paths))
+		},
+		"copy-relative-path": func(_ url.Values, paths []string, cfg config.Config) error {
+			return copyPathsFromBase(paths, cfg, files.RelativePaths)
+		},
+		"copy-markdown-link": func(_ url.Values, paths []string, cfg config.Config) error {
+			return copyPathsFromBase(paths, cfg, files.MarkdownFileLinks)
+		},
 		"copy-name": func(_ url.Values, paths []string, _ config.Config) error {
 			return copyText(joinLines(baseNames(paths)))
 		},
@@ -123,15 +133,16 @@ func actionHandlers() map[string]actionHandler {
 		},
 		"open-terminal": openTerminal,
 		"open-with":     openWithApp,
-		"zip": func(_ url.Values, paths []string, _ config.Config) error {
-			return zipItems(paths)
+		"zip": func(_ url.Values, paths []string, cfg config.Config) error {
+			return zipItems(paths, cfg.ZipExclusions.Names()...)
 		},
-		"unzip": unzipAction,
-		"hash": func(params url.Values, paths []string, _ config.Config) error {
-			return hashWindow(params.Get("algo"), paths)
+		"unzip":           unzipAction,
+		"unzip-to-folder": unzipToFolderAction,
+		"hash": func(params url.Values, paths []string, cfg config.Config) error {
+			return hashWindow(actionHashAlgorithm(params.Get("algo"), cfg), paths)
 		},
-		"compare-hash": func(params url.Values, paths []string, _ config.Config) error {
-			return compareItems(params.Get("algo"), paths)
+		"compare-hash": func(params url.Values, paths []string, cfg config.Config) error {
+			return compareItems(actionHashAlgorithm(params.Get("algo"), cfg), paths)
 		},
 		"toggle-hidden": func(_ url.Values, _ []string, _ config.Config) error {
 			return toggleHiddenFiles()
@@ -434,8 +445,8 @@ func archiveName(paths []string) string {
 }
 
 // zipItems archives paths into the folder that holds the first one.
-func zipItems(paths []string) error {
-	_, err := files.Zip(paths, filepath.Dir(paths[0]), archiveName(paths))
+func zipItems(paths []string, exclusions ...string) error {
+	_, err := files.Zip(paths, filepath.Dir(paths[0]), archiveName(paths), exclusions...)
 	return err
 }
 
@@ -463,6 +474,22 @@ func unzipAction(_ url.Values, paths []string, _ config.Config) error {
 		return errors.New(locales.UnzipPartial(written, err.Error()))
 	}
 	notify(locales.NotifyUnzipped(), locales.UnzipWritten(written))
+	return nil
+}
+
+func unzipToFolderAction(_ url.Values, paths []string, _ config.Config) error {
+	path, err := requireOne(paths)
+	if err != nil {
+		return err
+	}
+	folder, written, _, err := files.UnzipToFolder(path)
+	if err != nil {
+		if folder == "" {
+			return err
+		}
+		return errors.New(locales.UnzipFolderPartial(written, folder, err.Error()))
+	}
+	notify(locales.NotifyUnzipped(), locales.UnzipFolderWritten(written, folder))
 	return nil
 }
 
@@ -550,7 +577,7 @@ func deleteDetail(paths []string) string {
 
 // hashWindow opens the window that shows the digest of the one selected file.
 // The window belongs to the app, so the action opens it on the main thread.
-func hashWindow(algoName string, paths []string) error {
+var hashWindow = func(algoName string, paths []string) error {
 	path, err := requireOne(paths)
 	if err != nil {
 		return err
@@ -618,6 +645,16 @@ func compareSummary(algo files.Algorithm, same bool, pathA, hashA, pathB, hashB 
 	title = locales.HashCompareTitle(string(algo), verdict)
 	body = fmt.Sprintf("%s\n%s\n%s\n%s", files.Name(pathA), hashA, files.Name(pathB), hashB)
 	return title, body
+}
+
+func actionHashAlgorithm(name string, cfg config.Config) string {
+	if name != "" {
+		return name
+	}
+	if slices.Contains(config.HashAlgorithms, cfg.DefaultHashAlgorithm) {
+		return cfg.DefaultHashAlgorithm
+	}
+	return string(files.SHA256)
 }
 
 // hashAlgorithm maps the algo parameter to a hash function. An empty parameter

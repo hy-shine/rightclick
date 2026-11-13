@@ -2,6 +2,7 @@ package app
 
 import (
 	"archive/zip"
+	"net/url"
 	"os"
 	"path/filepath"
 	"testing"
@@ -30,6 +31,59 @@ func TestUnzipActionExtractsAndReportsTheCount(t *testing.T) {
 	}
 	if title != locales.NotifyUnzipped() || body != locales.UnzipWritten(1) {
 		t.Errorf("notification = %q / %q", title, body)
+	}
+}
+
+func TestExtractToFolderActionReportsDestination(test *testing.T) {
+	root := test.TempDir()
+	archive := filepath.Join(root, "bundle.zip")
+	writeZip(test, archive, map[string]string{"nested/notes.md": "hello"})
+	previous := notify
+	test.Cleanup(func() { notify = previous })
+	var title, body string
+	notify = func(nextTitle, nextBody string) { title, body = nextTitle, nextBody }
+	if err := runAction("unzip-to-folder", url.Values{}, []string{archive}, config.Default()); err != nil {
+		test.Fatal(err)
+	}
+	folder := filepath.Join(root, "bundle")
+	if title != locales.NotifyUnzipped() || body != locales.UnzipFolderWritten(1, folder) {
+		test.Fatalf("notification = %q / %q", title, body)
+	}
+	if data, err := os.ReadFile(filepath.Join(folder, "nested", "notes.md")); err != nil || string(data) != "hello" {
+		test.Fatal("output file missing")
+	}
+}
+
+func TestZipActionUsesSavedExclusions(test *testing.T) {
+	root := test.TempDir()
+	project := filepath.Join(root, "project")
+	if err := os.Mkdir(project, 0o755); err != nil {
+		test.Fatal(err)
+	}
+	for _, name := range []string{".DS_Store", "notes.md"} {
+		if err := os.WriteFile(filepath.Join(project, name), []byte("content"), 0o600); err != nil {
+			test.Fatal(err)
+		}
+	}
+	if err := runAction("zip", nil, []string{project}, config.Default()); err != nil {
+		test.Fatal(err)
+	}
+	reader, err := zip.OpenReader(filepath.Join(root, "project.zip"))
+	if err != nil {
+		test.Fatal(err)
+	}
+	defer reader.Close()
+	found := false
+	for _, entry := range reader.File {
+		if entry.Name == "project/.DS_Store" {
+			test.Fatal("saved exclusion was ignored by action")
+		}
+		if entry.Name == "project/notes.md" {
+			found = true
+		}
+	}
+	if !found {
+		test.Fatal("regular file missing from archive")
 	}
 }
 

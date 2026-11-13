@@ -188,6 +188,26 @@ func (msgs Messages) AboutBlurb() string {
 	return Catalog.Format(msgs.locale, "aboutBlurb", nil)
 }
 
+// Github says "GitHub"
+// in the language the app shows.
+func Github() string { return In(i18n.Locale()).Github() }
+
+// Github says "GitHub"
+// in the language of msgs.
+func (msgs Messages) Github() string {
+	return Catalog.Format(msgs.locale, "github", nil)
+}
+
+// OpenGitHub says "Open GitHub"
+// in the language the app shows.
+func OpenGitHub() string { return In(i18n.Locale()).OpenGitHub() }
+
+// OpenGitHub says "Open GitHub"
+// in the language of msgs.
+func (msgs Messages) OpenGitHub() string {
+	return Catalog.Format(msgs.locale, "openGitHub", nil)
+}
+
 // AddFailed says "Could not add"
 // in the language the app shows.
 func AddFailed() string { return In(i18n.Locale()).AddFailed() }
@@ -762,16 +782,6 @@ func (msgs Messages) DeletedItems(count int) string {
 	return Catalog.Format(msgs.locale, "deletedItems", map[string]any{"count": count})
 }
 
-// DiagnosticsIntro says "Turn on the Finder extension before the menu appears in Finder."
-// in the language the app shows.
-func DiagnosticsIntro() string { return In(i18n.Locale()).DiagnosticsIntro() }
-
-// DiagnosticsIntro says "Turn on the Finder extension before the menu appears in Finder."
-// in the language of msgs.
-func (msgs Messages) DiagnosticsIntro() string {
-	return Catalog.Format(msgs.locale, "diagnosticsIntro", nil)
-}
-
 // DocumentCorrupt says "The document file is damaged: {cause}"
 // in the language the app shows.
 func DocumentCorrupt(cause string) string { return In(i18n.Locale()).DocumentCorrupt(cause) }
@@ -1326,6 +1336,36 @@ func (msgs Messages) HashAlgorithm() string {
 	return Catalog.Format(msgs.locale, "hashAlgorithm", nil)
 }
 
+// HashSettings says "Hash"
+// in the language the app shows.
+func HashSettings() string { return In(i18n.Locale()).HashSettings() }
+
+// HashSettings says "Hash"
+// in the language of msgs.
+func (msgs Messages) HashSettings() string {
+	return Catalog.Format(msgs.locale, "hashSettings", nil)
+}
+
+// DefaultHashAlgorithm says "Default Algorithm"
+// in the language the app shows.
+func DefaultHashAlgorithm() string { return In(i18n.Locale()).DefaultHashAlgorithm() }
+
+// DefaultHashAlgorithm says "Default Algorithm"
+// in the language of msgs.
+func (msgs Messages) DefaultHashAlgorithm() string {
+	return Catalog.Format(msgs.locale, "defaultHashAlgorithm", nil)
+}
+
+// DefaultHashAlgorithmHint says "Used when computing or comparing file hashes."
+// in the language the app shows.
+func DefaultHashAlgorithmHint() string { return In(i18n.Locale()).DefaultHashAlgorithmHint() }
+
+// DefaultHashAlgorithmHint says "Used when computing or comparing file hashes."
+// in the language of msgs.
+func (msgs Messages) DefaultHashAlgorithmHint() string {
+	return Catalog.Format(msgs.locale, "defaultHashAlgorithmHint", nil)
+}
+
 // HashCopy says "Copy Hash"
 // in the language the app shows.
 func HashCopy() string { return In(i18n.Locale()).HashCopy() }
@@ -1464,6 +1504,46 @@ func LanguageSetting() string { return In(i18n.Locale()).LanguageSetting() }
 // in the language of msgs.
 func (msgs Messages) LanguageSetting() string {
 	return Catalog.Format(msgs.locale, "languageSetting", nil)
+}
+
+// AppearanceSetting says "Appearance"
+// in the language the app shows.
+func AppearanceSetting() string { return In(i18n.Locale()).AppearanceSetting() }
+
+// AppearanceSetting says "Appearance"
+// in the language of msgs.
+func (msgs Messages) AppearanceSetting() string {
+	return Catalog.Format(msgs.locale, "appearanceSetting", nil)
+}
+
+// AppearanceSystem says "Same as System"
+// in the language the app shows.
+func AppearanceSystem() string { return In(i18n.Locale()).AppearanceSystem() }
+
+// AppearanceSystem says "Same as System"
+// in the language of msgs.
+func (msgs Messages) AppearanceSystem() string {
+	return Catalog.Format(msgs.locale, "appearanceSystem", nil)
+}
+
+// AppearanceLight says "Light"
+// in the language the app shows.
+func AppearanceLight() string { return In(i18n.Locale()).AppearanceLight() }
+
+// AppearanceLight says "Light"
+// in the language of msgs.
+func (msgs Messages) AppearanceLight() string {
+	return Catalog.Format(msgs.locale, "appearanceLight", nil)
+}
+
+// AppearanceDark says "Dark"
+// in the language the app shows.
+func AppearanceDark() string { return In(i18n.Locale()).AppearanceDark() }
+
+// AppearanceDark says "Dark"
+// in the language of msgs.
+func (msgs Messages) AppearanceDark() string {
+	return Catalog.Format(msgs.locale, "appearanceDark", nil)
 }
 
 // LanguageSystem says "Same as System"
@@ -1606,6 +1686,76 @@ func (msgs Messages) MenuCopyPath() string {
 	return Catalog.Format(msgs.locale, "menuCopyPath", nil)
 }
 
+// MenuCopyTerminalPath says "Copy as Terminal Path"
+// in the language the app shows.
+func MenuCopyTerminalPath() string { return In(i18n.Locale()).MenuCopyTerminalPath() }
+
+// MenuCopyTerminalPath says "Copy as Terminal Path"
+// in the language of msgs.
+func (msgs Messages) MenuCopyTerminalPath() string {
+	return Catalog.Format(msgs.locale, "menuCopyTerminalPath", nil)
+}
+
+// MenuCopyRelativePath says "Copy Relative Path…"
+// in the language the app shows.
+func MenuCopyRelativePath() string { return In(i18n.Locale()).MenuCopyRelativePath() }
+
+// MenuCopyRelativePath says "Copy Relative Path…"
+// in the language of msgs.
+func (msgs Messages) MenuCopyRelativePath() string {
+	return Catalog.Format(msgs.locale, "menuCopyRelativePath", nil)
+}
+
+// MenuCopyMarkdownLink says "Copy Markdown File Link…"
+// in the language the app shows.
+func MenuCopyMarkdownLink() string { return In(i18n.Locale()).MenuCopyMarkdownLink() }
+
+// MenuCopyMarkdownLink says "Copy Markdown File Link…"
+// in the language of msgs.
+func (msgs Messages) MenuCopyMarkdownLink() string {
+	return Catalog.Format(msgs.locale, "menuCopyMarkdownLink", nil)
+}
+
+// CopyBaseTitle says "Choose Base Folder"
+// in the language the app shows.
+func CopyBaseTitle() string { return In(i18n.Locale()).CopyBaseTitle() }
+
+// CopyBaseTitle says "Choose Base Folder"
+// in the language of msgs.
+func (msgs Messages) CopyBaseTitle() string {
+	return Catalog.Format(msgs.locale, "copyBaseTitle", nil)
+}
+
+// CopyBaseHint says "Paths are relative to this folder. For Markdown links, choose the folder containing your Markdown document."
+// in the language the app shows.
+func CopyBaseHint() string { return In(i18n.Locale()).CopyBaseHint() }
+
+// CopyBaseHint says "Paths are relative to this folder. For Markdown links, choose the folder containing your Markdown document."
+// in the language of msgs.
+func (msgs Messages) CopyBaseHint() string {
+	return Catalog.Format(msgs.locale, "copyBaseHint", nil)
+}
+
+// CopyBaseNotFolder says "The base path is not a folder: {path}"
+// in the language the app shows.
+func CopyBaseNotFolder(path string) string { return In(i18n.Locale()).CopyBaseNotFolder(path) }
+
+// CopyBaseNotFolder says "The base path is not a folder: {path}"
+// in the language of msgs.
+func (msgs Messages) CopyBaseNotFolder(path string) string {
+	return Catalog.Format(msgs.locale, "copyBaseNotFolder", map[string]any{"path": path})
+}
+
+// CopyBaseSaveFailed says "Copied, but could not remember the base folder: {cause}"
+// in the language the app shows.
+func CopyBaseSaveFailed(cause string) string { return In(i18n.Locale()).CopyBaseSaveFailed(cause) }
+
+// CopyBaseSaveFailed says "Copied, but could not remember the base folder: {cause}"
+// in the language of msgs.
+func (msgs Messages) CopyBaseSaveFailed(cause string) string {
+	return Catalog.Format(msgs.locale, "copyBaseSaveFailed", map[string]any{"cause": cause})
+}
+
 // MenuCopyTo says "Copy To…"
 // in the language the app shows.
 func MenuCopyTo() string { return In(i18n.Locale()).MenuCopyTo() }
@@ -1726,6 +1876,40 @@ func (msgs Messages) MenuUnzip() string {
 	return Catalog.Format(msgs.locale, "menuUnzip", nil)
 }
 
+// MenuUnzipToFolder says "Extract to Folder"
+// in the language the app shows.
+func MenuUnzipToFolder() string { return In(i18n.Locale()).MenuUnzipToFolder() }
+
+// MenuUnzipToFolder says "Extract to Folder"
+// in the language of msgs.
+func (msgs Messages) MenuUnzipToFolder() string {
+	return Catalog.Format(msgs.locale, "menuUnzipToFolder", nil)
+}
+
+// UnzipFolderWritten says "Extracted {count, plural, one {# file} other {# files}} to {path}"
+// in the language the app shows.
+func UnzipFolderWritten(count int, path string) string {
+	return In(i18n.Locale()).UnzipFolderWritten(count, path)
+}
+
+// UnzipFolderWritten says "Extracted {count, plural, one {# file} other {# files}} to {path}"
+// in the language of msgs.
+func (msgs Messages) UnzipFolderWritten(count int, path string) string {
+	return Catalog.Format(msgs.locale, "unzipFolderWritten", map[string]any{"count": count, "path": path})
+}
+
+// UnzipFolderPartial says "Extracted {count, plural, one {# file} other {# files}} to {path}, then failed: {cause}"
+// in the language the app shows.
+func UnzipFolderPartial(count int, path string, cause string) string {
+	return In(i18n.Locale()).UnzipFolderPartial(count, path, cause)
+}
+
+// UnzipFolderPartial says "Extracted {count, plural, one {# file} other {# files}} to {path}, then failed: {cause}"
+// in the language of msgs.
+func (msgs Messages) UnzipFolderPartial(count int, path string, cause string) string {
+	return Catalog.Format(msgs.locale, "unzipFolderPartial", map[string]any{"count": count, "path": path, "cause": cause})
+}
+
 // MenuZip says "Compress to ZIP"
 // in the language the app shows.
 func MenuZip() string { return In(i18n.Locale()).MenuZip() }
@@ -1734,6 +1918,66 @@ func MenuZip() string { return In(i18n.Locale()).MenuZip() }
 // in the language of msgs.
 func (msgs Messages) MenuZip() string {
 	return Catalog.Format(msgs.locale, "menuZip", nil)
+}
+
+// ZipSettings says "ZIP Compression"
+// in the language the app shows.
+func ZipSettings() string { return In(i18n.Locale()).ZipSettings() }
+
+// ZipSettings says "ZIP Compression"
+// in the language of msgs.
+func (msgs Messages) ZipSettings() string {
+	return Catalog.Format(msgs.locale, "zipSettings", nil)
+}
+
+// ZipExclude says "Exclude {name}"
+// in the language the app shows.
+func ZipExclude(name string) string { return In(i18n.Locale()).ZipExclude(name) }
+
+// ZipExclude says "Exclude {name}"
+// in the language of msgs.
+func (msgs Messages) ZipExclude(name string) string {
+	return Catalog.Format(msgs.locale, "zipExclude", map[string]any{"name": name})
+}
+
+// ZipExcludeToggle says "Exclude {name} from ZIP"
+// in the language the app shows.
+func ZipExcludeToggle(name string) string { return In(i18n.Locale()).ZipExcludeToggle(name) }
+
+// ZipExcludeToggle says "Exclude {name} from ZIP"
+// in the language of msgs.
+func (msgs Messages) ZipExcludeToggle(name string) string {
+	return Catalog.Format(msgs.locale, "zipExcludeToggle", map[string]any{"name": name})
+}
+
+// ZipDSStoreHint says "Skip Finder metadata inside selected folders. Explicitly selected files stay included."
+// in the language the app shows.
+func ZipDSStoreHint() string { return In(i18n.Locale()).ZipDSStoreHint() }
+
+// ZipDSStoreHint says "Skip Finder metadata inside selected folders. Explicitly selected files stay included."
+// in the language of msgs.
+func (msgs Messages) ZipDSStoreHint() string {
+	return Catalog.Format(msgs.locale, "zipDSStoreHint", nil)
+}
+
+// ZipGitHint says "Skip Git metadata inside selected folders. Off by default to keep complete backups."
+// in the language the app shows.
+func ZipGitHint() string { return In(i18n.Locale()).ZipGitHint() }
+
+// ZipGitHint says "Skip Git metadata inside selected folders. Off by default to keep complete backups."
+// in the language of msgs.
+func (msgs Messages) ZipGitHint() string {
+	return Catalog.Format(msgs.locale, "zipGitHint", nil)
+}
+
+// ZipNodeModulesHint says "Skip installed dependencies inside selected folders. Off by default."
+// in the language the app shows.
+func ZipNodeModulesHint() string { return In(i18n.Locale()).ZipNodeModulesHint() }
+
+// ZipNodeModulesHint says "Skip installed dependencies inside selected folders. Off by default."
+// in the language of msgs.
+func (msgs Messages) ZipNodeModulesHint() string {
+	return Catalog.Format(msgs.locale, "zipNodeModulesHint", nil)
 }
 
 // MoveToTitle says "Move To"
@@ -1946,6 +2190,16 @@ func PaneDiagnostics() string { return In(i18n.Locale()).PaneDiagnostics() }
 // in the language of msgs.
 func (msgs Messages) PaneDiagnostics() string {
 	return Catalog.Format(msgs.locale, "paneDiagnostics", nil)
+}
+
+// PaneDefaults says "Default Actions"
+// in the language the app shows.
+func PaneDefaults() string { return In(i18n.Locale()).PaneDefaults() }
+
+// PaneDefaults says "Default Actions"
+// in the language of msgs.
+func (msgs Messages) PaneDefaults() string {
+	return Catalog.Format(msgs.locale, "paneDefaults", nil)
 }
 
 // PaneFolders says "Favorite Folders"
