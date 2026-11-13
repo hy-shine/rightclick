@@ -66,13 +66,19 @@ guard let staleExtensionMenu = provider.buildMenu(target: fileTarget, config: st
 }
 precondition(!allTitles(staleExtensionMenu).contains("Copy Extension") && !allTitles(staleExtensionMenu).contains("copy-extension"), "a removed action still builds a menu row")
 
-// Action icons come from the Lucide set. Warm them from the source folder and
-// check that every action and every menu row carries one.
+// Action icons come from the Lucide set, except the system folder artwork and
+// the red destructive icon. Warm them from the source folder and check that
+// every action and every menu row carries one.
 ActionIcons.warm(from: stringsRoot.deletingLastPathComponent().deletingLastPathComponent()
     .appendingPathComponent("internal/actionicons/icons"))
 for id in MenuActions.defaultOrder {
     precondition(ActionIcons.image(for: id) != nil, "no icon for action \(id)")
 }
+precondition(ActionIcons.image(for: "folder")?.isTemplate == false, "folder icon is still a template")
+precondition(ActionIcons.image(for: "choose-folder")?.isTemplate == false, "folder destination icon is still a template")
+precondition(ActionIcons.image(for: "delete-permanently")?.isTemplate == false, "destructive icon is still a template")
+precondition(ActionIcons.image(for: "new-folder")?.isTemplate == true, "new folder action lost its template treatment")
+precondition(ActionIcons.image(for: "copy-path")?.isTemplate == true, "ordinary action icon is unexpectedly colored")
 func menuItems(_ menu: NSMenu?) -> [NSMenuItem] {
     (menu?.items ?? []).flatMap { [$0] + menuItems($0.submenu) }
 }

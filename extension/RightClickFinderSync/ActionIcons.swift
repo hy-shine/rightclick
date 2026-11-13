@@ -1,10 +1,13 @@
 import AppKit
+import UniformTypeIdentifiers
 
-/// Icons for the built-in actions, taken from the Lucide icon set (ISC license,
-/// see THIRD_PARTY_LICENSES.txt at the repository root). The files are
-/// loaded once, off the main thread: Finder builds the menu on its main thread
-/// every time it opens, and a cold load of every icon costs about 13 ms, which
-/// the menu itself must not pay.
+/// Icons for the built-in actions. Most come from the Lucide icon set (ISC
+/// license, see THIRD_PARTY_LICENSES.txt at the repository root). Folder rows
+/// use the system folder artwork, and the destructive action uses the system
+/// red, so those two read like the rest of macOS. The files are loaded once,
+/// off the main thread: Finder builds the menu on its main thread every time it
+/// opens, and a cold load of every icon costs about 13 ms, which the menu itself
+/// must not pay.
 enum ActionIcons {
     /// The icon file of each action ID or shortcut kind, without the extension.
     /// Keep it in step with MenuActions.defaultOrder.
@@ -35,9 +38,9 @@ enum ActionIcons {
         "folder": "folder",
         // The menu of the app itself: a pointer clicking, the right-click idea.
         "menu": "menu",
-        // Not an action of its own: the "Choose Another Folder…" row reuses the
-        // New Folder artwork, so every row in that submenu keeps one icon column.
-        "choose-folder": "new-folder",
+        // Not an action of its own: the "Choose Another Folder…" row uses the
+        // folder artwork, so every row in that submenu keeps one icon column.
+        "choose-folder": "folder",
     ]
 
     private static var cache: [String: NSImage] = [:]
@@ -56,9 +59,32 @@ enum ActionIcons {
             image.isTemplate = true
             loaded[name] = image
         }
+        if let folder = NSWorkspace.shared.icon(for: .folder).copy() as? NSImage {
+            folder.size = NSSize(width: 16, height: 16)
+            folder.isTemplate = false
+            loaded["folder"] = folder
+        }
+        if let delete = loaded["delete-permanently"] {
+            loaded["delete-permanently"] = tinted(delete, color: .systemRed)
+        }
         lock.lock()
         cache = loaded
         lock.unlock()
+    }
+
+    /// Draws a template image in one fixed color. The drawing handler runs when
+    /// Finder renders the menu, so the system color resolves in the current
+    /// appearance instead of being frozen when the extension starts.
+    private static func tinted(_ image: NSImage, color: NSColor) -> NSImage {
+        let tinted = NSImage(size: image.size, flipped: false) { rect in
+            image.draw(in: rect, from: NSRect(origin: .zero, size: image.size),
+                       operation: .sourceOver, fraction: 1)
+            color.set()
+            rect.fill(using: .sourceAtop)
+            return true
+        }
+        tinted.isTemplate = false
+        return tinted
     }
 
     /// The icon of an action, or nil while the cache is still empty.

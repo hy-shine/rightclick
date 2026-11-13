@@ -1,7 +1,7 @@
 // Package actionicons holds the icons shown for the app's menu actions. The
-// files come from the Lucide set (ISC, see THIRD_PARTY_LICENSES.txt) and are bundled
-// into the Finder extension as well, so the settings window and the Finder menu
-// show the same picture for an action.
+// files come from the Lucide set (ISC, see THIRD_PARTY_LICENSES.txt) and are
+// bundled into the Finder extension. The extension uses them for action glyphs;
+// folder rows use the system folder artwork and the destructive action is red.
 package actionicons
 
 import (
@@ -44,8 +44,8 @@ var Names = map[string]string{
 	"folder": "folder",
 	// The app's own menu entry: a pointer clicking, the right-click idea.
 	"menu": "menu",
-	// Not an action: the folder picker row reuses the New Folder artwork.
-	"choose-folder": "new-folder",
+	// Not an action: the folder picker row uses the folder artwork.
+	"choose-folder": "folder",
 }
 
 var (
