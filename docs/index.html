@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RightClick 右键助手 — 让访达右键，更顺手</title>
+<meta name="description" content="在访达里新建文档、拷贝路径、复制或移动文件。RightClick 把常用操作放进右键菜单，支持自己的模板和菜单自定义，免费开源。">
+<meta property="og:title" content="RightClick 右键助手 — 让访达右键，更顺手">
+<meta property="og:description" content="新建文档、拷贝路径、整理文件。把常用操作，放进访达的右键菜单。">
+<meta property="og:type" content="website">
+<meta property="og:image" content="icon.png">
+<link rel="icon" href="icon.png">
+<link rel="stylesheet" href="site.css">
+<script type="module" src="site.js"></script>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top"><img src="icon.png" alt="" width="32" height="32"><span>RightClick</span></a>
+    <div class="nav-links">
+      <a href="#what" data-t="navWhat">功能</a>
+      <a href="#download" data-t="navDownload">下载</a>
+      <button type="button" id="lang-switch" data-t="navLang" data-aria="languageLabel" aria-label="Switch to English">EN</button>
+      <a class="github-link" href="https://github.com/hy-shine/rightclick" target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub">
+        <svg class="github-icon" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/github.svg#mark-github"></use></svg>
+      </a>
+    </div>
+  </div>
+</nav>
+
+<main id="top">
+  <section class="wrap hero" aria-labelledby="hero-title">
+    <p class="eyebrow" data-t="productName">RightClick 右键助手</p>
+    <h1 id="hero-title">
+      <span data-t="h1a">让访达右键，</span>
+      <span class="accent" data-t="h1b">更顺手。</span>
+    </h1>
+    <p class="lede" data-t="sub">新建文档、拷贝路径、整理文件。把常用操作，放进访达的右键菜单。</p>
+    <div class="hero-actions">
+      <a class="button" href="#download" data-t="download">免费下载</a>
+      <a class="text-link" href="#demo" data-t="explore">看看菜单</a>
+    </div>
+    <p class="fineprint" data-t="fine">免费开源 · macOS 15 或更高版本</p>
+  </section>
+
+  <section class="wrap demo" id="demo" aria-labelledby="demo-title">
+    <div class="demo-copy">
+      <p class="eyebrow" data-t="demoEyebrow">熟悉的访达，多一点便利</p>
+      <h2 id="demo-title" data-t="demoTitle">常用操作，
+就在手边。</h2>
+      <p data-t="demoSub">在空白处新建文档，选中文件后整理归档。换一个场景，看看菜单能做什么。</p>
+      <div class="context-switch" role="group" data-aria="contextLabel" aria-label="选择预览场景">
+        <button type="button" data-scene="folder" aria-pressed="true" aria-controls="folder-menu" data-t="sceneFolder">新建文档</button>
+        <button type="button" data-scene="file" aria-pressed="false" aria-controls="file-menu" data-t="sceneFile">整理文件</button>
+      </div>
+      <p class="demo-feedback" id="demo-feedback" aria-live="polite">选好文档类型，就在当前文件夹新建。</p>
+    </div>
+    <div class="demo-preview">
+      <p class="preview-context" id="preview-context">项目文件夹 · 空白处</p>
+      <div class="menu-stage">
+        <div class="menu" id="folder-menu">
+          <div class="menu-block">
+            <button type="button" class="menu-button" id="new-trigger" aria-expanded="true" aria-controls="new-submenu">
+              <svg class="icon" aria-hidden="true"><use href="assets/actions.svg#new-file"></use></svg><span data-t="rNew">新建文件</span><span class="chevron" aria-hidden="true">›</span>
+            </button>
+            <div class="submenu" id="new-submenu">
+              <button type="button" class="menu-button" data-detail="hintNewFolder"><svg class="icon" aria-hidden="true"><use href="assets/actions.svg#new-folder"></use></svg><span data-t="rNewFolder">新建文件夹</span></button>
+              <div class="separator"></div>
+              <button type="button" class="menu-button" data-detail="hintText"><span class="file-type">TXT</span><span data-t="plainText">纯文本</span></button>
+              <button type="button" class="menu-button" data-detail="hintWord"><span class="file-type word">W</span><span>Word</span></button>
+              <button type="button" class="menu-button" data-detail="hintExcel"><span class="file-type excel">X</span><span>Excel</span></button>
+              <button type="button" class="menu-button" data-detail="hintPowerPoint"><span class="file-type powerpoint">P</span><span>PowerPoint</span></button>
+              <button type="button" class="menu-button" data-detail="hintMarkdown"><span class="file-type">MD</span><span>Markdown</span></button>
+              <button type="button" class="menu-button" data-detail="hintJSON"><span class="file-type">{ }</span><span>JSON</span></button>
+              <div class="separator"></div>
+              <button type="button" class="menu-button" data-detail="hintTemplate"><svg class="icon" aria-hidden="true"><use href="assets/actions.svg#new-template"></use></svg><span data-t="templateExample">工作周报.docx</span><span class="menu-tag" data-t="templateTag">模板示例</span></button>
+            </div>
+          </div>
+          <button type="button" class="menu-button" data-detail="hintFolderPath"><svg class="icon" aria-hidden="true"><use href="assets/actions.svg#copy-path"></use></svg><span data-t="rCopyPath">拷贝路径</span></button>
+          <div class="separator"></div>
+          <button type="button" class="menu-button" data-detail="hintHidden"><svg class="icon" aria-hidden="true"><use href="assets/actions.svg#toggle-hidden"></use></svg><span data-t="rHidden">显示/隐藏隐藏文件</span></button>
+        </div>
+        <div class="menu" id="file-menu" hidden>
+          <button type="button" class="menu-button" data-detail="hintFilePath"><svg class="icon" aria-hidden="true"><use href="assets/actions.svg#copy-path"></use></svg><span data-t="rCopyPath">拷贝路径</span></button>
+          <button type="button" class="menu-button" data-detail="hintCopyName"><svg class="icon" aria-hidden="true"><use href="assets/actions.svg#copy-name"></use></svg><span data-t="rCopyName">拷贝文件名</span></button>
+          <div class="separator"></div>
+          <div class="menu-block">
+            <button type="button" class="menu-button" id="copy-trigger" aria-expanded="false" aria-controls="copy-submenu">
+              <svg class="icon" aria-hidden="true"><use href="assets/actions.svg#copy-to"></use></svg><span data-t="rCopyTo">复制到…</span><span class="chevron" aria-hidden="true">›</span>
+            </button>
+            <div class="submenu" id="copy-submenu" hidden>
+              <button type="button" class="menu-button" data-detail="hintCopyDownloads"><svg class="icon" aria-hidden="true"><use href="assets/actions.svg#folder"></use></svg><span data-t="favDl">下载</span></button>
+              <button type="button" class="menu-button" data-detail="hintCopyDesktop"><svg class="icon" aria-hidden="true"><use href="assets/actions.svg#folder"></use></svg><span data-t="favDk">桌面</span></button>
+              <button type="button" class="menu-button" data-detail="hintCopyProject"><svg class="icon" aria-hidden="true"><use href="assets/actions.svg#folder"></use></svg><span data-t="favProject">项目</span></button>
+              <div class="separator"></div>
+              <button type="button" class="menu-button" data-detail="hintChooseFolder"><span data-t="chooseFolder">选择文件夹…</span></button>
+            </div>
+          </div>
+          <button type="button" class="menu-button" data-detail="hintMove"><svg class="icon" aria-hidden="true"><use href="assets/actions.svg#move-to"></use></svg><span data-t="rMoveTo">移动到…</span></button>
+          <div class="separator"></div>
+          <button type="button" class="menu-button" data-detail="hintZip"><svg class="icon" aria-hidden="true"><use href="assets/actions.svg#zip"></use></svg><span data-t="rZip">压缩为 ZIP</span></button>
+          <button type="button" class="menu-button" data-detail="hintHash"><svg class="icon" aria-hidden="true"><use href="assets/actions.svg#hash"></use></svg><span data-t="rHash">计算哈希</span></button>
+        </div>
+      </div>
+      <p class="preview-caption" data-t="previewCaption">交互演示 · 展示部分菜单项</p>
+    </div>
+  </section>
+
+  <section class="wrap features" id="what" aria-labelledby="features-title">
+    <div class="section-heading">
+      <p class="eyebrow" data-t="featuresEyebrow">为每天的文件操作而做</p>
+      <h2 id="features-title" data-t="featuresTitle">从新建到整理，
+都按你的习惯来。</h2>
+    </div>
+    <div class="feature-grid">
+      <article class="feature-card creation-card">
+        <p class="eyebrow" data-t="createEyebrow">文档与模板</p>
+        <h3 data-t="createTitle">文档，直接建在这里。</h3>
+        <p data-t="createSub">选好类型，直接在当前文件夹新建。Word、Excel、PowerPoint、Markdown、JSON，都可以从这里开始。</p>
+        <div class="document-types" aria-hidden="true">
+          <div class="document-type"><span class="document-extension word">.docx</span><span>Word</span></div>
+          <div class="document-type"><span class="document-extension excel">.xlsx</span><span>Excel</span></div>
+          <div class="document-type"><span class="document-extension powerpoint">.pptx</span><span>PowerPoint</span></div>
+        </div>
+        <div class="template-note"><svg class="icon" aria-hidden="true"><use href="assets/actions.svg#new-template"></use></svg><p data-t="templateSub">也能加入自己的模板，保留周报、表格等常用格式。</p></div>
+      </article>
+      <article class="feature-card favorites-card">
+        <p class="eyebrow" data-t="favoritesEyebrow">常用文件夹</p>
+        <h3 data-t="favoritesTitle">常用位置，少绕几步。</h3>
+        <p data-t="favoritesSub">把常用文件夹加入收藏，右键复制或移动文件，少一些来回切换。</p>
+        <div class="folder-list" aria-hidden="true">
+          <div><svg class="icon" aria-hidden="true"><use href="assets/actions.svg#folder"></use></svg><span data-t="favDl">下载</span><span class="folder-path">~/Downloads</span></div>
+          <div><svg class="icon" aria-hidden="true"><use href="assets/actions.svg#folder"></use></svg><span data-t="favDk">桌面</span><span class="folder-path">~/Desktop</span></div>
+          <div><svg class="icon" aria-hidden="true"><use href="assets/actions.svg#folder"></use></svg><span data-t="favProject">项目</span><span class="folder-path">~/Projects</span></div>
+        </div>
+      </article>
+      <article class="feature-card layout-card">
+        <p class="eyebrow" data-t="layoutEyebrow">菜单自定义</p>
+        <h3 data-t="layoutTitle">留什么，放哪里，你来定。</h3>
+        <p data-t="layoutSub">开关菜单项、拖动排序，选择放在主菜单还是子菜单。让右键菜单符合自己的习惯。</p>
+        <div class="layout-preview" aria-hidden="true">
+          <div><svg class="icon" aria-hidden="true"><use href="assets/actions.svg#new-file"></use></svg><span data-t="rNew">新建文件</span><span class="location-tag" data-t="mainMenu">主菜单</span></div>
+          <div><svg class="icon" aria-hidden="true"><use href="assets/actions.svg#copy-path"></use></svg><span data-t="rCopyPath">拷贝路径</span><span class="location-tag" data-t="mainMenu">主菜单</span></div>
+          <div><svg class="icon" aria-hidden="true"><use href="assets/actions.svg#zip"></use></svg><span data-t="rZip">压缩为 ZIP</span><span class="location-tag subtle" data-t="subMenu">子菜单</span></div>
+        </div>
+      </article>
+      <article class="feature-card apps-card">
+        <p class="eyebrow" data-t="appsEyebrow">用常用应用打开</p>
+        <h3 data-t="appsTitle">熟悉的应用，也放在右键里。</h3>
+        <p data-t="appsSub">添加你常用的终端或其他应用，直接打开文件或所在文件夹。</p>
+        <div class="app-options" aria-hidden="true">
+          <div><svg class="icon" aria-hidden="true"><use href="assets/actions.svg#open-terminal"></use></svg><span data-t="terminal">终端</span></div>
+          <div><svg class="icon" aria-hidden="true"><use href="assets/actions.svg#app"></use></svg><span data-t="yourApps">你添加的应用</span></div>
+        </div>
+      </article>
+    </div>
+    <div class="tools">
+      <article><svg class="icon" aria-hidden="true"><use href="assets/actions.svg#copy-path"></use></svg><h3 data-t="pathTitle">文件名与路径</h3><p data-t="pathSub">拷贝完整路径、文件名，或不含扩展名的名称。</p></article>
+      <article><svg class="icon" aria-hidden="true"><use href="assets/actions.svg#zip"></use></svg><h3 data-t="zipTitle">ZIP 压缩与解压</h3><p data-t="zipSub">把文件压缩为 ZIP，或将 ZIP 解压到当前文件夹。</p></article>
+      <article><svg class="icon" aria-hidden="true"><use href="assets/actions.svg#hash"></use></svg><h3 data-t="hashTitle">计算与比较哈希</h3><p data-t="hashSub">支持 SHA-256、SHA-1、MD5，也能比较两份文件。</p></article>
+      <article><svg class="icon" aria-hidden="true"><use href="assets/actions.svg#toggle-hidden"></use></svg><h3 data-t="hiddenTitle">切换隐藏文件</h3><p data-t="hiddenSub">需要查看隐藏文件时，从右键菜单切换显示。</p></article>
+    </div>
+  </section>
+
+  <section class="dark" id="download">
+    <div class="wrap download-layout">
+      <div>
+        <h2 data-t="dlTitle">从下一次右键开始。</h2>
+        <p data-t="dlSub">下载 RightClick，让常用文件操作更顺手。</p>
+      </div>
+      <div class="download-options">
+        <div class="download-buttons">
+          <a class="button" data-arch="arm64" href="https://github.com/hy-shine/rightclick/releases/latest" data-t="downloadApple" data-aria="downloadAppleLabel" aria-label="下载 Apple 芯片版 RightClick">Apple 芯片版</a>
+          <a class="button button-secondary" data-arch="x86_64" href="https://github.com/hy-shine/rightclick/releases/latest" data-t="downloadIntel" data-aria="downloadIntelLabel" aria-label="下载 Intel 芯片版 RightClick">Intel 芯片版</a>
+        </div>
+        <p class="fineprint"><span data-t="fine">免费开源 · macOS 15 或更高版本</span><span id="release-version"></span></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <span>© 2026 RightClick</span>
+  <span class="spacer"></span>
+  <a href="https://github.com/hy-shine/rightclick/releases" data-t="changelog">版本记录</a>
+  <a data-install href="https://github.com/hy-shine/rightclick/blob/master/README.zh-CN.md#安装" data-t="installGuide">安装说明</a>
+  <a href="https://github.com/hy-shine/rightclick">GitHub</a>
+</footer>
+</body>
+</html>
