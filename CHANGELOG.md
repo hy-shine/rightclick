@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.3 - 2026-11-13
+
+### Added
+
+- Copy as Terminal Path, Copy Relative Path, and Copy Markdown File Link.
+- Compress selected folders and mixed selections to ZIP, with optional `.DS_Store`, `.git`, and `node_modules` exclusions.
+- Extract a ZIP to a new folder beside the archive.
+- Default Actions settings for the default hash algorithm and archive exclusions.
+- Appearance setting for System, Light, or Dark.
+
+### Changed
+
+- General now contains the Finder extension status, About, update, and GitHub actions.
+- The landing page copy is shorter and organized around creating and organizing files.
+
 ## 0.1.2 - 2026-11-12
 
 ### Added

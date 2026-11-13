@@ -1,7 +1,7 @@
 {
   "name": "RightClick",
   "identifier": "com.example.rightclick",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "main": "./cmd/rightclick",
   "out": "build",
   "urlSchemes": [
