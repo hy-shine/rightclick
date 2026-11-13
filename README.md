@@ -24,11 +24,11 @@ English | [简体中文](README.zh-CN.md)
 
 Requires macOS 15.0 or later.
 
-1. Download the disk image from GitHub Releases: `RightClick-0.1.3-arm64.dmg` for Apple silicon, `RightClick-0.1.3-x86_64.dmg` for Intel.
+1. Download the disk image from GitHub Releases: `RightClick-0.1.4-arm64.dmg` for Apple silicon, `RightClick-0.1.4-x86_64.dmg` for Intel.
 2. Open the disk image and drag RightClick into `/Applications`.
 3. Double-click RightClick. macOS shows a warning. Close it.
 
-RightClick 0.1.2 and later update from the app menu. If you have 0.1.1 or earlier, install 0.1.3 manually once.
+RightClick 0.1.2 and later update from the app menu. If you have 0.1.1 or earlier, install 0.1.4 manually once.
 
 If RightClick still won't open, use one of these two ways.
 

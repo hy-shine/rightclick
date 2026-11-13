@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.4 - 2026-11-13
+
+### Added
+
+- Paste as File: save clipboard text as an `untitled.txt` or valid JSON file in the current folder.
+- Copy Content: copy up to 256 KB of UTF-8 text from a selected file.
+- Make Executable: add execute permissions to selected regular files; off by default.
+
+### Changed
+
+- Folder destinations use the native macOS folder icon; Delete Permanently uses the system red.
+- README and the landing page describe the new clipboard and developer actions.
+
 ## 0.1.3 - 2026-11-13
 
 ### Added

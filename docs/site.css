@@ -110,7 +110,7 @@ p, h1, h2, h3 { margin: 0; }
 .app-options { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 31px; }
 .app-options > div { display: flex; align-items: center; gap: 12px; min-height: 58px; padding: 12px 17px; border: 1px solid var(--line); border-radius: 10px; font-size: 13px; }
 .app-options .icon { color: #5b6579; }
-.tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; margin-top: 44px; padding-top: 36px; border-top: 1px solid var(--line); }
+.tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin-top: 44px; padding-top: 36px; border-top: 1px solid var(--line); }
 .tools .icon { color: #6e788b; }
 .tools h3 { margin-top: 13px; font-size: 16px; font-weight: 600; line-height: 1.5; }
 .tools p { margin-top: 7px; font-size: 13px; line-height: 1.8; color: var(--muted); }
