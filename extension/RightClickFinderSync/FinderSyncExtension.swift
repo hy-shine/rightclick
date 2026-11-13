@@ -172,7 +172,7 @@ final class FinderSyncExtension: FIFinderSync {
         // new-* actions send the folder that receives the new item, not the selected items.
         let folderPaths = pathParams(target.newItemFolder.map { [$0] } ?? [])
         switch id {
-        case "new-folder":
+        case "new-folder", "paste-as-file":
             return actionItem(title: title(for: id), urlAction: id, params: folderPaths)
         case "new-template":
             let children = Templates.load().map { entry in
@@ -198,11 +198,13 @@ final class FinderSyncExtension: FIFinderSync {
         case "new-file": return Localized.text("finder.newFile")
         case "new-folder": return Localized.text("finder.newFolder")
         case "new-template": return Localized.text("finder.userTemplate")
+        case "paste-as-file": return Localized.text("finder.pasteAsFile")
         case "add-template": return Localized.text("finder.captureTemplate")
         case "copy-path": return Localized.text("finder.copyPath")
         case "copy-terminal-path": return Localized.text("finder.copyTerminalPath")
         case "copy-relative-path": return Localized.text("finder.copyRelativePath")
         case "copy-markdown-link": return Localized.text("finder.copyMarkdownLink")
+        case "copy-content": return Localized.text("finder.copyContent")
         case "copy-name": return Localized.text("finder.copyName")
         case "copy-basename": return Localized.text("finder.copyBaseName")
         case "copy-to": return Localized.text("finder.copyTo")
@@ -213,6 +215,7 @@ final class FinderSyncExtension: FIFinderSync {
         case "unzip-to-folder": return Localized.text("finder.unzipToFolder")
         case "hash": return Localized.text("finder.hash")
         case "compare-hash": return Localized.text("finder.compareHash")
+        case "chmod-x": return Localized.text("finder.makeExecutable")
         case "toggle-hidden": return Localized.text("finder.toggleHidden")
         case "delete-permanently": return Localized.text("finder.deletePermanently")
         default: return id
@@ -335,10 +338,13 @@ struct MenuTarget {
     struct Item {
         let url: URL
         let isDirectory: Bool
+        let isSymbolicLink: Bool
 
         init(url: URL) {
             self.url = url
-            self.isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+            let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+            self.isDirectory = values?.isDirectory ?? false
+            self.isSymbolicLink = values?.isSymbolicLink ?? false
         }
     }
 
@@ -361,18 +367,22 @@ struct MenuTarget {
 
     /// The URL of the only selected item, when exactly one file is selected.
     var singleFile: URL? {
-        guard !isBlankArea, items.count == 1, !items[0].isDirectory else { return nil }
+        guard !isBlankArea, items.count == 1, !items[0].isDirectory, !items[0].isSymbolicLink else { return nil }
         return items[0].url
     }
 
     /// Whether an action is shown for this target. The rules come from the product spec.
     func allows(_ id: String) -> Bool {
         switch id {
-        case "new-file", "new-folder", "new-template":
+        case "new-file", "new-folder", "new-template", "paste-as-file":
             return newItemFolder != nil
         case "copy-path", "copy-name", "copy-basename", "copy-terminal-path", "copy-relative-path", "copy-markdown-link":
             // On the blank area these copy the current folder itself, as a selected folder would.
             return true
+        case "copy-content":
+            return singleFile != nil
+        case "chmod-x":
+            return !isBlankArea && !items.isEmpty && items.allSatisfy { !$0.isDirectory && !$0.isSymbolicLink }
         case "copy-to", "move-to", "delete-permanently":
             return !isBlankArea
         case "open-terminal":

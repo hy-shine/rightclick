@@ -3,6 +3,7 @@ package app
 import (
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -55,10 +56,51 @@ func failInBackground(raw string, err error) int {
 // dialog calls cannot finish there. AppleScript does the same jobs.
 func useBackgroundInterface() {
 	copyText = setClipboard
+	readClipboardText = getClipboardText
 	notify = notifyWithAppleScript
 	chooseFolder = chooseFolderWithAppleScript
 	chooseCopyBaseFolder = chooseCopyBaseWithAppleScript
 	confirmDelete = confirmDeleteWithAppleScript
+}
+
+// pbpasteCmd builds the command to read the macOS clipboard. It is a variable
+// so unit tests can substitute an isolated runner.
+var pbpasteCmd = func() *exec.Cmd {
+	cmd := exec.Command("/usr/bin/pbpaste")
+	cmd.Env = append(os.Environ(), "LANG=en_US.UTF-8", "LC_ALL=en_US.UTF-8")
+	return cmd
+}
+
+// getClipboardText reads up to maxBytes text from the clipboard using pbpaste.
+// It sets LANG and LC_ALL to en_US.UTF-8 to preserve exact UTF-8 bytes without
+// appending any newlines, bounds reading with io.LimitReader, kills pbpaste on
+// overflow, and returns locales.ErrClipboardTooLarge.
+func getClipboardText(maxBytes int64) (string, error) {
+	cmd := pbpasteCmd()
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return "", err
+	}
+	if err := cmd.Start(); err != nil {
+		return "", err
+	}
+
+	lr := io.LimitReader(stdout, maxBytes+1)
+	data, readErr := io.ReadAll(lr)
+	if readErr != nil {
+		_ = cmd.Process.Kill()
+		_ = cmd.Wait()
+		return "", readErr
+	}
+	if int64(len(data)) > maxBytes {
+		_ = cmd.Process.Kill()
+		_ = cmd.Wait()
+		return "", errors.New(locales.ErrClipboardTooLarge())
+	}
+	if err := cmd.Wait(); err != nil {
+		return "", err
+	}
+	return string(data), nil
 }
 
 // setClipboard puts text on the clipboard. AppleScript keeps the text's encoding;

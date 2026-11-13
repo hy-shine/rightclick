@@ -1716,6 +1716,16 @@ func (msgs Messages) MenuCopyMarkdownLink() string {
 	return Catalog.Format(msgs.locale, "menuCopyMarkdownLink", nil)
 }
 
+// MenuCopyContent says "Copy Content"
+// in the language the app shows.
+func MenuCopyContent() string { return In(i18n.Locale()).MenuCopyContent() }
+
+// MenuCopyContent says "Copy Content"
+// in the language of msgs.
+func (msgs Messages) MenuCopyContent() string {
+	return Catalog.Format(msgs.locale, "menuCopyContent", nil)
+}
+
 // CopyBaseTitle says "Choose Base Folder"
 // in the language the app shows.
 func CopyBaseTitle() string { return In(i18n.Locale()).CopyBaseTitle() }
@@ -1836,6 +1846,16 @@ func (msgs Messages) MenuNewTemplate() string {
 	return Catalog.Format(msgs.locale, "menuNewTemplate", nil)
 }
 
+// MenuPasteAsFile says "Paste as File"
+// in the language the app shows.
+func MenuPasteAsFile() string { return In(i18n.Locale()).MenuPasteAsFile() }
+
+// MenuPasteAsFile says "Paste as File"
+// in the language of msgs.
+func (msgs Messages) MenuPasteAsFile() string {
+	return Catalog.Format(msgs.locale, "menuPasteAsFile", nil)
+}
+
 // MenuOpenTerminal says "Open with Terminal"
 // in the language the app shows.
 func MenuOpenTerminal() string { return In(i18n.Locale()).MenuOpenTerminal() }
@@ -1844,6 +1864,16 @@ func MenuOpenTerminal() string { return In(i18n.Locale()).MenuOpenTerminal() }
 // in the language of msgs.
 func (msgs Messages) MenuOpenTerminal() string {
 	return Catalog.Format(msgs.locale, "menuOpenTerminal", nil)
+}
+
+// MenuMakeExecutable says "Make Executable"
+// in the language the app shows.
+func MenuMakeExecutable() string { return In(i18n.Locale()).MenuMakeExecutable() }
+
+// MenuMakeExecutable says "Make Executable"
+// in the language of msgs.
+func (msgs Messages) MenuMakeExecutable() string {
+	return Catalog.Format(msgs.locale, "menuMakeExecutable", nil)
 }
 
 // MenuPreview says "Menu Preview"
@@ -2912,4 +2942,176 @@ func FoldersIntro() string { return In(i18n.Locale()).FoldersIntro() }
 // in the language of msgs.
 func (msgs Messages) FoldersIntro() string {
 	return Catalog.Format(msgs.locale, "foldersIntro", nil)
+}
+
+// ErrNoTextInClipboard says "There is no plain text on the clipboard"
+// in the language the app shows.
+func ErrNoTextInClipboard() string { return In(i18n.Locale()).ErrNoTextInClipboard() }
+
+// ErrNoTextInClipboard says "There is no plain text on the clipboard"
+// in the language of msgs.
+func (msgs Messages) ErrNoTextInClipboard() string {
+	return Catalog.Format(msgs.locale, "errNoTextInClipboard", nil)
+}
+
+// ErrClipboardTooLarge says "The clipboard content is too large (over 1 MB)"
+// in the language the app shows.
+func ErrClipboardTooLarge() string { return In(i18n.Locale()).ErrClipboardTooLarge() }
+
+// ErrClipboardTooLarge says "The clipboard content is too large (over 1 MB)"
+// in the language of msgs.
+func (msgs Messages) ErrClipboardTooLarge() string {
+	return Catalog.Format(msgs.locale, "errClipboardTooLarge", nil)
+}
+
+// ErrSymlinkNotSupported says "Symbolic links are not supported"
+// in the language the app shows.
+func ErrSymlinkNotSupported() string { return In(i18n.Locale()).ErrSymlinkNotSupported() }
+
+// ErrSymlinkNotSupported says "Symbolic links are not supported"
+// in the language of msgs.
+func (msgs Messages) ErrSymlinkNotSupported() string {
+	return Catalog.Format(msgs.locale, "errSymlinkNotSupported", nil)
+}
+
+// ErrNotRegularFile says "Only regular files are supported"
+// in the language the app shows.
+func ErrNotRegularFile() string { return In(i18n.Locale()).ErrNotRegularFile() }
+
+// ErrNotRegularFile says "Only regular files are supported"
+// in the language of msgs.
+func (msgs Messages) ErrNotRegularFile() string {
+	return Catalog.Format(msgs.locale, "errNotRegularFile", nil)
+}
+
+// ErrFileTooLarge says "The file is too large (over 256 KB)"
+// in the language the app shows.
+func ErrFileTooLarge() string { return In(i18n.Locale()).ErrFileTooLarge() }
+
+// ErrFileTooLarge says "The file is too large (over 256 KB)"
+// in the language of msgs.
+func (msgs Messages) ErrFileTooLarge() string {
+	return Catalog.Format(msgs.locale, "errFileTooLarge", nil)
+}
+
+// ErrNotTextFile says "Cannot copy non-text file content"
+// in the language the app shows.
+func ErrNotTextFile() string { return In(i18n.Locale()).ErrNotTextFile() }
+
+// ErrNotTextFile says "Cannot copy non-text file content"
+// in the language of msgs.
+func (msgs Messages) ErrNotTextFile() string {
+	return Catalog.Format(msgs.locale, "errNotTextFile", nil)
+}
+
+// ErrNotUTF8Text says "Cannot copy non-UTF-8 text content"
+// in the language the app shows.
+func ErrNotUTF8Text() string { return In(i18n.Locale()).ErrNotUTF8Text() }
+
+// ErrNotUTF8Text says "Cannot copy non-UTF-8 text content"
+// in the language of msgs.
+func (msgs Messages) ErrNotUTF8Text() string {
+	return Catalog.Format(msgs.locale, "errNotUTF8Text", nil)
+}
+
+// ErrNoReadPermission says "Permission denied reading file"
+// in the language the app shows.
+func ErrNoReadPermission() string { return In(i18n.Locale()).ErrNoReadPermission() }
+
+// ErrNoReadPermission says "Permission denied reading file"
+// in the language of msgs.
+func (msgs Messages) ErrNoReadPermission() string {
+	return Catalog.Format(msgs.locale, "errNoReadPermission", nil)
+}
+
+// ErrNoWritePermission says "Permission denied writing to destination folder"
+// in the language the app shows.
+func ErrNoWritePermission() string { return In(i18n.Locale()).ErrNoWritePermission() }
+
+// ErrNoWritePermission says "Permission denied writing to destination folder"
+// in the language of msgs.
+func (msgs Messages) ErrNoWritePermission() string {
+	return Catalog.Format(msgs.locale, "errNoWritePermission", nil)
+}
+
+// ErrFileNotFound says "File not found"
+// in the language the app shows.
+func ErrFileNotFound() string { return In(i18n.Locale()).ErrFileNotFound() }
+
+// ErrFileNotFound says "File not found"
+// in the language of msgs.
+func (msgs Messages) ErrFileNotFound() string {
+	return Catalog.Format(msgs.locale, "errFileNotFound", nil)
+}
+
+// NotifyCreated says "Created {name}"
+// in the language the app shows.
+func NotifyCreated(name string) string { return In(i18n.Locale()).NotifyCreated(name) }
+
+// NotifyCreated says "Created {name}"
+// in the language of msgs.
+func (msgs Messages) NotifyCreated(name string) string {
+	return Catalog.Format(msgs.locale, "notifyCreated", map[string]any{"name": name})
+}
+
+// NotifyCopiedEmpty says "Copied empty file content"
+// in the language the app shows.
+func NotifyCopiedEmpty() string { return In(i18n.Locale()).NotifyCopiedEmpty() }
+
+// NotifyCopiedEmpty says "Copied empty file content"
+// in the language of msgs.
+func (msgs Messages) NotifyCopiedEmpty() string {
+	return Catalog.Format(msgs.locale, "notifyCopiedEmpty", nil)
+}
+
+// NotifyChmodSuccess says "Made executable: {count, plural, one {# file} other {# files}}"
+// in the language the app shows.
+func NotifyChmodSuccess(count int) string { return In(i18n.Locale()).NotifyChmodSuccess(count) }
+
+// NotifyChmodSuccess says "Made executable: {count, plural, one {# file} other {# files}}"
+// in the language of msgs.
+func (msgs Messages) NotifyChmodSuccess(count int) string {
+	return Catalog.Format(msgs.locale, "notifyChmodSuccess", map[string]any{"count": count})
+}
+
+// NotifyChmodPartial says "Made executable: {succeeded, plural, one {# file} other {# files}}; {failed, plural, one {# failed} other {# failed}}…"
+// in the language the app shows.
+func NotifyChmodPartial(succeeded int, failed int, cause string) string {
+	return In(i18n.Locale()).NotifyChmodPartial(succeeded, failed, cause)
+}
+
+// NotifyChmodPartial says "Made executable: {succeeded, plural, one {# file} other {# files}}; {failed, plural, one {# failed} other {# failed}}…"
+// in the language of msgs.
+func (msgs Messages) NotifyChmodPartial(succeeded int, failed int, cause string) string {
+	return Catalog.Format(msgs.locale, "notifyChmodPartial", map[string]any{"succeeded": succeeded, "failed": failed, "cause": cause})
+}
+
+// NotifyChmodAlready says "The selected files are already executable"
+// in the language the app shows.
+func NotifyChmodAlready() string { return In(i18n.Locale()).NotifyChmodAlready() }
+
+// NotifyChmodAlready says "The selected files are already executable"
+// in the language of msgs.
+func (msgs Messages) NotifyChmodAlready() string {
+	return Catalog.Format(msgs.locale, "notifyChmodAlready", nil)
+}
+
+// NotifyChmodNoFiles says "No eligible files to update"
+// in the language the app shows.
+func NotifyChmodNoFiles() string { return In(i18n.Locale()).NotifyChmodNoFiles() }
+
+// NotifyChmodNoFiles says "No eligible files to update"
+// in the language of msgs.
+func (msgs Messages) NotifyChmodNoFiles() string {
+	return Catalog.Format(msgs.locale, "notifyChmodNoFiles", nil)
+}
+
+// NotifyChmodFailed says "Could not make executable"
+// in the language the app shows.
+func NotifyChmodFailed() string { return In(i18n.Locale()).NotifyChmodFailed() }
+
+// NotifyChmodFailed says "Could not make executable"
+// in the language of msgs.
+func (msgs Messages) NotifyChmodFailed() string {
+	return Catalog.Format(msgs.locale, "notifyChmodFailed", nil)
 }

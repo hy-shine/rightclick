@@ -3,9 +3,9 @@
 package app
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/hy-shine/rightclick/internal/locales"
 	"log"
 	"net/url"
 	"os"
@@ -18,6 +18,7 @@ import (
 	"github.com/hy-shine/rightclick/internal/config"
 	"github.com/hy-shine/rightclick/internal/files"
 	"github.com/hy-shine/rightclick/internal/finder"
+	"github.com/hy-shine/rightclick/internal/locales"
 	"github.com/hy-shine/rightclick/internal/settings"
 )
 
@@ -88,6 +89,9 @@ func actionHandlers() map[string]actionHandler {
 		"copy-markdown-link": func(_ url.Values, paths []string, cfg config.Config) error {
 			return copyPathsFromBase(paths, cfg, files.MarkdownFileLinks)
 		},
+		"copy-content": func(_ url.Values, paths []string, _ config.Config) error {
+			return copyContent(paths)
+		},
 		"copy-name": func(_ url.Values, paths []string, _ config.Config) error {
 			return copyText(joinLines(baseNames(paths)))
 		},
@@ -114,6 +118,9 @@ func actionHandlers() map[string]actionHandler {
 				return err
 			}
 			return createFromTemplate(templatesPath, params.Get("name"), paths, cfg)
+		},
+		"paste-as-file": func(_ url.Values, paths []string, _ config.Config) error {
+			return pasteAsFile(paths)
 		},
 		"add-template": func(_ url.Values, paths []string, _ config.Config) error {
 			return captureTemplate(paths, func(template files.Template) error {
@@ -143,6 +150,9 @@ func actionHandlers() map[string]actionHandler {
 		},
 		"compare-hash": func(params url.Values, paths []string, cfg config.Config) error {
 			return compareItems(actionHashAlgorithm(params.Get("algo"), cfg), paths)
+		},
+		"chmod-x": func(_ url.Values, paths []string, _ config.Config) error {
+			return makeExecutableAction(paths)
 		},
 		"toggle-hidden": func(_ url.Values, _ []string, _ config.Config) error {
 			return toggleHiddenFiles()
@@ -708,6 +718,111 @@ func stemNames(paths []string) []string {
 // see what would be copied without touching the real clipboard.
 var copyText = func(text string) error {
 	return mygo.Clipboard.Write(transfer.TextData(text))
+}
+
+const maxClipboardTextBytes = 1048576 // 1 MB
+
+// readClipboardText returns up to maxBytes text from the clipboard. It is a variable
+// so that tests can provide test text without touching the real clipboard.
+var readClipboardText = getClipboardText
+
+func pasteAsFile(paths []string) error {
+	dir, err := requireOne(paths)
+	if err != nil {
+		return err
+	}
+	text, err := readClipboardText(maxClipboardTextBytes)
+	if err != nil {
+		return err
+	}
+	if int64(len(text)) > maxClipboardTextBytes {
+		return errors.New(locales.ErrClipboardTooLarge())
+	}
+	trimmed := strings.TrimSpace(text)
+	if trimmed == "" {
+		return errors.New(locales.ErrNoTextInClipboard())
+	}
+	baseName := "untitled.txt"
+	if (strings.HasPrefix(trimmed, "{") && strings.HasSuffix(trimmed, "}")) ||
+		(strings.HasPrefix(trimmed, "[") && strings.HasSuffix(trimmed, "]")) {
+		if json.Valid([]byte(trimmed)) {
+			baseName = "untitled.json"
+		}
+	}
+	created, err := files.CreateFile(dir, baseName, []byte(text))
+	if err != nil {
+		switch {
+		case errors.Is(err, os.ErrPermission):
+			return errors.New(locales.ErrNoWritePermission())
+		case errors.Is(err, os.ErrNotExist):
+			return errors.New(locales.ErrFileNotFound())
+		default:
+			return err
+		}
+	}
+	notify(locales.AppName(), locales.NotifyCreated(files.Name(created)))
+	return nil
+}
+
+func copyContent(paths []string) error {
+	path, err := requireOne(paths)
+	if err != nil {
+		return err
+	}
+	content, err := files.ReadTextContent(path, 256*1024)
+	if err != nil {
+		switch {
+		case errors.Is(err, os.ErrPermission):
+			return errors.New(locales.ErrNoReadPermission())
+		case errors.Is(err, os.ErrNotExist):
+			return errors.New(locales.ErrFileNotFound())
+		case errors.Is(err, files.ErrSymlinkNotSupported):
+			return errors.New(locales.ErrSymlinkNotSupported())
+		case errors.Is(err, files.ErrNotRegularFile):
+			return errors.New(locales.ErrNotRegularFile())
+		case errors.Is(err, files.ErrFileTooLarge):
+			return errors.New(locales.ErrFileTooLarge())
+		case errors.Is(err, files.ErrNotTextFile):
+			return errors.New(locales.ErrNotTextFile())
+		case errors.Is(err, files.ErrNotUTF8Text):
+			return errors.New(locales.ErrNotUTF8Text())
+		default:
+			return err
+		}
+	}
+	if err := copyText(content); err != nil {
+		return err
+	}
+	if len(content) == 0 {
+		notify(locales.AppName(), locales.NotifyCopiedEmpty())
+	}
+	return nil
+}
+
+func makeExecutableAction(paths []string) error {
+	if len(paths) == 0 {
+		return errors.New(locales.NeedOneItem())
+	}
+	res := files.MakeExecutable(paths)
+	if len(res.Failed) > 0 {
+		firstErr := res.Failed[0].Err
+		if len(res.Succeeded) > 0 {
+			notify(locales.AppName(), locales.NotifyChmodPartial(len(res.Succeeded), len(res.Failed), firstErr.Error()))
+		} else {
+			return fmt.Errorf("%s: %w", locales.NotifyChmodFailed(), firstErr)
+		}
+		return nil
+	}
+	if len(res.Succeeded) == 0 {
+		if len(res.AlreadyExecutable) > 0 {
+			notify(locales.AppName(), locales.NotifyChmodAlready())
+		} else {
+			notify(locales.AppName(), locales.NotifyChmodNoFiles())
+		}
+		return nil
+	}
+	notify(locales.AppName(), locales.NotifyChmodSuccess(len(res.Succeeded)))
+	return nil
 }
 
 // notifyFailure shows an error in a notification.

@@ -105,11 +105,12 @@ type Config struct {
 
 // defaultMenuIDs lists the menu entries in their default order, as in ui.md section 2.
 var defaultMenuIDs = []string{
-	"new-file", "new-folder", "new-template",
-	"copy-path", "copy-name", "copy-basename", "copy-to", "move-to",
+	"new-file", "new-folder", "new-template", "paste-as-file",
+	"copy-path", "copy-name", "copy-basename", "copy-content", "copy-to", "move-to",
 	"copy-terminal-path", "copy-relative-path", "copy-markdown-link",
 	"open-terminal",
 	"zip", "unzip", "unzip-to-folder", "hash", "compare-hash",
+	"chmod-x",
 	"toggle-hidden", "delete-permanently",
 	"add-template",
 }
@@ -120,6 +121,7 @@ var defaultMenuIDs = []string{
 var defaultOffMenuIDs = map[string]bool{
 	"delete-permanently": true, "open-terminal": true, "new-template": true, "add-template": true,
 	"copy-terminal-path": true, "copy-relative-path": true, "copy-markdown-link": true,
+	"chmod-x": true,
 }
 
 // defaultOffFileTypeIDs lists the file types that start switched off: the programming

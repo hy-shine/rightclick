@@ -302,3 +302,47 @@ let finderIcon = ProgramIcons.image(for: "Finder")
 precondition(finderIcon != nil, "Finder's own icon was not found")
 precondition(programMenu.items.contains { $0.image === finderIcon }, "the app item does not show the app's own icon")
 precondition(ProgramIcons.image(for: "No Such Program Here") == nil, "a program that is not installed got an icon")
+
+// paste-as-file is on by default and allowed only on folders and blank area.
+precondition(MenuActions.enabledIDs(from: nil).contains("paste-as-file"), "paste-as-file is off by default")
+precondition(target.allows("paste-as-file"), "paste-as-file missing on blank area")
+precondition(selectedFolder.allows("paste-as-file"), "paste-as-file missing on selected folder")
+precondition(!fileTarget.allows("paste-as-file") && !multipleFiles.allows("paste-as-file"), "paste-as-file allowed on files")
+guard let pasteMenu = provider.buildMenu(target: target, config: nil, templates: []),
+      let pasteItem = firstItem(pasteMenu, title: "Paste as File"),
+      let pasteURL = provider.menuURL(for: pasteItem) else { fatalError("paste-as-file action missing") }
+precondition(pasteItem.image != nil && pasteURL.host == "paste-as-file", "paste-as-file icon or route is wrong")
+print("Paste as file default, contexts, icon, and route verified")
+
+// copy-content is on by default and allowed only on a single file.
+precondition(MenuActions.enabledIDs(from: nil).contains("copy-content"), "copy-content is off by default")
+precondition(fileTarget.allows("copy-content"), "copy-content missing on single file")
+precondition(!target.allows("copy-content") && !selectedFolder.allows("copy-content") && !multipleFiles.allows("copy-content"), "copy-content allowed on wrong contexts")
+guard let contentMenu = provider.buildMenu(target: fileTarget, config: nil, templates: []),
+      let contentItem = firstItem(contentMenu, title: "Copy Content"),
+      let contentURL = provider.menuURL(for: contentItem) else { fatalError("copy-content action missing") }
+precondition(contentItem.image != nil && contentURL.host == "copy-content", "copy-content icon or route is wrong")
+print("Copy content default, contexts, icon, and route verified")
+
+// chmod-x is off by default and allowed on regular files, not directories or blank areas.
+precondition(!MenuActions.enabledIDs(from: nil).contains("chmod-x"), "chmod-x is on by default")
+precondition(fileTarget.allows("chmod-x") && multipleFiles.allows("chmod-x"), "chmod-x missing on files")
+precondition(!target.allows("chmod-x") && !selectedFolder.allows("chmod-x"), "chmod-x allowed on folder or blank area")
+let chmodConfig = try JSONDecoder().decode(AppConfig.self, from: Data(#"{"menuItems":[{"id":"chmod-x","enabled":true,"location":"submenu"}]}"#.utf8))
+guard let chmodMenu = provider.buildMenu(target: fileTarget, config: chmodConfig, templates: []),
+      let chmodItem = firstItem(chmodMenu, title: "Make Executable"),
+      let chmodURL = provider.menuURL(for: chmodItem) else { fatalError("chmod-x action missing") }
+precondition(chmodItem.image != nil && chmodURL.host == "chmod-x", "chmod-x icon or route is wrong")
+
+// Symbolic links are rejected by copy-content and chmod-x, but allowed by compare-hash when 2 are selected.
+let symlinkURL = FileManager.default.temporaryDirectory.appendingPathComponent("rc_test_symlink_\(UUID().uuidString).txt")
+try FileManager.default.createSymbolicLink(at: symlinkURL, withDestinationURL: URL(fileURLWithPath: "/private/tmp/document.txt"))
+defer { try? FileManager.default.removeItem(at: symlinkURL) }
+let symlinkItem = MenuTarget.Item(url: symlinkURL)
+let symlinkTarget = MenuTarget(items: [symlinkItem], isBlankArea: false)
+let twoSymlinksTarget = MenuTarget(items: [symlinkItem, symlinkItem], isBlankArea: false)
+precondition(symlinkItem.isSymbolicLink, "Item did not detect symbolic link")
+precondition(!symlinkTarget.allows("copy-content"), "copy-content unexpectedly allowed on symbolic link")
+precondition(!symlinkTarget.allows("chmod-x"), "chmod-x unexpectedly allowed on symbolic link")
+precondition(twoSymlinksTarget.allows("compare-hash"), "compare-hash must remain allowed on two file symlinks")
+print("Make executable default, contexts, icon, and route verified")

@@ -11,10 +11,12 @@ English | [简体中文](README.zh-CN.md)
 ## Features
 
 - **New File and New from Template**: Word, Excel, PowerPoint, Markdown, JSON and many programming languages, plus your own templates.
+- **Paste as File**: create a new document in the current folder from clipboard text, automatically choosing text or JSON formatting.
 - **Open with**: Terminal, the default app, or any app you add.
-- **Copy**: the name, the name without its extension, or the path. Enable Copy as Terminal Path, Copy Relative Path, or Copy Markdown File Link for other formats. Relative paths and Markdown links ask you to choose a base folder.
+- **Copy**: the name, the name without its extension, the path, or the full text content of a document (up to 256 KB). Enable Copy as Terminal Path, Copy Relative Path, or Copy Markdown File Link for other formats. Relative paths and Markdown links ask you to choose a base folder.
 - **Copy To / Move To** and **Favorite Folders**: send items to a folder you choose or to a favorite.
 - **Archives and hashes**: Compress and extract ZIP archives, and compute or compare file hashes.
+- **Permissions**: Make Executable to grant execution permissions (`+x`) to scripts and binaries (off by default).
 - **Also**: show or hide hidden files, and Delete Permanently (off by default).
 - **Menu layout and languages**: choose where each entry sits and drag to reorder. English, Simplified Chinese and Traditional Chinese.
 

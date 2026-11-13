@@ -253,12 +253,12 @@ func TestReorderStopsAtTheMainEntries(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m.reorderGroup(1, []int{3}, 0) // move copy-to to the top of the group
+	m.reorderGroup(1, []int{4}, 0) // move copy-to to the top of the group
 	var got []string
 	for _, i := range m.groupRows(1) {
 		got = append(got, m.cfg.MenuItems[i].ID)
 	}
-	want := []string{"copy-path", "copy-to", "copy-name", "copy-basename", "move-to", "copy-terminal-path", "copy-relative-path", "copy-markdown-link"}
+	want := []string{"copy-path", "copy-to", "copy-name", "copy-basename", "copy-content", "move-to", "copy-terminal-path", "copy-relative-path", "copy-markdown-link"}
 	if !slices.Equal(got, want) {
 		t.Errorf("group order = %q, want %q", got, want)
 	}

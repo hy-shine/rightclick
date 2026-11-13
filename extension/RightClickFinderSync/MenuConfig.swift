@@ -180,11 +180,12 @@ enum Templates {
 enum MenuActions {
     /// Groups in the order they appear in the submenu. Within a group, config order applies.
     static let groups: [[String]] = [
-        ["new-file", "new-folder", "new-template"],
-        ["copy-path", "copy-name", "copy-basename", "copy-to", "move-to", "copy-terminal-path", "copy-relative-path", "copy-markdown-link"],
+        ["new-file", "new-folder", "new-template", "paste-as-file"],
+        ["copy-path", "copy-name", "copy-basename", "copy-content", "copy-to", "move-to", "copy-terminal-path", "copy-relative-path", "copy-markdown-link"],
         ["open-terminal"],
         ["zip", "unzip", "unzip-to-folder", "hash"],
         ["compare-hash"],
+        ["chmod-x"],
         ["toggle-hidden"],
         ["delete-permanently"],
         ["add-template"],
@@ -195,7 +196,7 @@ enum MenuActions {
 
     /// Actions that start switched off. Like the Go side's defaultOffMenuIDs, they stay out of
     /// the menu until the user turns them on.
-    static let defaultOff: Set<String> = ["delete-permanently", "open-terminal", "copy-terminal-path", "copy-relative-path", "copy-markdown-link"]
+    static let defaultOff: Set<String> = ["delete-permanently", "open-terminal", "copy-terminal-path", "copy-relative-path", "copy-markdown-link", "chmod-x"]
 
     /// The IDs to show, in display order, from the menuItems array. Entries with enabled = false
     /// are dropped. An ID missing from the array (for example, one added in a later version)

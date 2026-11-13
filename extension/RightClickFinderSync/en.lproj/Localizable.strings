@@ -6,11 +6,13 @@
 "finder.newFile" = "New File";
 "finder.newFolder" = "New Folder";
 "finder.userTemplate" = "New from Template";
+"finder.pasteAsFile" = "Paste as File";
 "finder.captureTemplate" = "Add as Template…";
 "finder.copyPath" = "Copy Path";
 "finder.copyTerminalPath" = "Copy as Terminal Path";
 "finder.copyRelativePath" = "Copy Relative Path…";
 "finder.copyMarkdownLink" = "Copy Markdown File Link…";
+"finder.copyContent" = "Copy Content";
 "finder.copyName" = "Copy Name";
 "finder.copyBaseName" = "Copy Name (Without Extension)";
 "finder.copyTo" = "Copy To…";
@@ -22,6 +24,7 @@
 "finder.unzipToFolder" = "Extract to Folder";
 "finder.hash" = "Compute Hash";
 "finder.compareHash" = "Compare File Hashes";
+"finder.makeExecutable" = "Make Executable";
 "finder.toggleHidden" = "Show or Hide Hidden Files (⌘⇧.)";
 "finder.deletePermanently" = "Delete Permanently";
 "finder.noTemplates" = "No Templates";
