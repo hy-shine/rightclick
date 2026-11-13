@@ -1,0 +1,151 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release Git tag (e.g. v0.1.4, must match mygo.json and CHANGELOG.md)'
+        required: true
+        type: string
+      draft:
+        description: 'Create draft release'
+        required: false
+        type: boolean
+        default: true
+      prerelease:
+        description: 'Mark as prerelease'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & Publish Release
+    runs-on: macos-15
+    steps:
+      - name: Determine release tag
+        id: vars
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          if [ -n "$INPUT_TAG" ]; then
+            TAG="$INPUT_TAG"
+          else
+            TAG="$GITHUB_REF_NAME"
+          fi
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]] || {
+            echo "::error::Invalid release tag: $TAG (must match semver like v0.1.4)"
+            exit 1
+          }
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.vars.outputs.tag }}
+          fetch-depth: 0
+
+      - name: Validate tag, version, and changelog alignment
+        env:
+          TARGET_TAG: ${{ steps.vars.outputs.tag }}
+        run: |
+          set -euo pipefail
+          VERSION=$(python3 -I -c 'import json; print(json.load(open("mygo.json"))["version"])')
+          
+          echo "Target Tag: ${TARGET_TAG}"
+          echo "mygo.json Version: ${VERSION}"
+          
+          if [ "${TARGET_TAG}" != "v${VERSION}" ]; then
+            echo "::error::Tag mismatch! Git tag '${TARGET_TAG}' does not match mygo.json version 'v${VERSION}'."
+            exit 1
+          fi
+
+          if ! grep -E -q "^## ${VERSION}" CHANGELOG.md && ! grep -E -q "^## \[${VERSION}\]" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md missing entry for version '${VERSION}'."
+            exit 1
+          fi
+          echo "Tag, version, and changelog alignment verified successfully."
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+
+      - name: Run quality gates
+        run: |
+          go test ./...
+          CGO_ENABLED=0 go test ./...
+          go vet ./...
+          go tool mygo vet .
+          test -z "$(gofmt -l .)"
+          swiftc -application-extension -module-cache-path "${TMPDIR:-/tmp}/swift-module-cache" -o "${TMPDIR:-/tmp}/rc_ext_test" \
+            extension/RightClickFinderSync/FinderSyncExtension.swift \
+            extension/RightClickFinderSync/MenuConfig.swift \
+            extension/RightClickFinderSync/Localized.swift \
+            extension/RightClickFinderSync/ActionIcons.swift \
+            extension/tests/main.swift
+          "${TMPDIR:-/tmp}/rc_ext_test"
+
+      - name: Build release disk images & update archives
+        env:
+          UPDATER_PRIVATE_KEY: ${{ secrets.MYGO_UPDATER_PRIVATE_KEY }}
+        run: |
+          if [ -z "$UPDATER_PRIVATE_KEY" ]; then
+            echo "::error::Secret MYGO_UPDATER_PRIVATE_KEY is missing. Please configure it in repository Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+          key_file="${RUNNER_TEMP}/updater.key"
+          printf '%s' "$UPDATER_PRIVATE_KEY" > "$key_file"
+          chmod 600 "$key_file"
+          export MYGO_UPDATER_PRIVATE_KEY_FILE="$key_file"
+          sh scripts/release-dmg.sh
+
+      - name: Verify release artifacts integrity
+        run: |
+          VERSION=$(python3 -I -c 'import json; print(json.load(open("mygo.json"))["version"])')
+          expected=(
+            "build/release/RightClick-${VERSION}-arm64.dmg"
+            "build/release/RightClick-${VERSION}-arm64.dmg.sha256"
+            "build/release/RightClick-${VERSION}-x86_64.dmg"
+            "build/release/RightClick-${VERSION}-x86_64.dmg.sha256"
+            "build/release/RightClick-${VERSION}-darwin-arm64.tar.gz"
+            "build/release/RightClick-${VERSION}-darwin-arm64.tar.gz.sha256"
+            "build/release/RightClick-${VERSION}-darwin-amd64.tar.gz"
+            "build/release/RightClick-${VERSION}-darwin-amd64.tar.gz.sha256"
+            "build/release/update-darwin-arm64.json"
+            "build/release/update-darwin-amd64.json"
+          )
+          for f in "${expected[@]}"; do
+            if [ ! -f "$f" ]; then
+              echo "::error::Missing expected release artifact: $f"
+              exit 1
+            fi
+            if [ ! -s "$f" ]; then
+              echo "::error::Release artifact is empty: $f"
+              exit 1
+            fi
+          done
+          echo "All 10 release artifacts verified successfully."
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.vars.outputs.tag }}
+          name: RightClick ${{ steps.vars.outputs.tag }}
+          files: |
+            build/release/*.dmg
+            build/release/*.dmg.sha256
+            build/release/*.tar.gz
+            build/release/*.tar.gz.sha256
+            build/release/update-*.json
+          draft: ${{ github.event_name == 'push' || inputs.draft }}
+          prerelease: ${{ inputs.prerelease || false }}
+          generate_release_notes: true

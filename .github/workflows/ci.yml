@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test:
+    name: Test & Lint
+    runs-on: macos-15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+
+      - name: Go checks
+        run: |
+          go test ./...
+          CGO_ENABLED=0 go test ./...
+          go vet ./...
+          go tool mygo vet .
+          test -z "$(gofmt -l .)"
+
+      - name: Finder extension tests
+        run: |
+          swiftc -application-extension -module-cache-path "${TMPDIR:-/tmp}/swift-module-cache" -o "${TMPDIR:-/tmp}/rc_ext_test" \
+            extension/RightClickFinderSync/FinderSyncExtension.swift \
+            extension/RightClickFinderSync/MenuConfig.swift \
+            extension/RightClickFinderSync/Localized.swift \
+            extension/RightClickFinderSync/ActionIcons.swift \
+            extension/tests/main.swift
+          "${TMPDIR:-/tmp}/rc_ext_test"
