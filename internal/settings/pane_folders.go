@@ -13,21 +13,16 @@ import (
 // foldersPane is the favorite folders pane: the targets of Copy To and Move To, and
 // the folders that can be added to the menu.
 func (m *app) foldersPane(c *ui.Context) {
-	paneHeader(c, locales.PaneFolders(), locales.FoldersIntro())
-	ui.Column(c).Gap(12).Children(func() { m.folderToolbarAndList(c) })
-}
-
-// folderToolbarAndList is the toolbar and the list under it, 12 points apart. The add
-// action sits at the right end of the toolbar, as in the New pane.
-func (m *app) folderToolbarAndList(c *ui.Context) {
-	if len(m.cfg.FavoriteFolders) > 0 {
-		ui.Row(c).Gap(12).AlignItems(ui.Center).Children(func() {
-			ui.Spacer(c)
+	ui.Row(c).Gap(12).AlignItems(ui.Center).Children(func() {
+		ui.Column(c).Grow(1).MinWidth(0).Children(func() {
+			paneHeader(c, locales.PaneFolders(), locales.FoldersIntro())
+		})
+		if len(m.cfg.FavoriteFolders) > 0 {
 			if primaryButtonCentered(c, iconPlus, locales.AddFolder()) {
 				m.pickFavorite()
 			}
-		})
-	}
+		}
+	})
 	m.favoriteRows(c)
 }
 

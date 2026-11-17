@@ -68,11 +68,9 @@ func TestFavoriteRowActionsAreIconTargets(t *testing.T) {
 	}
 }
 
-// TestFolderToolbarSitsCloseToItsList keeps the toolbar of the folder pane from floating
-// away from the list it acts on: the space above it is the pane's usual 20 points, and
-// the list starts close under it. The distances are measured between texts, which sit a few
-// points inside their buttons. The folder column headings sit between the toolbar and rows.
-func TestFolderToolbarSitsCloseToItsList(t *testing.T) {
+// TestFolderAddActionSharesTheHeader keeps the add button beside the title and
+// description instead of reserving a separate toolbar row above the list.
+func TestFolderAddActionSharesTheHeader(t *testing.T) {
 	m := readyApp(t)
 	m.cfg.FavoriteFolders = []config.FavoriteFolder{{ID: "f1", Path: "/tmp", Label: "Folder 01", Enabled: true}}
 	m.selectPane(paneFolders)
@@ -84,10 +82,10 @@ func TestFolderToolbarSitsCloseToItsList(t *testing.T) {
 	if !okTitle || !okIntro || !okAdd || !okRow {
 		t.Fatal("title, intro, add action and first row must be on the pane")
 	}
-	if above := add.Y - (intro.Y + intro.H); above > 32 {
-		t.Errorf("%.1f pt between the intro and the toolbar, want at most 32", above)
+	if add.Y+add.H > intro.Y+intro.H {
+		t.Errorf("add action extends below the header: action=%+v intro=%+v", add, intro)
 	}
-	if below := row.Y - (add.Y + add.H); below > 32+favoriteHeaderHeight {
-		t.Errorf("%.1f pt between the toolbar and the list, want at most %d", below, 32+favoriteHeaderHeight)
+	if below := row.Y - (intro.Y + intro.H); below > 32+favoriteHeaderHeight {
+		t.Errorf("%.1f pt between the intro and the first row, want at most %d", below, 32+favoriteHeaderHeight)
 	}
 }
