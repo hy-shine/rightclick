@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.1.5 - 2026-11-17
+
+### Changed
+
+- Make menu actions easier to arrange and rename with visible drag handles, edit buttons, and clearer placement labels.
+- Improve the menu preview with aligned submenus and context controls that remain visible while scrolling.
+- Rename New to Files & Templates, distinguish empty templates from search results, and add direct actions to empty states.
+- Give favorite folders clear column headings and separate switches for enabling folders and showing menu shortcuts.
+- Place the Add Folder button beside the page heading to keep the folder list close to its description.
+- Improve English, Simplified Chinese, and Traditional Chinese labels, tooltips, and primary action consistency.
+
+### Fixed
+
+- Keep template editor buttons on one line and validation errors visible in short windows.
+- Prevent the English Enabled column heading from being truncated.
+- Allow the settings window to narrow to 860 points while keeping its controls usable.
+
 ## 0.1.4 - 2026-11-13
 
 ### Added
