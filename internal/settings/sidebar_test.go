@@ -19,7 +19,7 @@ func TestSidebarHasOnlyPaneLabels(t *testing.T) {
 			t.Errorf("missing pane %s", tab.label)
 		}
 	}
-	if err := tester.Click("New"); err != nil {
+	if err := tester.Click("Files & Templates"); err != nil {
 		t.Fatal(err)
 	}
 	if model.currentPane() != paneTemplates {

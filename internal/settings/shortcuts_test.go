@@ -80,3 +80,37 @@ func TestFavoritePaneAndRename(t *testing.T) {
 		t.Fatal("favorite rename was not saved")
 	}
 }
+
+func TestFavoriteSwitchesSaveIndependently(t *testing.T) {
+	model := readyApp(t)
+	if err := model.addFavorite(t.TempDir()); err != nil {
+		t.Fatal(err)
+	}
+	folder := model.cfg.FavoriteFolders[0]
+	model.selectPane(paneFolders)
+	screen := ui.NewTester(model.view, minWidth, minHeight)
+	for _, step := range []struct {
+		label    string
+		enabled  bool
+		shortcut bool
+	}{
+		{locales.ShortcutFor(folder.Label), true, true},
+		{locales.EnableLabel(folder.Label), false, true},
+		{locales.ShortcutFor(folder.Label), false, false},
+		{locales.EnableLabel(folder.Label), true, false},
+	} {
+		if err := screen.Click(step.label); err != nil {
+			t.Fatal(err)
+		}
+		saved, err := config.Load(model.store.ConfigPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		shortcut := slices.ContainsFunc(saved.MenuItems, func(item config.MenuItem) bool {
+			return item.ID == "folder:"+folder.ID
+		})
+		if saved.FavoriteFolders[0].Enabled != step.enabled || shortcut != step.shortcut {
+			t.Fatalf("after %q: enabled=%v shortcut=%v, want %v %v", step.label, saved.FavoriteFolders[0].Enabled, shortcut, step.enabled, step.shortcut)
+		}
+	}
+}

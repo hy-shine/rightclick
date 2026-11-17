@@ -14,11 +14,21 @@ import (
 	"github.com/hy-shine/rightclick/internal/locales"
 )
 
+const (
+	favoriteHeaderHeight  = 32
+	favoriteShortcutWidth = 112
+	favoriteEnabledWidth  = 68
+)
+
 // favoriteRows lists the favorite folders: the targets of Copy To and Move To, and the
 // folders that can be added to the menu. Adding is in the toolbar of the folder pane.
 func (m *app) favoriteRows(c *ui.Context) {
 	if len(m.cfg.FavoriteFolders) == 0 {
-		emptyState(c, iconDir, locales.NoFavoriteFolders(), locales.AddFavoriteHint())
+		emptyState(c, iconDir, locales.NoFavoriteFolders(), locales.AddFavoriteHint(), func() {
+			if primaryButton(c, iconPlus, locales.AddFolder()) {
+				m.pickFavorite()
+			}
+		})
 	} else {
 		removeID := ""
 		m.favoriteList.Key = func(index int) any { return m.cfg.FavoriteFolders[index].ID }
@@ -26,22 +36,39 @@ func (m *app) favoriteRows(c *ui.Context) {
 			m.cfg.FavoriteFolders = moveRows(m.cfg.FavoriteFolders, rows, target)
 			m.saveConfig()
 		}
-		// The ledger border takes a point at the top and at the bottom, inside the height.
-		ledger(c, ui.List(c, &m.favoriteList, len(m.cfg.FavoriteFolders), func(index int) {
-			folder := &m.cfg.FavoriteFolders[index]
-			itemRow(c, true, func() {
-				glyphTile(c, iconDir)
-			}, folder.Label, tildePath(folder.Path), func() {
-				m.shortcutToggleLabeled(c, "folder:"+folder.ID, folder.Label, locales.QuickAccess())
-				ui.Switch(c.Key("favorite-enabled:"+folder.ID), &folder.Enabled).Label(locales.EnableLabel(folder.Label)).OnChange(m.saveConfig)
-				if iconButton(c.Key("edit-favorite:"+folder.ID), iconEdit, locales.EditMenuName(), false) {
-					m.favoriteEditID, m.favoriteName, m.favoriteEditOpen = folder.ID, folder.Label, true
-				}
-				if iconButton(c.Key("remove-favorite:"+folder.ID), iconTrash, locales.Delete(), true) {
-					removeID = folder.ID
-				}
+		ledger(c, ui.Column(c)).Children(func() {
+			ui.Row(c).Height(favoriteHeaderHeight).Gap(12).Padding(0, 14).AlignItems(ui.Center).Children(func() {
+				ui.Text(c, locales.ContextFolder()).FontSize(sizeBody).FontWeight(600).TextColor(c.Theme().TextMuted).Grow(1)
+				ui.Text(c, locales.ColEnabled()).FontSize(sizeBody).FontWeight(600).TextColor(c.Theme().TextMuted).Width(favoriteEnabledWidth).TextAlign(ui.Center)
+				ui.Text(c, locales.QuickAccess()).FontSize(sizeBody).FontWeight(600).TextColor(c.Theme().TextMuted).Width(favoriteShortcutWidth).TextAlign(ui.Center)
+				ui.Text(c, locales.ColActionContext()).FontSize(sizeBody).FontWeight(600).TextColor(c.Theme().TextMuted).Width(76).TextAlign(ui.Center)
 			})
-		}).Height(float32(len(m.cfg.FavoriteFolders))*itemRowHeight+2))
+			ui.List(c, &m.favoriteList, len(m.cfg.FavoriteFolders), func(index int) {
+				folder := &m.cfg.FavoriteFolders[index]
+				itemRow(c, true, func() {
+					glyphTile(c, iconDir)
+				}, folder.Label, tildePath(folder.Path), func() {
+					ui.Row(c).Width(favoriteEnabledWidth).Justify(ui.Center).Children(func() {
+						ui.Switch(c.Key("favorite-enabled:"+folder.ID), &folder.Enabled).Label(locales.EnableLabel(folder.Label)).OnChange(m.saveConfig)
+					})
+					ui.Row(c).Width(favoriteShortcutWidth).Justify(ui.Center).Children(func() {
+						id := "folder:" + folder.ID
+						enabled := m.hasShortcut(id)
+						ui.Switch(c.Key("shortcut:"+id), &enabled).Label(locales.ShortcutFor(folder.Label)).OnChange(func() {
+							m.setShortcut(id, enabled)
+						})
+					})
+					ui.Row(c).Width(76).Gap(12).AlignItems(ui.Center).Children(func() {
+						if iconButton(c.Key("edit-favorite:"+folder.ID), iconEdit, locales.EditMenuName(), false) {
+							m.favoriteEditID, m.favoriteName, m.favoriteEditOpen = folder.ID, folder.Label, true
+						}
+						if iconButton(c.Key("remove-favorite:"+folder.ID), iconTrash, locales.Delete(), true) {
+							removeID = folder.ID
+						}
+					})
+				})
+			}).Height(float32(len(m.cfg.FavoriteFolders))*itemRowHeight).Dividers(1, separatorColor(c))
+		})
 		// Removing waits until the list has been built, as in the other panes.
 		if removeID != "" {
 			m.removeFavorite(removeID)

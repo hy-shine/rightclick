@@ -215,10 +215,13 @@ func TestEmptyTemplatesShowOnlyTheEmptyState(t *testing.T) {
 	m.tplSel = -1
 	m.newMode = newModeTemplates
 	m.selectPane(paneTemplates)
-	tt := ui.NewTester(m.view, 760, 560)
+	tt := ui.NewTester(m.view, minWidth, minHeight)
 	texts := tt.Texts()
-	if !slices.Contains(texts, "No matching types") || !slices.Contains(texts, "Add Template…") {
+	if !slices.Contains(texts, "No templates yet") || !slices.Contains(texts, "Add Template…") {
 		t.Errorf("empty templates pane shows %q, want the empty state and Add Template…", texts)
+	}
+	if _, found := tt.Find(locales.FileTypesList()); found {
+		t.Error("an empty table competes with the template empty state")
 	}
 }
 
@@ -229,7 +232,7 @@ func TestSidebarNamesPanesByTheirPurpose(t *testing.T) {
 		t.Fatal(err)
 	}
 	texts := ui.NewTester(m.view, 760, 560).Texts()
-	for _, want := range []string{"New", "Favorite Folders"} {
+	for _, want := range []string{"Files & Templates", "Favorite Folders"} {
 		if !slices.Contains(texts, want) {
 			t.Errorf("sidebar does not show %q; texts %q", want, texts)
 		}

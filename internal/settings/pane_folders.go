@@ -20,12 +20,14 @@ func (m *app) foldersPane(c *ui.Context) {
 // folderToolbarAndList is the toolbar and the list under it, 12 points apart. The add
 // action sits at the right end of the toolbar, as in the New pane.
 func (m *app) folderToolbarAndList(c *ui.Context) {
-	ui.Row(c).Gap(12).AlignItems(ui.Center).Children(func() {
-		ui.Spacer(c)
-		if primaryButtonCentered(c, iconPlus, locales.AddFolder()) {
-			m.pickFavorite()
-		}
-	})
+	if len(m.cfg.FavoriteFolders) > 0 {
+		ui.Row(c).Gap(12).AlignItems(ui.Center).Children(func() {
+			ui.Spacer(c)
+			if primaryButtonCentered(c, iconPlus, locales.AddFolder()) {
+				m.pickFavorite()
+			}
+		})
+	}
 	m.favoriteRows(c)
 }
 

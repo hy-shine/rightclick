@@ -30,7 +30,7 @@ func TestFavoriteRowsStayCompact(t *testing.T) {
 		t.Fatal("the first folder row is missing")
 	}
 	if !slices.Contains(screen.Texts(), locales.QuickAccess()) {
-		t.Error("the direct-entry check box has no visible label")
+		t.Error("the menu shortcut column has no heading")
 	}
 	hint, ok := screen.Find(locales.FavoriteFoldersHint())
 	if !ok {

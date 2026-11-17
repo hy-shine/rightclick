@@ -107,9 +107,9 @@ func itemRow(c *ui.Context, grip bool, icon func(), title, note string, trailing
 		}
 		ui.Row(c).Size(itemIconSize, itemIconSize).Shrink(0).AlignItems(ui.Center).Justify(ui.Center).Children(icon)
 		ui.Column(c).Grow(1).MinWidth(0).Gap(2).Children(func() {
-			ui.Text(c, title).FontSize(sizeBody).SingleLine()
+			ui.Text(c, title).FontSize(sizeBody).SingleLine().Tooltip(title)
 			if note != "" {
-				ui.Text(c, note).FontSize(sizeNote).TextColor(t.TextMuted).SingleLine()
+				ui.Text(c, note).FontSize(sizeNote).TextColor(t.TextMuted).SingleLine().Tooltip(note)
 			}
 		})
 		trailing()
@@ -255,7 +255,7 @@ func iconButton(c *ui.Context, s *ui.SVG, label string, danger bool) bool {
 	}
 	// The hit area is 32 by 26 points, the target the edit button had, so every
 	// icon-only button is the same size.
-	b := ui.ButtonBase(c).Size(32, 26).Radius(t.Radius).Label(label).Center()
+	b := ui.ButtonBase(c).Size(32, 26).Radius(t.Radius).Label(label).Tooltip(label).Center()
 	var mark ui.Element
 	b.Children(func() {
 		mark = ui.Icon(c, s).Size(15, 15).TextColor(t.TextMuted)
@@ -292,10 +292,8 @@ func banner(c *ui.Context, tone ui.Color, s *ui.SVG, title, note, action string)
 	return clicked
 }
 
-// emptyState fills the place of a list that has nothing in it: a dashed outline
-// with an icon, what is missing, and what to do about it. The caller puts the
-// action under it.
-func emptyState(c *ui.Context, s *ui.SVG, title, note string) {
+// emptyState keeps the explanation and its next action together in place of an empty list.
+func emptyState(c *ui.Context, s *ui.SVG, title, note string, action func()) {
 	t := c.Theme()
 	ui.Column(c).Gap(6).Padding(28, 20).AlignItems(ui.Center).Radius(t.Radius+6).
 		Border(1, t.Border).BorderStyle(ui.BorderDashed).Children(func() {
@@ -305,6 +303,9 @@ func emptyState(c *ui.Context, s *ui.SVG, title, note string) {
 		})
 		ui.Text(c, title).FontSize(sizeBody).FontWeight(600)
 		ui.Text(c, note).FontSize(sizeNote).LineHeight(1.5).TextColor(t.TextMuted).TextAlign(ui.Center).MaxWidth(320)
+		if action != nil {
+			ui.Row(c).Margin(8, 0, 0).Children(action)
+		}
 	})
 }
 

@@ -46,11 +46,11 @@ func (msgs Messages) FavoriteFolders() string {
 	return Catalog.Format(msgs.locale, "favoriteFolders", nil)
 }
 
-// FavoriteFoldersHint says "Use them as Copy To or Move To destinations, or add them to the menu. Removing a folder here only takes it off the li…"
+// FavoriteFoldersHint says "Enabled folders appear in Copy To and Move To. Turn on Menu Shortcut for a separate entry. Removing a folder here kee…"
 // in the language the app shows.
 func FavoriteFoldersHint() string { return In(i18n.Locale()).FavoriteFoldersHint() }
 
-// FavoriteFoldersHint says "Use them as Copy To or Move To destinations, or add them to the menu. Removing a folder here only takes it off the li…"
+// FavoriteFoldersHint says "Enabled folders appear in Copy To and Move To. Turn on Menu Shortcut for a separate entry. Removing a folder here kee…"
 // in the language of msgs.
 func (msgs Messages) FavoriteFoldersHint() string {
 	return Catalog.Format(msgs.locale, "favoriteFoldersHint", nil)
@@ -108,11 +108,11 @@ func (msgs Messages) NoticeFailure(what string, cause string) string {
 	return Catalog.Format(msgs.locale, "noticeFailure", map[string]any{"what": what, "cause": cause})
 }
 
-// QuickAccess says "Add to Menu"
+// QuickAccess says "Menu Shortcut"
 // in the language the app shows.
 func QuickAccess() string { return In(i18n.Locale()).QuickAccess() }
 
-// QuickAccess says "Add to Menu"
+// QuickAccess says "Menu Shortcut"
 // in the language of msgs.
 func (msgs Messages) QuickAccess() string {
 	return Catalog.Format(msgs.locale, "quickAccess", nil)
@@ -138,11 +138,11 @@ func (msgs Messages) OpenWithShortcut(name string) string {
 	return Catalog.Format(msgs.locale, "openWithShortcut", map[string]any{"name": name})
 }
 
-// MenuArrangeHint says "Drag to reorder · Double-click to rename · Add items from New, Open With, or Favorite Folders."
+// MenuArrangeHint says "Drag to reorder · Click the pencil to rename · Changes are saved automatically."
 // in the language the app shows.
 func MenuArrangeHint() string { return In(i18n.Locale()).MenuArrangeHint() }
 
-// MenuArrangeHint says "Drag to reorder · Double-click to rename · Add items from New, Open With, or Favorite Folders."
+// MenuArrangeHint says "Drag to reorder · Click the pencil to rename · Changes are saved automatically."
 // in the language of msgs.
 func (msgs Messages) MenuArrangeHint() string {
 	return Catalog.Format(msgs.locale, "menuArrangeHint", nil)
@@ -458,14 +458,24 @@ func (msgs Messages) ClosePreview() string {
 	return Catalog.Format(msgs.locale, "closePreview", nil)
 }
 
-// ColActionContext says "Action and Context"
+// ColActionContext says "Action"
 // in the language the app shows.
 func ColActionContext() string { return In(i18n.Locale()).ColActionContext() }
 
-// ColActionContext says "Action and Context"
+// ColActionContext says "Action"
 // in the language of msgs.
 func (msgs Messages) ColActionContext() string {
 	return Catalog.Format(msgs.locale, "colActionContext", nil)
+}
+
+// ColContext says "Appears On"
+// in the language the app shows.
+func ColContext() string { return In(i18n.Locale()).ColContext() }
+
+// ColContext says "Appears On"
+// in the language of msgs.
+func (msgs Messages) ColContext() string {
+	return Catalog.Format(msgs.locale, "colContext", nil)
 }
 
 // ColContent says "Initial Content"
@@ -556,6 +566,16 @@ func ContextBlank() string { return In(i18n.Locale()).ContextBlank() }
 // in the language of msgs.
 func (msgs Messages) ContextBlank() string {
 	return Catalog.Format(msgs.locale, "contextBlank", nil)
+}
+
+// ContextFolder says "Folder"
+// in the language the app shows.
+func ContextFolder() string { return In(i18n.Locale()).ContextFolder() }
+
+// ContextFolder says "Folder"
+// in the language of msgs.
+func (msgs Messages) ContextFolder() string {
+	return Catalog.Format(msgs.locale, "contextFolder", nil)
 }
 
 // ContextFile says "File"
@@ -918,11 +938,11 @@ func (msgs Messages) EditTemplate() string {
 	return Catalog.Format(msgs.locale, "editTemplate", nil)
 }
 
-// EditorsHint says "Turn on “Add to Menu” to give an app its own entry. Arrange entries in Context Menu. Removing an app here only ta…"
+// EditorsHint says "Menu Shortcut adds an “Open with…” entry. Set its position in Context Menu. Removing it here keeps the app inst…"
 // in the language the app shows.
 func EditorsHint() string { return In(i18n.Locale()).EditorsHint() }
 
-// EditorsHint says "Turn on “Add to Menu” to give an app its own entry. Arrange entries in Context Menu. Removing an app here only ta…"
+// EditorsHint says "Menu Shortcut adds an “Open with…” entry. Set its position in Context Menu. Removing it here keeps the app inst…"
 // in the language of msgs.
 func (msgs Messages) EditorsHint() string {
 	return Catalog.Format(msgs.locale, "editorsHint", nil)
@@ -1616,21 +1636,21 @@ func (msgs Messages) UpdateHint() string {
 	return Catalog.Format(msgs.locale, "updateHint", nil)
 }
 
-// LocFinderTopShort says "Main Menu"
+// LocFinderTopShort says "Finder Menu"
 // in the language the app shows.
 func LocFinderTopShort() string { return In(i18n.Locale()).LocFinderTopShort() }
 
-// LocFinderTopShort says "Main Menu"
+// LocFinderTopShort says "Finder Menu"
 // in the language of msgs.
 func (msgs Messages) LocFinderTopShort() string {
 	return Catalog.Format(msgs.locale, "locFinderTopShort", nil)
 }
 
-// LocInApp says "RightClick"
+// LocInApp says "App Submenu"
 // in the language the app shows.
 func LocInApp() string { return In(i18n.Locale()).LocInApp() }
 
-// LocInApp says "RightClick"
+// LocInApp says "App Submenu"
 // in the language of msgs.
 func (msgs Messages) LocInApp() string {
 	return Catalog.Format(msgs.locale, "locInApp", nil)
@@ -2030,14 +2050,54 @@ func (msgs Messages) NeedOneItem() string {
 	return Catalog.Format(msgs.locale, "needOneItem", nil)
 }
 
-// NewIntro says "Create files in the current folder. All types sit under New File."
+// NewIntro says "Choose formats and reusable templates for the New File menu."
 // in the language the app shows.
 func NewIntro() string { return In(i18n.Locale()).NewIntro() }
 
-// NewIntro says "Create files in the current folder. All types sit under New File."
+// NewIntro says "Choose formats and reusable templates for the New File menu."
 // in the language of msgs.
 func (msgs Messages) NewIntro() string {
 	return Catalog.Format(msgs.locale, "newIntro", nil)
+}
+
+// NoTemplatesYet says "No templates yet"
+// in the language the app shows.
+func NoTemplatesYet() string { return In(i18n.Locale()).NoTemplatesYet() }
+
+// NoTemplatesYet says "No templates yet"
+// in the language of msgs.
+func (msgs Messages) NoTemplatesYet() string {
+	return Catalog.Format(msgs.locale, "noTemplatesYet", nil)
+}
+
+// TemplatesEmptyHint says "Add an existing document, such as a meeting note or invoice, to reuse its content from Finder."
+// in the language the app shows.
+func TemplatesEmptyHint() string { return In(i18n.Locale()).TemplatesEmptyHint() }
+
+// TemplatesEmptyHint says "Add an existing document, such as a meeting note or invoice, to reuse its content from Finder."
+// in the language of msgs.
+func (msgs Messages) TemplatesEmptyHint() string {
+	return Catalog.Format(msgs.locale, "templatesEmptyHint", nil)
+}
+
+// SearchEmptyHint says "Try another name or clear the search to see all items."
+// in the language the app shows.
+func SearchEmptyHint() string { return In(i18n.Locale()).SearchEmptyHint() }
+
+// SearchEmptyHint says "Try another name or clear the search to see all items."
+// in the language of msgs.
+func (msgs Messages) SearchEmptyHint() string {
+	return Catalog.Format(msgs.locale, "searchEmptyHint", nil)
+}
+
+// ClearSearch says "Clear Search"
+// in the language the app shows.
+func ClearSearch() string { return In(i18n.Locale()).ClearSearch() }
+
+// ClearSearch says "Clear Search"
+// in the language of msgs.
+func (msgs Messages) ClearSearch() string {
+	return Catalog.Format(msgs.locale, "clearSearch", nil)
 }
 
 // NoEditors says "No apps yet"
@@ -2050,11 +2110,11 @@ func (msgs Messages) NoEditors() string {
 	return Catalog.Format(msgs.locale, "noEditors", nil)
 }
 
-// NoEditorsBody says "Click “Add App…” to pick one from the Applications folder."
+// NoEditorsBody says "Choose an installed app to open selected files from Finder."
 // in the language the app shows.
 func NoEditorsBody() string { return In(i18n.Locale()).NoEditorsBody() }
 
-// NoEditorsBody says "Click “Add App…” to pick one from the Applications folder."
+// NoEditorsBody says "Choose an installed app to open selected files from Finder."
 // in the language of msgs.
 func (msgs Messages) NoEditorsBody() string {
 	return Catalog.Format(msgs.locale, "noEditorsBody", nil)
@@ -2202,11 +2262,11 @@ func (msgs Messages) OpenWithFailed(name string, app string, cause string) strin
 	return Catalog.Format(msgs.locale, "openWithFailed", map[string]any{"name": name, "app": app, "cause": cause})
 }
 
-// OpenersIntro says "Each app in this list gets its own “Open with …” item. “Open with Terminal” always uses Terminal."
+// OpenersIntro says "Choose apps for opening files from the context menu."
 // in the language the app shows.
 func OpenersIntro() string { return In(i18n.Locale()).OpenersIntro() }
 
-// OpenersIntro says "Each app in this list gets its own “Open with …” item. “Open with Terminal” always uses Terminal."
+// OpenersIntro says "Choose apps for opening files from the context menu."
 // in the language of msgs.
 func (msgs Messages) OpenersIntro() string {
 	return Catalog.Format(msgs.locale, "openersIntro", nil)
@@ -2262,11 +2322,11 @@ func (msgs Messages) PaneMenu() string {
 	return Catalog.Format(msgs.locale, "paneMenu", nil)
 }
 
-// PaneNew says "New"
+// PaneNew says "Files & Templates"
 // in the language the app shows.
 func PaneNew() string { return In(i18n.Locale()).PaneNew() }
 
-// PaneNew says "New"
+// PaneNew says "Files & Templates"
 // in the language of msgs.
 func (msgs Messages) PaneNew() string {
 	return Catalog.Format(msgs.locale, "paneNew", nil)
@@ -2292,21 +2352,21 @@ func (msgs Messages) Preview() string {
 	return Catalog.Format(msgs.locale, "preview", nil)
 }
 
-// PreviewLiveHint says "Updates as you change the menu."
+// PreviewLiveHint says "Preview of your current settings. Actions appear when they apply to the selection."
 // in the language the app shows.
 func PreviewLiveHint() string { return In(i18n.Locale()).PreviewLiveHint() }
 
-// PreviewLiveHint says "Updates as you change the menu."
+// PreviewLiveHint says "Preview of your current settings. Actions appear when they apply to the selection."
 // in the language of msgs.
 func (msgs Messages) PreviewLiveHint() string {
 	return Catalog.Format(msgs.locale, "previewLiveHint", nil)
 }
 
-// PreviewSearchHint says "Search filters the list below; the preview still shows the full menu."
+// PreviewSearchHint says "Preview of all enabled actions; the search filter does not apply here."
 // in the language the app shows.
 func PreviewSearchHint() string { return In(i18n.Locale()).PreviewSearchHint() }
 
-// PreviewSearchHint says "Search filters the list below; the preview still shows the full menu."
+// PreviewSearchHint says "Preview of all enabled actions; the search filter does not apply here."
 // in the language of msgs.
 func (msgs Messages) PreviewSearchHint() string {
 	return Catalog.Format(msgs.locale, "previewSearchHint", nil)
@@ -2914,11 +2974,11 @@ func (msgs Messages) SearchPrograms() string {
 	return Catalog.Format(msgs.locale, "searchPrograms", nil)
 }
 
-// SearchProgramsPlaceholder says "Type an app name"
+// SearchProgramsPlaceholder says "Search apps"
 // in the language the app shows.
 func SearchProgramsPlaceholder() string { return In(i18n.Locale()).SearchProgramsPlaceholder() }
 
-// SearchProgramsPlaceholder says "Type an app name"
+// SearchProgramsPlaceholder says "Search apps"
 // in the language of msgs.
 func (msgs Messages) SearchProgramsPlaceholder() string {
 	return Catalog.Format(msgs.locale, "searchProgramsPlaceholder", nil)
@@ -2934,11 +2994,11 @@ func (msgs Messages) NoProgramMatches() string {
 	return Catalog.Format(msgs.locale, "noProgramMatches", nil)
 }
 
-// FoldersIntro says "Folders you use often. Copy To and Move To can send items to them, and they can join the menu."
+// FoldersIntro says "Keep destinations close for copying, moving, and opening files."
 // in the language the app shows.
 func FoldersIntro() string { return In(i18n.Locale()).FoldersIntro() }
 
-// FoldersIntro says "Folders you use often. Copy To and Move To can send items to them, and they can join the menu."
+// FoldersIntro says "Keep destinations close for copying, moving, and opening files."
 // in the language of msgs.
 func (msgs Messages) FoldersIntro() string {
 	return Catalog.Format(msgs.locale, "foldersIntro", nil)

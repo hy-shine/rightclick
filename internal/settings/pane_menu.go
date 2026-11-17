@@ -21,7 +21,7 @@ const (
 
 // previewContexts names the places in the order of the preview's switch.
 func previewContexts() []string {
-	return []string{locales.ContextBlank(), locales.MenuNewFolder(), locales.ContextFile(), locales.ContextTwoFiles()}
+	return []string{locales.ContextBlank(), locales.ContextFolder(), locales.ContextFile(), locales.ContextTwoFiles()}
 }
 
 // menuEntry is the label of a Finder menu entry and the condition that shows it.
@@ -57,20 +57,6 @@ func menuEntries() map[string]menuEntry {
 		"delete-permanently": {locales.DeletePermanently(), locales.WhereSelection()},
 	}
 }
-
-// gripMark is the drag handle of a menu row. Its viewBox is cropped to the three
-// pairs of dots, so the dots start at the left edge of the handle's box. The
-// section header lines up with that edge. gripScale is the scale the 24-unit
-// handle had in its 10 pt box before, so the dots keep their size.
-var gripMark = ui.MustParseSVG([]byte(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="7.7 4.7 8.6 14.6" ` +
-	`fill="none" stroke="#000" stroke-linecap="round"><path stroke-width="2.6" ` +
-	`d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01"/></svg>`))
-
-const gripScale = 10.0 / 24
-
-// gripWidth is the width of the dots, and so of the handle's box. A wider box
-// would leave an empty gap between the dots and the entry icon.
-const gripWidth = 8.6 * gripScale
 
 // locationValues and locationLabels are the choices of the location dropdown, in the
 // order they are shown: the top of the Finder menu first, the app's own submenu second.
@@ -130,7 +116,9 @@ var menuContexts = map[string][]int{
 const menuRowHeight = 36
 
 // menuWhenWidth is the width of the condition column beside an entry.
-const menuWhenWidth = 150
+const menuWhenWidth = 118
+
+const menuLocationWidth = 148
 
 // menuEntryFor returns the entry for id. An unknown ID is shown as it is.
 func menuEntryFor(id string) menuEntry {
@@ -267,23 +255,31 @@ func (m *app) menuPage(c *ui.Context) {
 
 func (m *app) menuEditor(c *ui.Context) {
 	t := c.Theme()
+	rows := m.menuDisplayRows(-1)
+	if len(rows) == 0 {
+		ui.Column(c).Grow(1).Justify(ui.Center).Children(func() {
+			emptyState(c, iconMenu, locales.NoMenuMatches(), locales.SearchEmptyHint(), func() {
+				if quietButton(c, nil, locales.ClearSearch()) {
+					m.menuSearch = ""
+				}
+			})
+		})
+		return
+	}
 	ui.Row(c).Margin(20, 0, 8, 0).Padding(0, 8).AlignItems(ui.Center).Children(func() {
 		ui.Text(c, locales.ColActionContext()).FontSize(sizeCaption).TextColor(t.TextMuted).Grow(1)
-		ui.Text(c, locales.ColLocation()).FontSize(sizeCaption).TextColor(t.TextMuted).Width(118).Shrink(0)
+		ui.Text(c, locales.ColContext()).FontSize(sizeCaption).TextColor(t.TextMuted).Width(menuWhenWidth).Shrink(0)
+		ui.Text(c, locales.ColLocation()).FontSize(sizeCaption).TextColor(t.TextMuted).Width(menuLocationWidth).Shrink(0)
 		ui.Text(c, locales.ColEnabled()).FontSize(sizeCaption).TextColor(t.TextMuted).Width(48).Shrink(0).TextAlign(ui.Center)
+		ui.Row(c).Width(32).Shrink(0)
 	})
 	ui.Divider(c).Background(separatorColor(c))
 	ui.Scroll(c).Grow(1).Children(func() {
 		ui.Column(c).Children(func() {
-			rows := m.menuDisplayRows(-1)
-			if len(rows) == 0 {
-				ui.Text(c, locales.NoMenuMatches()).FontSize(sizeNote).TextColor(t.TextMuted).Padding(16, 12)
-			} else {
-				m.menuGroup(c, -1, rows)
-			}
+			m.menuGroup(c, -1, rows)
 		})
 	})
-	ui.Text(c, locales.MenuArrangeHint()).FontSize(sizeCaption).TextColor(t.TextMuted).Margin(8, 0, 0)
+	ui.Text(c, locales.MenuArrangeHint()).FontSize(sizeNote).TextColor(t.TextMuted).Margin(8, 0, 0)
 }
 
 func (m *app) menuPreviewDialog(c *ui.Context) {
@@ -305,7 +301,8 @@ func (m *app) menuPreviewDialog(c *ui.Context) {
 				}
 			})
 			ui.Text(c, hint).FontSize(sizeCaption).TextColor(t.TextMuted)
-			ui.Scroll(c).MaxHeight(height - 140).Children(func() { m.menuStage(c) })
+			m.previewControls(c)
+			ui.Scroll(c).MaxHeight(height - 192).Children(func() { m.previewMenus(c) })
 		})
 	})
 }
@@ -318,31 +315,38 @@ const (
 	stageAbove  = 2
 	stageBelow  = 3
 	stageEdge   = 4   // padding inside a menu card
-	parentWidth = 112 // the parent menu card
-	subWidth    = 220 // the submenu card
-	stageSubTop = stageAbove * stageRow
-	stageGap    = 6 // space between the parent menu and the submenu
+	parentWidth = 180 // the parent menu card
+	subWidth    = 260 // the submenu card
+	stageGap    = 6   // space between the parent menu and the submenu
 )
 
-// menuStage is the pane's hero: the places to choose from, and a drawing of the
-// Finder menu in the chosen place. It sits on the paper, with no mat of its own.
+// menuStage combines the context choices and menu drawing for a standalone preview.
 func (m *app) menuStage(c *ui.Context) {
+	ui.Column(c).Gap(16).Children(func() {
+		m.previewControls(c)
+		m.previewMenus(c)
+	})
+}
+
+// previewControls stays above the scroll area so the context can always be changed.
+func (m *app) previewControls(c *ui.Context) {
 	t := c.Theme()
 	groups := m.previewGroups(m.previewCtx)
 	n := len(m.previewTopItems(m.previewCtx))
 	for _, g := range groups {
 		n += len(g)
 	}
-	ui.Column(c).Gap(16).Children(func() {
-		ui.Row(c).AlignItems(ui.Center).Children(func() {
-			m.placeSwitch(c)
-			ui.Spacer(c)
-			ui.Text(c, locales.ShowCount(n)).FontSize(sizeNote).TextColor(t.TextMuted).SingleLine()
-		})
-		ui.Row(c).Gap(stageGap).AlignItems(ui.Start).Children(func() {
-			m.parentMenu(c)
-			m.submenu(c, groups)
-		})
+	ui.Row(c).AlignItems(ui.Center).Children(func() {
+		m.placeSwitch(c)
+		ui.Spacer(c)
+		ui.Text(c, locales.ShowCount(n)).FontSize(sizeNote).TextColor(t.TextMuted).SingleLine()
+	})
+}
+
+func (m *app) previewMenus(c *ui.Context) {
+	ui.Row(c).Gap(stageGap).AlignItems(ui.Start).Children(func() {
+		m.parentMenu(c)
+		m.submenu(c, m.previewGroups(m.previewCtx))
 	})
 }
 
@@ -398,7 +402,7 @@ func (m *app) parentMenu(c *ui.Context) {
 		for _, item := range m.previewTopItems(m.previewCtx) {
 			ui.Row(c).Height(stageRow).Gap(5).Padding(0, 6).AlignItems(ui.Center).Children(func() {
 				m.entryMark(c, item.id, 13, t.TextMuted)
-				ui.Text(c, item.label).FontSize(10).SingleLine()
+				ui.Text(c, item.label).FontSize(sizeNote).SingleLine().Grow(1).MinWidth(0).Tooltip(item.label)
 			})
 		}
 		ui.Row(c).Height(stageRow).Gap(4).Padding(0, 6, 0, 10).AlignItems(ui.Center).Radius(5).Background(fill).Children(func() {
@@ -416,7 +420,8 @@ func (m *app) parentMenu(c *ui.Context) {
 func (m *app) submenu(c *ui.Context, groups [][]previewItem) {
 	fill, text := c.Theme().Accent, c.Theme().AccentText
 	t := c.Theme()
-	menuCard(c, ui.Column(c).Width(subWidth).Margin(stageSubTop, 0, 0, 0), 12).Children(func() {
+	top := float32((stageAbove + len(m.previewTopItems(m.previewCtx))) * stageRow)
+	menuCard(c, ui.Column(c).Width(subWidth).Margin(top, 0, 0, 0), 12).Children(func() {
 		for g, items := range groups {
 			if g > 0 {
 				ui.Divider(c).Margin(4, 6)
@@ -425,7 +430,7 @@ func (m *app) submenu(c *ui.Context, groups [][]previewItem) {
 				var icon, label ui.Element
 				row := ui.Row(c).Height(stageRow).Gap(8).Padding(0, 8).AlignItems(ui.Center).Radius(5).Children(func() {
 					icon = m.entryMark(c, it.id, 15, t.TextMuted)
-					label = ui.Text(c, it.label).FontSize(sizeBody).TextColor(t.Text)
+					label = ui.Text(c, it.label).FontSize(sizeBody).TextColor(t.Text).SingleLine().Grow(1).MinWidth(0).Tooltip(it.label)
 				})
 				if row.Hovered() {
 					row.Background(fill)
@@ -478,33 +483,36 @@ func (m *app) menuGroup(c *ui.Context, g int, rows []int) {
 			row.Children(func() {
 				ui.Row(c).Gap(9).Grow(1).MinWidth(0).AlignItems(ui.Center).Children(func() {
 					if strings.TrimSpace(m.menuSearch) == "" {
-						gripColor := ui.Transparent
+						gripColor := t.TextMuted.Alpha(.65)
 						if row.Hovered() {
-							gripColor = t.TextMuted.Alpha(.45)
+							gripColor = t.TextMuted
 						}
-						ui.Row(c).Size(gripWidth, 14).Shrink(0).AlignItems(ui.Center).Children(func() {
-							ui.Icon(c, gripMark).Size(8.6*gripScale, 14.6*gripScale).Shrink(0).TextColor(gripColor)
+						ui.Row(c).Size(itemGripSlot, 14).Shrink(0).AlignItems(ui.Center).Children(func() {
+							glyph(c, iconGrip, 14, gripColor)
 						})
 					} else {
-						ui.Row(c).Size(gripWidth, 14).Shrink(0)
+						ui.Row(c).Size(itemGripSlot, 14).Shrink(0)
 					}
 					m.entryMark(c, item.ID, 16, iconColor)
-					ui.Text(c, entry.label).FontSize(sizeBody).TextColor(labelColor).SingleLine().Grow(1).MinWidth(0)
+					ui.Text(c, entry.label).FontSize(sizeBody).TextColor(labelColor).SingleLine().Grow(1).MinWidth(0).Tooltip(entry.label)
 					// The condition keeps its own column, so every entry stays on one
 					// line; a group's shared condition stays in its header.
 					ui.Text(c, entry.when).FontSize(sizeCaption).TextColor(t.TextMuted).SingleLine().Width(menuWhenWidth).Shrink(0)
 				})
-				ui.Row(c).Width(118).Shrink(0).AlignItems(ui.Center).Children(func() {
+				ui.Row(c).Width(menuLocationWidth).Shrink(0).AlignItems(ui.Center).Children(func() {
 					if item.ID == "new-template" || item.ID == "new-folder" {
 						ui.Text(c, locales.MenuNewFileInside()).FontSize(sizeCaption).TextColor(t.TextMuted)
 					} else {
 						locationSelect(c, &item.Location, "action:"+item.ID, locales.LocationLabel(entry.label),
-							locationValues(), locationLabels(), item.Enabled, m.saveConfig)
+							locationValues(), locationLabels(), item.Enabled, m.saveConfig).Width(menuLocationWidth - 12)
 					}
 				})
 				ui.Row(c).Width(48).Shrink(0).Justify(ui.Center).AlignItems(ui.Center).Children(func() {
 					creationSwitch(c, &item.Enabled, locales.EnableLabel(entry.label)).OnChange(m.saveConfig)
 				})
+				if iconButton(c.Key("rename:"+item.ID), iconEdit, locales.EditItem(entry.label), false) {
+					m.menuNameID, m.menuName, m.menuNameOpen = item.ID, item.Label, true
+				}
 			})
 			if row.Hovered() {
 				row.Background(t.SurfaceHover)

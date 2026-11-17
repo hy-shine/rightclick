@@ -17,12 +17,12 @@ var (
 )
 
 // Size of the main window, in points. It opens at mainWidth by mainHeight and
-// cannot be made smaller than minWidth by minHeight. At minWidth the menu page
-// still shows its editor and its preview side by side.
+// cannot be made smaller than minWidth by minHeight. The minimum keeps the
+// list controls readable while leaving room for Finder beside the window.
 const (
 	mainWidth  = 980
 	mainHeight = 680
-	minWidth   = 940
+	minWidth   = 860
 	minHeight  = 480
 )
 

@@ -19,12 +19,23 @@ const (
 
 func (m *app) newPane(c *ui.Context) {
 	t := c.Theme()
+	emptyTemplates := m.newMode == newModeTemplates && len(m.templates) == 0 && strings.TrimSpace(m.creationSearch) == ""
 	ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
 		ui.Column(c).Grow(1).MinWidth(0).Children(func() { paneHeader(c, locales.PaneNew(), locales.NewIntro()) })
-		if quietButtonCentered(c, nil, locales.AddTemplate()) {
-			m.pickTemplate()
+		if !emptyTemplates {
+			kind := quietKind
+			if m.newMode == newModeTemplates {
+				kind = primaryKind
+			}
+			if actionButton(c, kind, iconPlus, locales.AddTemplate(), ui.Center) {
+				m.pickTemplate()
+			}
 		}
-		if primaryButtonCentered(c, iconPlus, locales.AddFileType()) {
+		kind := primaryKind
+		if m.newMode == newModeTemplates {
+			kind = quietKind
+		}
+		if actionButton(c, kind, iconPlus, locales.AddFileType(), ui.Center) {
 			m.newFileType()
 		}
 	})
@@ -34,11 +45,44 @@ func (m *app) newPane(c *ui.Context) {
 		ui.TextInput(c.Key("creation-search"), &m.creationSearch).Label(locales.SearchFileTypes()).Placeholder(locales.SearchPlaceholder()).Width(180)
 	})
 	m.creationRows = m.filteredCreationRows()
+	if len(m.creationRows) == 0 {
+		ui.Column(c).Grow(1).Justify(ui.Center).Children(func() {
+			if emptyTemplates {
+				emptyState(c, iconNew, locales.NoTemplatesYet(), locales.TemplatesEmptyHint(), func() {
+					if primaryButton(c, iconPlus, locales.AddTemplate()) {
+						m.pickTemplate()
+					}
+				})
+			} else {
+				emptyState(c, iconNew, locales.NoMatches(), locales.SearchEmptyHint(), func() {
+					if quietButton(c, nil, locales.ClearSearch()) {
+						m.creationSearch = ""
+						m.newMode = newModeFileTypes
+					}
+				})
+			}
+		})
+	} else {
+		m.creationTable(c)
+	}
+	ui.Divider(c)
+	ui.Row(c).Margin(14, 0, 0, 0).AlignItems(ui.Center).Children(func() {
+		ui.Column(c).Gap(3).Children(func() {
+			ui.Text(c, locales.OpenAfterCreate()).FontSize(sizeBody).FontWeight(600)
+			ui.Text(c, locales.OpenAfterCreateHint()).FontSize(sizeNote).TextColor(t.TextMuted)
+		})
+		ui.Spacer(c)
+		ui.Switch(c.Key("open-after-create"), &m.cfg.OpenAfterCreate).Label(locales.OpenAfterCreate()).OnChange(m.saveConfig)
+	})
+}
+
+func (m *app) creationTable(c *ui.Context) {
+	t := c.Theme()
 	columns := []ui.TableColumn{
 		{Title: locales.ColFileType(), ID: "type", Width: 240, Fixed: true},
 		{Title: locales.ColFormat(), ID: "extension", Width: 80, Fixed: true},
 		{Title: locales.ColContent(), ID: "source", MinWidth: 140, Fixed: true},
-		{Title: locales.ColEnabled(), ID: "enabled", Width: 68, Align: ui.Center, Fixed: true},
+		{Title: locales.ColEnabled(), ID: "enabled", Width: 84, Align: ui.Center, Fixed: true},
 		{Title: "", ID: "edit", Width: 52, Fixed: true},
 	}
 	tableTheme := *t
@@ -53,22 +97,10 @@ func (m *app) newPane(c *ui.Context) {
 	if table.Submitted() && m.creationSel >= 0 && m.creationSel < len(m.creationRows) {
 		m.openCreationEditor(m.creationRows[m.creationSel])
 	}
-	if len(m.creationRows) == 0 {
-		ui.Text(c, locales.NoMatches()).FontSize(sizeNote).TextColor(t.TextMuted).Padding(12, 0)
-	}
 	ui.Row(c).Margin(10, 0, 16, 0).Children(func() {
 		ui.Text(c, locales.TypeCount(len(m.creationRows))).FontSize(sizeCaption).TextColor(t.TextMuted)
 		ui.Spacer(c)
-		ui.Text(c, locales.CreationListHint()).FontSize(sizeCaption).TextColor(t.TextMuted)
-	})
-	ui.Divider(c)
-	ui.Row(c).Margin(14, 0, 0, 0).AlignItems(ui.Center).Children(func() {
-		ui.Column(c).Gap(3).Children(func() {
-			ui.Text(c, locales.OpenAfterCreate()).FontSize(sizeNote).FontWeight(600)
-			ui.Text(c, locales.OpenAfterCreateHint()).FontSize(sizeCaption).TextColor(t.TextMuted)
-		})
-		ui.Spacer(c)
-		ui.Switch(c.Key("open-after-create"), &m.cfg.OpenAfterCreate).Label(locales.OpenAfterCreate()).OnChange(m.saveConfig)
+		ui.Text(c, locales.CreationListHint()).FontSize(sizeNote).TextColor(t.TextMuted)
 	})
 }
 
@@ -122,7 +154,7 @@ func creationSwitch(c *ui.Context, enabled *bool, label string) ui.Element {
 	return ui.Switch(c, enabled).Label(label)
 }
 
-func locationSelect(c *ui.Context, value *string, key, label string, values, labels []string, enabled bool, save func()) {
+func locationSelect(c *ui.Context, value *string, key, label string, values, labels []string, enabled bool, save func()) ui.Element {
 	t := c.Theme()
 	selected := slices.Index(values, *value)
 	if selected < 0 {
@@ -130,7 +162,7 @@ func locationSelect(c *ui.Context, value *string, key, label string, values, lab
 	}
 	parts := ui.SelectBase(c.Key("location:"+key), value)
 	parts.Trigger.MinWidth(100).Padding(6, 10).Gap(10).AlignItems(ui.Center).Radius(t.Radius).Background(t.Surface).Border(1, t.Border).Label(label).Value(labels[selected]).TextColor(t.Text).Disabled(!enabled).OnChange(save).Children(func() {
-		ui.Text(c, labels[selected]).FontSize(sizeBody).TextColor(t.Text).SingleLine()
+		ui.Text(c, labels[selected]).FontSize(sizeBody).TextColor(t.Text).SingleLine().Grow(1).MinWidth(0)
 		glyph(c, iconChevronDown, 9, t.TextMuted)
 	})
 	parts.Popup(func(panel ui.Element) {
@@ -145,6 +177,7 @@ func locationSelect(c *ui.Context, value *string, key, label string, values, lab
 			item.Children(func() { ui.Text(c, labels[index]).FontSize(sizeNote).TextColor(color) })
 		}
 	})
+	return parts.Trigger
 }
 
 var creationIcons = make(map[string]*ui.SVG)
@@ -179,7 +212,7 @@ func (m *app) creationDialog(c *ui.Context) {
 				title = locales.AddFileTemplate()
 			}
 		}
-		panel.Width(440).MaxHeight(height-32).Padding(22).Background(t.Surface).Border(1, t.Border).Radius(dialogRadius).Label(locales.EditFileType())
+		panel.Width(500).MaxHeight(height-32).Padding(22).Background(t.Surface).Border(1, t.Border).Radius(dialogRadius).Label(locales.EditFileType())
 		ui.Column(c).Gap(14).Children(func() {
 			ui.Row(c).Gap(10).AlignItems(ui.Center).Children(func() {
 				creationFileIcon(c, m.editCreation.Extension, 32)
@@ -191,7 +224,11 @@ func (m *app) creationDialog(c *ui.Context) {
 					m.editCreationOpen = false
 				}
 			})
-			ui.Scroll(c).MaxHeight(height - 190).Children(func() {
+			bodyHeight := height - 190
+			if m.editCreationNotice != "" {
+				bodyHeight -= 52
+			}
+			ui.Scroll(c).MaxHeight(bodyHeight).Children(func() {
 				ui.Column(c).Gap(9).Children(func() {
 					ui.Text(c, locales.EditMenuName()).FontSize(sizeCaption).FontWeight(600)
 					ui.TextInput(c.Key("creation-name"), &m.editCreation.Label).Label(locales.EditMenuName())
@@ -236,11 +273,11 @@ func (m *app) creationDialog(c *ui.Context) {
 						})
 						creationSwitch(c.Key("creation-enabled"), &m.editCreation.Enabled, locales.EnableTypeSwitch())
 					})
-					if m.editCreationNotice != "" {
-						ui.Text(c, m.editCreationNotice).FontSize(sizeCaption).TextColor(t.Danger)
-					}
 				})
 			})
+			if m.editCreationNotice != "" {
+				ui.Text(c, m.editCreationNotice).FontSize(sizeNote).LineHeight(1.4).TextColor(t.Danger)
+			}
 			ui.Row(c).Wrap().Gap(8).AlignItems(ui.Center).Children(func() {
 				if m.editCreationTemplate && !m.editCreationNew && ghostButton(c, locales.DeleteTemplate(), true) {
 					m.tplSel = m.editCreationIndex

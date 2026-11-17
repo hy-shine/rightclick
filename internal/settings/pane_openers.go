@@ -17,13 +17,15 @@ import (
 func (m *app) openersPane(c *ui.Context) {
 	t := c.Theme()
 	paneHeader(c, locales.PaneOpeners(), locales.OpenersIntro())
-	ui.Row(c).Wrap().Gap(8).AlignItems(ui.Center).Children(func() {
-		ui.TextInput(c.Key("program-search"), &m.programSearch).
-			Label(locales.SearchPrograms()).Placeholder(locales.SearchProgramsPlaceholder()).Grow(1)
-		if quietButton(c, iconOpen, locales.ChooseApp()) {
-			m.pickEditor()
-		}
-	})
+	if len(m.cfg.Programs) > 0 {
+		ui.Row(c).Wrap().Gap(8).AlignItems(ui.Center).Children(func() {
+			ui.TextInput(c.Key("program-search"), &m.programSearch).
+				Label(locales.SearchPrograms()).Placeholder(locales.SearchProgramsPlaceholder()).Grow(1)
+			if primaryButton(c, iconPlus, locales.ChooseApp()) {
+				m.pickEditor()
+			}
+		})
+	}
 	// shown keeps each row's index in cfg.Programs, so removing a filtered row
 	// still removes the right program.
 	query := strings.ToLower(strings.TrimSpace(m.programSearch))
@@ -36,9 +38,17 @@ func (m *app) openersPane(c *ui.Context) {
 	remove := -1
 	switch {
 	case len(m.cfg.Programs) == 0:
-		emptyState(c, iconCode, locales.NoEditors(), locales.NoEditorsBody())
+		emptyState(c, iconOpen, locales.NoEditors(), locales.NoEditorsBody(), func() {
+			if primaryButton(c, iconPlus, locales.ChooseApp()) {
+				m.pickEditor()
+			}
+		})
 	case len(shown) == 0:
-		ui.Text(c, locales.NoProgramMatches()).FontSize(sizeNote).TextColor(t.TextMuted).Padding(16, 12)
+		emptyState(c, iconOpen, locales.NoProgramMatches(), locales.SearchEmptyHint(), func() {
+			if quietButton(c, nil, locales.ClearSearch()) {
+				m.programSearch = ""
+			}
+		})
 	default:
 		ledger(c, ui.Column(c)).Children(func() {
 			for _, i := range shown {
@@ -66,7 +76,7 @@ func (m *app) openersPane(c *ui.Context) {
 		m.saveConfig()
 	}
 	ui.Text(c, locales.EditorsHint()).
-		FontSize(sizeCaption).LineHeight(1.45).TextColor(t.TextMuted)
+		FontSize(sizeNote).LineHeight(1.45).TextColor(t.TextMuted)
 }
 
 // pickEditor lets the user add any installed application as a program.
