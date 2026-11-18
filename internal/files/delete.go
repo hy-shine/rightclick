@@ -20,7 +20,9 @@ func Protected(path, home string) bool {
 		return true
 	}
 	item := resolvedPath(path)
-	if sameFolder(item, "/") || sameFolder(item, "/Volumes") || sameFolder(item, home) {
+	if sameFolder(item, "/") || sameFolder(item, "/Volumes") || sameFolder(item, home) ||
+		sameFolder(item, "/System") || sameFolder(item, "/Applications") ||
+		sameFolder(item, "/Users") || sameFolder(item, "/Library") {
 		return true
 	}
 	return sameFolder(filepath.Dir(item), "/Volumes")
