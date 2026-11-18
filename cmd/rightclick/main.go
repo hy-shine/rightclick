@@ -64,10 +64,18 @@ func main() {
 		settings.InstallAppMenu()
 		installActionScript()
 		openedAtLogin := mygo.App.WasOpenedAtLogin()
+		var initialDiag, windowOpened atomic.Bool
 		if shouldOpenWindow(openedAtLogin, launchedForURL.Load()) {
 			time.AfterFunc(windowOpenDelay, func() {
 				if shouldOpenWindow(openedAtLogin, launchedForURL.Load()) {
-					mygo.RunOnMain(settings.Open)
+					mygo.RunOnMain(func() {
+						windowOpened.Store(true)
+						if initialDiag.Load() {
+							settings.OpenDiagnostics()
+						} else {
+							settings.Open()
+						}
+					})
 				}
 			})
 		}
@@ -80,8 +88,11 @@ func main() {
 				log.Printf("finder extension: %v", err)
 			}
 			enabled := settings.ExtensionEnabled()
+			if !enabled {
+				initialDiag.Store(true)
+			}
 			mygo.RunOnMain(func() {
-				if !enabled && shouldOpenWindow(openedAtLogin, launchedForURL.Load()) {
+				if !enabled && windowOpened.Load() && shouldOpenWindow(openedAtLogin, launchedForURL.Load()) {
 					settings.OpenDiagnostics()
 				}
 			})

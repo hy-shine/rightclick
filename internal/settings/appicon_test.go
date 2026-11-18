@@ -72,6 +72,19 @@ func TestAppIconReadsTheLargestPNGOfTheBundle(t *testing.T) {
 	}
 }
 
+func TestAppIconFindsNestedUtilitiesBundle(t *testing.T) {
+	folder := t.TempDir()
+	utilities := filepath.Join(folder, "Utilities")
+	if err := os.MkdirAll(utilities, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	makeBundle(t, utilities, "Terminal", "Terminal", icnsFile(icnsEntry("ic07", pngOfSize(t, 64))))
+	icon := appIcon([]string{folder}, "Terminal")
+	if icon == nil {
+		t.Fatal("appIcon did not find nested Utilities/Terminal.app")
+	}
+}
+
 func TestAppIconIsNilWithoutABundleOrAPNG(t *testing.T) {
 	folder := t.TempDir()
 	makeBundle(t, folder, "NoPNG", "NoPNG", icnsFile(icnsEntry("il32", []byte("not a png"))))

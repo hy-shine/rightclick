@@ -2,11 +2,10 @@ package settings
 
 import (
 	"github.com/hy-shine/rightclick/internal/actionicons"
+	"github.com/hy-shine/rightclick/internal/config"
 	"github.com/hy-shine/rightclick/internal/locales"
 
 	"github.com/egoist/mygo/ui"
-
-	"github.com/hy-shine/rightclick/internal/config"
 )
 
 // paneIcons are the icons of the sidebar rows, by pane ID.
@@ -20,32 +19,37 @@ var paneIcons = map[string]*ui.SVG{
 }
 
 // sidebarWidth is the width of the pane list, in points.
-const sidebarWidth = 176
+const sidebarWidth = 188
 
-// sidebar builds the pane list with a subtle accent for the selected pane.
+// sidebar builds the pane list with a translucent vibrancy material when available.
 func (m *app) sidebar(c *ui.Context) {
-	// The window has no title bar of its own: the sidebar runs up to the top edge
-	// and leaves room for the window controls, and the strip above the sign
-	// moves the window.
+	t := c.Theme()
 	bar := c.TitleBar()
-	ui.Column(c).Width(sidebarWidth).Padding(0, 10, 12).Children(func() {
+	panel := ui.Column(c).Width(sidebarWidth).Padding(0, 10, 12)
+	if !c.Vibrancy() {
+		panel.Background(t.Background)
+	}
+	panel.Children(func() {
 		ui.Row(c).Height(max(bar.Height, 22)).DragWindow()
-		ui.Row(c).Gap(8).Padding(6, 10).Margin(0, 0, 20).AlignItems(ui.Center).DragWindow().Children(func() {
-			mark(c, 22)
-			ui.Text(c, locales.AppName()).FontSize(14).FontWeight(600)
+		ui.Row(c).Gap(9).Padding(6, 10).Margin(0, 0, 12).AlignItems(ui.Center).DragWindow().Children(func() {
+			mark(c, 24)
+			ui.Column(c).Gap(1).Grow(1).MinWidth(0).Children(func() {
+				ui.Text(c, locales.AppName()).FontSize(14).FontWeight(700).SingleLine()
+			})
 		})
+		ui.Divider(c).Background(separatorColor(c).Alpha(0.65)).Margin(0, 4, 10)
 		ui.Column(c).Grow(1).Gap(3).Children(func() {
 			for index := range len(paneTabs()) - 1 {
 				m.navRow(c, index)
 			}
 		})
+		ui.Divider(c).Background(separatorColor(c).Alpha(0.65)).Margin(8, 4, 8)
 		m.navRow(c, len(paneTabs())-1)
 	})
 }
 
-// navRow builds the row of the pane at index i. Selection uses a tinted surface
-// and stronger text. When a setup
-// prerequisite is still missing, the diagnostics row carries a warning mark.
+// navRow builds the row of the pane at index i. Selection uses a lifted card or tinted accent
+// pill. When a setup prerequisite is still missing, General carries a warning indicator.
 func (m *app) navRow(c *ui.Context, i int) {
 	t := c.Theme()
 	p := paneTabs()[i]
@@ -54,7 +58,10 @@ func (m *app) navRow(c *ui.Context, i int) {
 	bg := ui.Transparent
 	if selected {
 		bg = t.Background.Mix(t.Accent, 0.16)
-		glyphColor = t.Accent.Mix(t.Text, 0.35)
+		glyphColor = t.Accent.Mix(t.Text, 0.25)
+		if c.Vibrancy() {
+			bg = t.Accent.Alpha(0.16)
+		}
 		if c.Preferences().HighContrast {
 			bg = t.Background.Mix(t.Accent, 0.26)
 			glyphColor = t.Text
@@ -62,17 +69,17 @@ func (m *app) navRow(c *ui.Context, i int) {
 	}
 	step := m.setupStep()
 	alert := p.id == paneGeneral && step.blocked()
-	btn := ui.ButtonBase(c.Key("nav:"+p.id)).Gap(9).Padding(8, 10).AlignItems(ui.Center).Justify(ui.Start).Radius(t.Radius).Background(bg).
+	btn := ui.ButtonBase(c.Key("nav:"+p.id)).Gap(9).Padding(7, 10).AlignItems(ui.Center).Justify(ui.Start).Radius(t.Radius+1).Background(bg).
 		Role(ui.RoleTab).Checked(selected).Label(p.label).
 		OnClick(func() { m.selectPane(p.id) }).
 		OnShortcut(0, ui.KeyDown, func() { m.selectPane(paneTabs()[min(i+1, len(paneTabs())-1)].id) }).
 		OnShortcut(0, ui.KeyUp, func() { m.selectPane(paneTabs()[max(i-1, 0)].id) })
 	if !selected {
-		tint(btn, bg, t.SurfaceHover, t.SurfacePressed)
+		tint(btn, bg, t.SurfaceHover.Alpha(0.75), t.SurfacePressed.Alpha(0.85))
 	}
 	btn.Children(func() {
 		glyph(c, paneIcons[p.id], 16, glyphColor)
-		name := ui.Text(c, p.label).FontSize(sizeBody).TextColor(label).Grow(1)
+		name := ui.Text(c, p.label).FontSize(sizeBody).TextColor(label).Grow(1).SingleLine()
 		if selected {
 			name.FontWeight(600)
 		}

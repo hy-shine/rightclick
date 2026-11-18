@@ -29,26 +29,30 @@ func appVersion() string {
 
 func (model *app) aboutSection(context *ui.Context) {
 	theme := context.Theme()
-	ui.Column(context).Gap(12).Margin(8, 0, 0).Children(func() {
+	ui.Column(context).Gap(10).Children(func() {
 		sectionTitle(context, locales.About())
-		ui.Row(context).Gap(12).AlignItems(ui.Center).Children(func() {
-			mark(context, 40)
-			ui.Column(context).Grow(1).Gap(2).Children(func() {
-				ui.Text(context, locales.AppName()).FontSize(sizeSection).FontWeight(600)
-				ui.Text(context, locales.VersionLine(appVersion())).FontSize(sizeNote).TextColor(theme.TextMuted)
-			})
-			ui.Row(context).Gap(8).AlignItems(ui.Center).Children(func() {
-				ui.Row(context).Tooltip(locales.OpenGitHub()).Children(func() {
-					if iconButton(context.Key("about-github"), iconGitHub, locales.OpenGitHub(), false) {
-						model.report(locales.Github(), model.env.openURL(repositoryURL))
+		ledger(context, ui.Column(context)).Children(func() {
+			ui.Row(context).Gap(14).Padding(14, 16).AlignItems(ui.Center).Children(func() {
+				mark(context, 42)
+				ui.Column(context).Grow(1).MinWidth(0).Gap(3).Children(func() {
+					ui.Row(context).Gap(8).AlignItems(ui.Center).Children(func() {
+						ui.Text(context, locales.AppName()).FontSize(sizeSection).FontWeight(600)
+						pillBadge(context, locales.VersionLine(appVersion()), theme.TextMuted, true)
+					})
+					ui.Text(context, locales.AboutBlurb()).
+						FontSize(sizeNote).LineHeight(1.45).TextColor(theme.TextMuted)
+				})
+				ui.Row(context).Gap(8).AlignItems(ui.Center).Shrink(0).Children(func() {
+					ui.Row(context).Tooltip(locales.OpenGitHub()).Children(func() {
+						if iconButton(context.Key("about-github"), iconGitHub, locales.OpenGitHub(), false) {
+							model.report(locales.Github(), model.env.openURL(repositoryURL))
+						}
+					})
+					if quietButton(context, nil, locales.CheckUpdate()) {
+						model.env.checkForUpdates()
 					}
 				})
-				if quietButton(context, nil, locales.CheckUpdate()) {
-					model.env.checkForUpdates()
-				}
 			})
 		})
-		ui.Text(context, locales.AboutBlurb()).
-			FontSize(sizeNote).LineHeight(1.5).TextColor(theme.TextMuted)
 	})
 }

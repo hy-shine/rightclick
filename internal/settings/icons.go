@@ -54,6 +54,7 @@ var (
 	iconCheck       = icon(`<path d="M5 12.5l4.5 4.5L19 7.5"/>`)
 	iconAlert       = icon(`<path d="M12 4l9 15.5H3z"/><path d="M12 10v4.2"/><path d="M12 17h.01"/>`)
 	iconRestart     = icon(`<path d="M4.5 12a7.5 7.5 0 1 0 2.4-5.5"/><path d="M4.5 4.5v4h4"/>`)
+	iconClose       = icon(`<path d="M6 6l12 12M18 6L6 18"/>`)
 )
 
 // entryIcon returns the icon of the menu entry id, or the plain document

@@ -10,18 +10,30 @@ import (
 )
 
 func (m *app) hasShortcut(id string) bool {
-	return slices.ContainsFunc(m.cfg.MenuItems, func(item config.MenuItem) bool { return item.ID == id })
+	return slices.ContainsFunc(m.cfg.MenuItems, func(item config.MenuItem) bool {
+		return item.ID == id && item.Enabled
+	})
 }
 
 func (m *app) setShortcut(id string, enabled bool) {
 	if enabled {
-		if !m.hasShortcut(id) {
+		if idx := slices.IndexFunc(m.cfg.MenuItems, func(item config.MenuItem) bool { return item.ID == id }); idx >= 0 {
+			m.cfg.MenuItems[idx].Enabled = true
+		} else {
 			m.cfg.MenuItems = append(m.cfg.MenuItems, config.MenuItem{ID: id, Enabled: true, Location: config.FileTypeMain})
 		}
 	} else {
 		m.cfg.MenuItems = slices.DeleteFunc(m.cfg.MenuItems, func(item config.MenuItem) bool { return item.ID == id })
 	}
 	m.saveConfig()
+}
+
+func (m *app) ensureShortcutInSubmenu(id string) {
+	if idx := slices.IndexFunc(m.cfg.MenuItems, func(item config.MenuItem) bool { return item.ID == id }); idx >= 0 {
+		m.cfg.MenuItems[idx].Enabled = true
+		return
+	}
+	m.cfg.MenuItems = append(m.cfg.MenuItems, config.MenuItem{ID: id, Enabled: true, Location: config.FileTypeSubmenu})
 }
 
 // shortcutToggleLabeled shows a checkbox that adds or removes the menu shortcut for
@@ -75,13 +87,22 @@ func (m *app) menuItemAvailable(item config.MenuItem, context int) bool {
 
 func (m *app) menuNameDialog(c *ui.Context) {
 	ui.DialogBase(c, &m.menuNameOpen, func(backdrop, panel ui.Element) {
+		t := c.Theme()
 		backdrop.Background(ui.RGBA(0, 0, 0, 0.3))
-		panel.Width(360).Padding(22).Background(c.Theme().Surface).Border(1, c.Theme().Border).Radius(dialogRadius).Label(locales.RenameMenuItem())
+		panel.Width(380).Padding(22).Background(t.Surface).Border(1, t.Border).Radius(dialogRadius).Label(locales.RenameMenuItem())
+		defaultEntry := m.menuEntry(config.MenuItem{ID: m.menuNameID})
 		ui.Column(c).Gap(14).Children(func() {
-			sectionTitle(c, locales.RenameMenuItem())
-			ui.TextInput(c.Key("menu-name"), &m.menuName).Label(locales.EditMenuName())
-			ui.Text(c, locales.MenuNameHint()).FontSize(sizeNote).TextColor(c.Theme().TextMuted)
-			ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
+			ui.Row(c).Gap(10).AlignItems(ui.Center).Children(func() {
+				m.entryMark(c, m.menuNameID, 20, t.Text)
+				ui.Text(c, locales.RenameActionTitle(defaultEntry.label)).FontSize(sizeSection).FontWeight(600).SingleLine().Grow(1).MinWidth(0)
+			})
+			ui.TextInput(c.Key("menu-name"), &m.menuName).Label(locales.EditMenuName()).Placeholder(defaultEntry.label)
+			ui.Text(c, locales.MenuNameHint()).FontSize(sizeNote).TextColor(t.TextMuted)
+			ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
+				if strings.TrimSpace(m.menuName) != "" && ghostButton(c, locales.RestoreDefaultName(), false) {
+					m.menuName = ""
+				}
+				ui.Spacer(c)
 				if quietButton(c, nil, locales.Cancel()) {
 					m.menuNameOpen = false
 				}

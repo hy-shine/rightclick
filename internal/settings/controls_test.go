@@ -23,10 +23,16 @@ func TestPlaceSwitchChangesPreview(t *testing.T) {
 	if err := tt.Click("Preview"); err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Contains(tt.Texts(), "Shows 10 items") {
-		t.Fatalf("a file shows 10 entries; texts %q", tt.Texts())
+	if !slices.Contains(tt.Texts(), "Shows 8 items") {
+		t.Fatalf("a regular file shows 8 entries; texts %q", tt.Texts())
 	}
 	tt.Frame()
+	if err := tt.Click(".zip Archive"); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Contains(tt.Texts(), "Shows 9 items") {
+		t.Fatalf("a zip archive shows 9 entries; texts %q", tt.Texts())
+	}
 	if err := tt.Click("Blank Space"); err != nil {
 		t.Fatal(err)
 	}
@@ -195,7 +201,7 @@ func TestPreviewCountFitsItsColumn(t *testing.T) {
 	if err := tt.Click("Preview"); err != nil {
 		t.Fatal(err)
 	}
-	count, ok := tt.Find("Shows 10 items")
+	count, ok := tt.Find("Shows 8 items")
 	if !ok {
 		t.Fatal("the entry count is not on the pane")
 	}

@@ -40,7 +40,8 @@ func (m *app) filteredCreationRows() []creationRow {
 	}
 	if m.newMode == newModeFileTypes || m.newMode == newModeTemplates {
 		for index, template := range m.templates {
-			if strings.Contains(strings.ToLower(template.Name), search) {
+			searchable := strings.ToLower(template.Label + " " + template.Name)
+			if strings.Contains(searchable, search) {
 				rows = append(rows, creationRow{key: "template:" + template.Name, index: index, template: true})
 			}
 		}
@@ -49,7 +50,12 @@ func (m *app) filteredCreationRows() []creationRow {
 }
 
 func isCodeExtension(extension string) bool {
-	return slices.Contains([]string{"json", "html", "css", "js", "swift", "py", "go", "rs", "java", "c", "cpp", "sql", "ts", "yaml", "yml", "sh"}, extension)
+	return slices.Contains([]string{
+		"json", "html", "css", "scss", "sass", "less",
+		"js", "jsx", "ts", "tsx", "vue",
+		"swift", "py", "go", "rs", "java", "kt", "c", "cpp",
+		"sql", "yaml", "yml", "toml", "xml", "sh", "rb", "php", "lua", "zig",
+	}, strings.ToLower(extension))
 }
 
 func (m *app) creationType(row creationRow) config.FileType {
@@ -374,4 +380,37 @@ func (m *app) deleteTemplate() {
 	m.templates = slices.Delete(m.templates, m.tplSel, m.tplSel+1)
 	m.tplSel = min(m.tplSel, len(m.templates)-1)
 	m.saveTemplates()
+}
+
+func (m *app) creationDefaultType() (config.FileType, bool) {
+	for _, def := range config.DefaultFileTypes() {
+		if def.ID == m.editCreation.ID {
+			def.Label = def.DisplayLabel()
+			def.DefaultName = def.DisplayDefaultName()
+			return def, true
+		}
+	}
+	return config.FileType{}, false
+}
+
+func (m *app) creationModifiedFromDefault() bool {
+	def, ok := m.creationDefaultType()
+	if !ok {
+		return false
+	}
+	return m.editCreation.Label != def.Label ||
+		m.editCreation.DefaultName != def.DefaultName ||
+		m.editCreation.Content != def.Content ||
+		m.editCreation.TemplateData != def.TemplateData ||
+		m.editCreation.TemplateName != def.TemplateName
+}
+
+func (m *app) resetCreationToDefault() {
+	def, ok := m.creationDefaultType()
+	if !ok {
+		return
+	}
+	def.Enabled = m.editCreation.Enabled
+	m.editCreation = def
+	m.editCreationNotice = ""
 }

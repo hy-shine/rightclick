@@ -27,13 +27,13 @@ func paperTheme(dark bool) *ui.Theme {
 	if dark {
 		return &ui.Theme{
 			Dark:           true,
-			Background:     ui.Hex("#222326"),
-			Surface:        ui.Hex("#2c2d30"),
-			SurfaceHover:   ui.Hex("#37383c"),
-			SurfacePressed: ui.Hex("#404145"),
-			Border:         ui.Hex("#48494f"),
+			Background:     ui.Hex("#1c1d21"),
+			Surface:        ui.Hex("#26272c"),
+			SurfaceHover:   ui.Hex("#31333a"),
+			SurfacePressed: ui.Hex("#3b3d46"),
+			Border:         ui.Hex("#434650"),
 			Text:           ui.Hex("#f5f5f7"),
-			TextMuted:      ui.Hex("#a6a7ad"),
+			TextMuted:      ui.Hex("#a4a7b2"),
 			Accent:         accent,
 			AccentHover:    hover,
 			AccentPressed:  pressed,
@@ -44,21 +44,21 @@ func paperTheme(dark bool) *ui.Theme {
 			Selection:      ui.RGBA(96, 165, 250, 0.32),
 			Focus:          ui.RGBA(96, 165, 250, 0.65),
 			Inverse:        ui.Hex("#f5f5f7"),
-			InverseText:    ui.Hex("#222326"),
-			Scrollbar:      ui.RGBA(166, 167, 173, 0.4),
+			InverseText:    ui.Hex("#1c1d21"),
+			Scrollbar:      ui.RGBA(164, 167, 178, 0.4),
 			Radius:         6,
 			Spacing:        4,
 			FontSize:       13,
 		}
 	}
 	return &ui.Theme{
-		Background:     ui.Hex("#ededf0"),
+		Background:     ui.Hex("#f2f3f6"),
 		Surface:        ui.Hex("#ffffff"),
-		SurfaceHover:   ui.Hex("#f5f5f7"),
-		SurfacePressed: ui.Hex("#e5e5e9"),
-		Border:         ui.Hex("#d6d6dc"),
-		Text:           ui.Hex("#252528"),
-		TextMuted:      ui.Hex("#68686f"),
+		SurfaceHover:   ui.Hex("#f6f7fa"),
+		SurfacePressed: ui.Hex("#e8eaf0"),
+		Border:         ui.Hex("#d8dae2"),
+		Text:           ui.Hex("#1d1e22"),
+		TextMuted:      ui.Hex("#676a75"),
 		Accent:         accent,
 		AccentHover:    hover,
 		AccentPressed:  pressed,
@@ -68,9 +68,9 @@ func paperTheme(dark bool) *ui.Theme {
 		Success:        ui.Hex("#1e7b4f"),
 		Selection:      ui.RGBA(37, 99, 235, 0.2),
 		Focus:          ui.RGBA(37, 99, 235, 0.6),
-		Inverse:        ui.Hex("#252528"),
+		Inverse:        ui.Hex("#1d1e22"),
 		InverseText:    ui.Hex("#ffffff"),
-		Scrollbar:      ui.RGBA(104, 104, 111, 0.4),
+		Scrollbar:      ui.RGBA(103, 106, 117, 0.4),
 		Radius:         6,
 		Spacing:        4,
 		FontSize:       13,
@@ -108,6 +108,15 @@ func windowTheme(context *ui.Context) *ui.Theme {
 		theme.Focus.A = 255
 	}
 	return theme
+}
+
+// applyTheme sets t as the active frame theme while keeping the window root transparent
+// under vibrancy so temporary widget themes never paint over the translucent sidebar.
+func applyTheme(c *ui.Context, t *ui.Theme) {
+	c.SetTheme(t)
+	if c.Vibrancy() {
+		c.Root().Background(ui.Transparent)
+	}
 }
 
 func separatorColor(context *ui.Context) ui.Color {

@@ -1,7 +1,6 @@
 package settings
 
 import (
-	"slices"
 	"testing"
 
 	"github.com/egoist/mygo/ui"
@@ -64,28 +63,31 @@ func TestMenuRowsKeepTheConditionInItsOwnColumn(t *testing.T) {
 	}
 }
 
-// TestMenuRuleKeepsTheRowPitch checks that the rule between the main entries and
-// the submenu entries adds no row: the first submenu entry sits one row below the
-// last main entry, within half a point of the rule's own width.
-func TestMenuRuleKeepsTheRowPitch(t *testing.T) {
+// TestMenuSectionsSeparateMainAndSubmenu checks that the Finder Menu and
+// RightClick Submenu sit in separate labeled sections rather than sharing one flat list.
+func TestMenuSectionsSeparateMainAndSubmenu(t *testing.T) {
 	model := readyApp(t)
 	model.selectPane(paneMenu)
 	screen := ui.NewTester(model.view, minWidth, minHeight)
 	screen.Frame()
-	rows := model.menuDisplayRows(-1)
-	split := slices.IndexFunc(rows, func(i int) bool { return model.cfg.MenuItems[i].Location != config.FileTypeMain })
-	if split <= 0 {
-		t.Fatal("the main and the submenu entries are not split")
+	mainHeader, okMain := screen.Find(locales.MenuSectionMain())
+	subHeader, okSub := screen.Find(locales.MenuSectionSub())
+	if !okMain || !okSub {
+		t.Fatalf("missing section headers: main=%v sub=%v", okMain, okSub)
 	}
-	last, ok := screen.Find(model.menuEntry(model.cfg.MenuItems[rows[split-1]]).label)
-	if !ok {
-		t.Fatal("the last main entry is missing")
+	if subHeader.Y <= mainHeader.Y+mainHeader.H {
+		t.Errorf("submenu section at y=%.1f does not sit below main section ending at %.1f", subHeader.Y, mainHeader.Y+mainHeader.H)
 	}
-	first, ok := screen.Find(model.menuEntry(model.cfg.MenuItems[rows[split]]).label)
-	if !ok {
-		t.Fatal("the first submenu entry is missing")
+	rows := model.locationRows(config.FileTypeMain)
+	if len(rows) < 2 {
+		t.Fatal("expected at least 2 main-menu items")
 	}
-	if pitch := first.Y - last.Y; pitch < menuRowHeight || pitch > menuRowHeight+1 {
-		t.Errorf("the rule moves the next entry %.1f pt, want %d to %d", pitch, menuRowHeight, menuRowHeight+1)
+	first, okFirst := screen.Find(model.menuEntry(model.cfg.MenuItems[rows[0]]).label)
+	second, okSecond := screen.Find(model.menuEntry(model.cfg.MenuItems[rows[1]]).label)
+	if !okFirst || !okSecond {
+		t.Fatal("main-menu entries missing")
+	}
+	if pitch := second.Y - first.Y; pitch != menuRowHeight {
+		t.Errorf("row pitch = %.1f pt, want %d", pitch, menuRowHeight)
 	}
 }

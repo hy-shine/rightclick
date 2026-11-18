@@ -938,11 +938,11 @@ func (msgs Messages) EditTemplate() string {
 	return Catalog.Format(msgs.locale, "editTemplate", nil)
 }
 
-// EditorsHint says "Menu Shortcut adds an “Open with…” entry. Set its position in Context Menu. Removing it here keeps the app inst…"
+// EditorsHint says "New apps are enabled in the RightClick submenu automatically. Drag to reorder, toggle Menu Shortcut, or move them in …"
 // in the language the app shows.
 func EditorsHint() string { return In(i18n.Locale()).EditorsHint() }
 
-// EditorsHint says "Menu Shortcut adds an “Open with…” entry. Set its position in Context Menu. Removing it here keeps the app inst…"
+// EditorsHint says "New apps are enabled in the RightClick submenu automatically. Drag to reorder, toggle Menu Shortcut, or move them in …"
 // in the language of msgs.
 func (msgs Messages) EditorsHint() string {
 	return Catalog.Format(msgs.locale, "editorsHint", nil)
@@ -2010,21 +2010,21 @@ func (msgs Messages) ZipDSStoreHint() string {
 	return Catalog.Format(msgs.locale, "zipDSStoreHint", nil)
 }
 
-// ZipGitHint says "Skip Git metadata inside selected folders. Off by default to keep complete backups."
+// ZipGitHint says "Skip Git metadata inside selected folders."
 // in the language the app shows.
 func ZipGitHint() string { return In(i18n.Locale()).ZipGitHint() }
 
-// ZipGitHint says "Skip Git metadata inside selected folders. Off by default to keep complete backups."
+// ZipGitHint says "Skip Git metadata inside selected folders."
 // in the language of msgs.
 func (msgs Messages) ZipGitHint() string {
 	return Catalog.Format(msgs.locale, "zipGitHint", nil)
 }
 
-// ZipNodeModulesHint says "Skip installed dependencies inside selected folders. Off by default."
+// ZipNodeModulesHint says "Skip installed dependencies inside selected folders."
 // in the language the app shows.
 func ZipNodeModulesHint() string { return In(i18n.Locale()).ZipNodeModulesHint() }
 
-// ZipNodeModulesHint says "Skip installed dependencies inside selected folders. Off by default."
+// ZipNodeModulesHint says "Skip installed dependencies inside selected folders."
 // in the language of msgs.
 func (msgs Messages) ZipNodeModulesHint() string {
 	return Catalog.Format(msgs.locale, "zipNodeModulesHint", nil)
@@ -3176,6 +3176,156 @@ func (msgs Messages) NotifyChmodFailed() string {
 	return Catalog.Format(msgs.locale, "notifyChmodFailed", nil)
 }
 
+// MenuSectionMain says "Finder Menu"
+// in the language the app shows.
+func MenuSectionMain() string { return In(i18n.Locale()).MenuSectionMain() }
+
+// MenuSectionMain says "Finder Menu"
+// in the language of msgs.
+func (msgs Messages) MenuSectionMain() string {
+	return Catalog.Format(msgs.locale, "menuSectionMain", nil)
+}
+
+// MenuSectionMainHint says "Shown directly in the top-level right-click menu. Keep this focused."
+// in the language the app shows.
+func MenuSectionMainHint() string { return In(i18n.Locale()).MenuSectionMainHint() }
+
+// MenuSectionMainHint says "Shown directly in the top-level right-click menu. Keep this focused."
+// in the language of msgs.
+func (msgs Messages) MenuSectionMainHint() string {
+	return Catalog.Format(msgs.locale, "menuSectionMainHint", nil)
+}
+
+// MenuSectionSub says "RightClick Submenu"
+// in the language the app shows.
+func MenuSectionSub() string { return In(i18n.Locale()).MenuSectionSub() }
+
+// MenuSectionSub says "RightClick Submenu"
+// in the language of msgs.
+func (msgs Messages) MenuSectionSub() string {
+	return Catalog.Format(msgs.locale, "menuSectionSub", nil)
+}
+
+// MenuSectionSubHint says "Grouped neatly inside the RightClick submenu."
+// in the language the app shows.
+func MenuSectionSubHint() string { return In(i18n.Locale()).MenuSectionSubHint() }
+
+// MenuSectionSubHint says "Grouped neatly inside the RightClick submenu."
+// in the language of msgs.
+func (msgs Messages) MenuSectionSubHint() string {
+	return Catalog.Format(msgs.locale, "menuSectionSubHint", nil)
+}
+
+// MenuSectionMainEmpty says "No top-level items. Switch an item's location to Finder Menu to place it here."
+// in the language the app shows.
+func MenuSectionMainEmpty() string { return In(i18n.Locale()).MenuSectionMainEmpty() }
+
+// MenuSectionMainEmpty says "No top-level items. Switch an item's location to Finder Menu to place it here."
+// in the language of msgs.
+func (msgs Messages) MenuSectionMainEmpty() string {
+	return Catalog.Format(msgs.locale, "menuSectionMainEmpty", nil)
+}
+
+// MenuSectionSubEmpty says "No items in the RightClick submenu."
+// in the language the app shows.
+func MenuSectionSubEmpty() string { return In(i18n.Locale()).MenuSectionSubEmpty() }
+
+// MenuSectionSubEmpty says "No items in the RightClick submenu."
+// in the language of msgs.
+func (msgs Messages) MenuSectionSubEmpty() string {
+	return Catalog.Format(msgs.locale, "menuSectionSubEmpty", nil)
+}
+
+// ContextZip says ".zip Archive"
+// in the language the app shows.
+func ContextZip() string { return In(i18n.Locale()).ContextZip() }
+
+// ContextZip says ".zip Archive"
+// in the language of msgs.
+func (msgs Messages) ContextZip() string {
+	return Catalog.Format(msgs.locale, "contextZip", nil)
+}
+
+// RenameActionTitle says "Rename “{name}”"
+// in the language the app shows.
+func RenameActionTitle(name string) string { return In(i18n.Locale()).RenameActionTitle(name) }
+
+// RenameActionTitle says "Rename “{name}”"
+// in the language of msgs.
+func (msgs Messages) RenameActionTitle(name string) string {
+	return Catalog.Format(msgs.locale, "renameActionTitle", map[string]any{"name": name})
+}
+
+// RestoreDefaultName says "Restore Original"
+// in the language the app shows.
+func RestoreDefaultName() string { return In(i18n.Locale()).RestoreDefaultName() }
+
+// RestoreDefaultName says "Restore Original"
+// in the language of msgs.
+func (msgs Messages) RestoreDefaultName() string {
+	return Catalog.Format(msgs.locale, "restoreDefaultName", nil)
+}
+
+// ManageTemplatesLink says "Manage Templates →"
+// in the language the app shows.
+func ManageTemplatesLink() string { return In(i18n.Locale()).ManageTemplatesLink() }
+
+// ManageTemplatesLink says "Manage Templates →"
+// in the language of msgs.
+func (msgs Messages) ManageTemplatesLink() string {
+	return Catalog.Format(msgs.locale, "manageTemplatesLink", nil)
+}
+
+// MenuSubmenuHint says "Added templates appear inside New File automatically. Rename individual templates in Files & Templates."
+// in the language the app shows.
+func MenuSubmenuHint() string { return In(i18n.Locale()).MenuSubmenuHint() }
+
+// MenuSubmenuHint says "Added templates appear inside New File automatically. Rename individual templates in Files & Templates."
+// in the language of msgs.
+func (msgs Messages) MenuSubmenuHint() string {
+	return Catalog.Format(msgs.locale, "menuSubmenuHint", nil)
+}
+
+// RestoredDefaultsToast says "Restored default menu"
+// in the language the app shows.
+func RestoredDefaultsToast() string { return In(i18n.Locale()).RestoredDefaultsToast() }
+
+// RestoredDefaultsToast says "Restored default menu"
+// in the language of msgs.
+func (msgs Messages) RestoredDefaultsToast() string {
+	return Catalog.Format(msgs.locale, "restoredDefaultsToast", nil)
+}
+
+// AppAddedToast says "Added “{name}” to the context menu"
+// in the language the app shows.
+func AppAddedToast(name string) string { return In(i18n.Locale()).AppAddedToast(name) }
+
+// AppAddedToast says "Added “{name}” to the context menu"
+// in the language of msgs.
+func (msgs Messages) AppAddedToast(name string) string {
+	return Catalog.Format(msgs.locale, "appAddedToast", map[string]any{"name": name})
+}
+
+// CopiedToClipboard says "Copied to clipboard"
+// in the language the app shows.
+func CopiedToClipboard() string { return In(i18n.Locale()).CopiedToClipboard() }
+
+// CopiedToClipboard says "Copied to clipboard"
+// in the language of msgs.
+func (msgs Messages) CopiedToClipboard() string {
+	return Catalog.Format(msgs.locale, "copiedToClipboard", nil)
+}
+
+// ResetToDefault says "Reset to Default"
+// in the language the app shows.
+func ResetToDefault() string { return In(i18n.Locale()).ResetToDefault() }
+
+// ResetToDefault says "Reset to Default"
+// in the language of msgs.
+func (msgs Messages) ResetToDefault() string {
+	return Catalog.Format(msgs.locale, "resetToDefault", nil)
+}
+
 // CompareWindowTitle says "Compare File Hashes"
 // in the language the app shows.
 func CompareWindowTitle() string { return In(i18n.Locale()).CompareWindowTitle() }
@@ -3234,4 +3384,54 @@ func CompareCopyBoth() string { return In(i18n.Locale()).CompareCopyBoth() }
 // in the language of msgs.
 func (msgs Messages) CompareCopyBoth() string {
 	return Catalog.Format(msgs.locale, "compareCopyBoth", nil)
+}
+
+// ColApp says "App"
+// in the language the app shows.
+func ColApp() string { return In(i18n.Locale()).ColApp() }
+
+// ColApp says "App"
+// in the language of msgs.
+func (msgs Messages) ColApp() string {
+	return Catalog.Format(msgs.locale, "colApp", nil)
+}
+
+// DefaultsIntro says "Configure default behavior for hashing and ZIP compression."
+// in the language the app shows.
+func DefaultsIntro() string { return In(i18n.Locale()).DefaultsIntro() }
+
+// DefaultsIntro says "Configure default behavior for hashing and ZIP compression."
+// in the language of msgs.
+func (msgs Messages) DefaultsIntro() string {
+	return Catalog.Format(msgs.locale, "defaultsIntro", nil)
+}
+
+// GeneralIntro says "Appearance, language, startup behavior, and Finder extension diagnostics."
+// in the language the app shows.
+func GeneralIntro() string { return In(i18n.Locale()).GeneralIntro() }
+
+// GeneralIntro says "Appearance, language, startup behavior, and Finder extension diagnostics."
+// in the language of msgs.
+func (msgs Messages) GeneralIntro() string {
+	return Catalog.Format(msgs.locale, "generalIntro", nil)
+}
+
+// ExtensionWaitingHint says "Waiting to be enabled in System Settings."
+// in the language the app shows.
+func ExtensionWaitingHint() string { return In(i18n.Locale()).ExtensionWaitingHint() }
+
+// ExtensionWaitingHint says "Waiting to be enabled in System Settings."
+// in the language of msgs.
+func (msgs Messages) ExtensionWaitingHint() string {
+	return Catalog.Format(msgs.locale, "extensionWaitingHint", nil)
+}
+
+// GoToContextMenu says "Open Context Menu"
+// in the language the app shows.
+func GoToContextMenu() string { return In(i18n.Locale()).GoToContextMenu() }
+
+// GoToContextMenu says "Open Context Menu"
+// in the language of msgs.
+func (msgs Messages) GoToContextMenu() string {
+	return Catalog.Format(msgs.locale, "goToContextMenu", nil)
 }

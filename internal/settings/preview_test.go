@@ -44,7 +44,9 @@ func TestPreviewFollowsContext(t *testing.T) {
 		{ctxFolder, "Compress to ZIP", true},
 		{ctxFile, "Compute Hash", true},
 		{ctxFile, "Compare File Hashes", false},
-		{ctxFile, "Extract Here", true},
+		{ctxFile, "Extract Here", false},
+		{ctxZip, "Extract Here", true},
+		{ctxZip, "Extract to Folder", true},
 		{ctxTwoFiles, "Compare File Hashes", true},
 		{ctxTwoFiles, "Compute Hash", false},
 	}

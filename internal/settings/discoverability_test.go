@@ -150,3 +150,50 @@ func TestCreationErrorStaysVisibleInShortWindow(t *testing.T) {
 		t.Fatalf("error is not visible above save: message=%+v save=%+v", message, save)
 	}
 }
+
+func TestCreationSearchMatchesTemplateDisplayLabel(t *testing.T) {
+	model := readyApp(t)
+	model.selectPane(paneTemplates)
+	model.templates = []files.Template{{Name: "weekly.docx", Label: "Project Report"}}
+	model.newMode = newModeTemplates
+	model.creationSearch = "report"
+	rows := model.filteredCreationRows()
+	if len(rows) != 1 || rows[0].key != "template:weekly.docx" {
+		t.Fatalf("filteredCreationRows = %+v, want template:weekly.docx", rows)
+	}
+}
+
+func TestRenameDialogShowsActionTitleAndRestoreOriginal(t *testing.T) {
+	model := readyApp(t)
+	screen := ui.NewTester(model.view, mainWidth, mainHeight)
+	if err := screen.Click(locales.EditItem(locales.MenuCopyPath())); err != nil {
+		t.Fatal(err)
+	}
+	if !screen.HasText(locales.RenameActionTitle(locales.MenuCopyPath())) {
+		t.Fatalf("rename dialog title missing action name; texts %q", screen.Texts())
+	}
+	model.menuName = "Full Path"
+	screen.Frame()
+	if err := screen.Click(locales.RestoreDefaultName()); err != nil {
+		t.Fatal(err)
+	}
+	if model.menuName != "" {
+		t.Fatalf("RestoreDefaultName left %q, want empty", model.menuName)
+	}
+}
+
+func TestWideWindowDocksMenuPreviewBesideEditor(t *testing.T) {
+	model := readyApp(t)
+	screen := ui.NewTester(model.view, mainWidth, mainHeight)
+	if err := screen.Click(locales.Preview()); err != nil {
+		t.Fatal(err)
+	}
+	mainSec, okMain := screen.Find(locales.MenuSectionMain())
+	previewTitle, okPreview := screen.Find(locales.MenuPreview())
+	if !okMain || !okPreview {
+		t.Fatalf("missing docked elements: main=%v preview=%v", okMain, okPreview)
+	}
+	if previewTitle.X <= mainSec.X+mainSec.W {
+		t.Errorf("preview at x=%.1f should sit beside editor ending at %.1f", previewTitle.X, mainSec.X+mainSec.W)
+	}
+}

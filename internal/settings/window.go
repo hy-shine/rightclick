@@ -20,8 +20,8 @@ var (
 // cannot be made smaller than minWidth by minHeight. The minimum keeps the
 // list controls readable while leaving room for Finder beside the window.
 const (
-	mainWidth  = 980
-	mainHeight = 680
+	mainWidth  = 1080
+	mainHeight = 700
 	minWidth   = 860
 	minHeight  = 480
 )
@@ -56,9 +56,15 @@ func Open() {
 		MinHeight: minHeight,
 		// A new key, so a size saved under "main" by an earlier build does not keep the
 		// window narrower than mainWidth.
-		StateKey:      "main-v2",
+		StateKey:      "main-v3",
 		TitleBarStyle: mygo.TitleBarHiddenInset, // the view draws the top edge; see sidebar
+		Vibrancy:      mygo.VibrancySidebar,
 		Content:       ui.View(m.view),
+	})
+	m.win.OnFocus(func() {
+		if m.finder != finderChecking {
+			m.checkFinder()
+		}
 	})
 	openWindow, openApp = m.win, m
 	m.checkFinder()

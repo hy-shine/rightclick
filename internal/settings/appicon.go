@@ -85,11 +85,26 @@ func appIcon(folders []string, name string) *ui.Bitmap {
 }
 
 // findBundle returns the path of the .app bundle called name in the first folder that has it.
+// It checks directly inside each folder and one subfolder deep (for Utilities/, Setapp/, etc.).
 func findBundle(folders []string, name string) (string, error) {
+	target := name + ".app"
 	for _, folder := range folders {
-		path := filepath.Join(folder, name+".app")
+		path := filepath.Join(folder, target)
 		if info, err := os.Stat(path); err == nil && info.IsDir() {
 			return path, nil
+		}
+		entries, err := os.ReadDir(folder)
+		if err != nil {
+			continue
+		}
+		for _, entry := range entries {
+			if !entry.IsDir() || strings.HasSuffix(strings.ToLower(entry.Name()), ".app") {
+				continue
+			}
+			nested := filepath.Join(folder, entry.Name(), target)
+			if info, err := os.Stat(nested); err == nil && info.IsDir() {
+				return nested, nil
+			}
 		}
 	}
 	return "", errors.New("application not found: " + name)

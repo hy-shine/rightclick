@@ -70,13 +70,16 @@ type app struct {
 	cfg       config.Config
 	templates []files.Template
 
-	tab        int    // index of the chosen pane in paneTabs; the sidebar list selects it
-	previewCtx int    // index into previewContexts, where the menu preview is shown
-	notice     string // error of the last action, shown below the pane
-	newMode    int    // index of the Files or Templates view in the New pane
+	tab          int    // index of the chosen pane in paneTabs; the sidebar list selects it
+	previewCtx   int    // index into previewContexts, where the menu preview is shown
+	notice       string // error of the last action, shown below the pane header
+	pendingToast string // transient confirmation message queued for the next view frame
+	newMode      int    // index of the Files or Templates view in the New pane
 
 	navList          ui.ListState
-	menuLists        []ui.ListState // one per group of the Finder menu, in menuGroups order
+	mainMenuList     ui.ListState
+	subMenuList      ui.ListState
+	menuLists        []ui.ListState // legacy group lists retained for direct group tests
 	menuSearch       string
 	menuPreviewOpen  bool
 	confirmRestore   bool
@@ -87,6 +90,7 @@ type app struct {
 	favoriteEditID   string
 	favoriteName     string
 	favoriteEditOpen bool
+	programList      ui.ListState
 
 	fileTypeList         ui.ListState
 	fileTypeSel          int
@@ -158,30 +162,29 @@ func newApp(store Store, e env) (*app, error) {
 
 // view builds the sidebar and continuous content surface using the window theme.
 func (m *app) view(c *ui.Context) {
-	c.SetTheme(windowTheme(c))
+	applyTheme(c, windowTheme(c))
 	t := c.Theme()
+	if m.pendingToast != "" {
+		c.Toast(m.pendingToast)
+		m.pendingToast = ""
+	}
 	ui.Row(c).Fill().AlignItems(ui.Stretch).Children(func() {
 		m.sidebar(c)
 		ui.Column(c).Width(1).Background(separatorColor(c))
-		ui.Column(c).Grow(1).Background(t.Surface.Mix(t.Background, 0.3)).Children(func() {
+		ui.Column(c).Grow(1).Background(t.Background).Children(func() {
 			ui.Row(c).Height(12).DragWindow() // the top edge of the window, which moves it
 			ui.Column(c).Grow(1).Padding(16, 28, 24).Children(func() {
-				// The menu pane scrolls its editor and its preview on their own. Every other
-				// pane scrolls as a whole, and its content is at most contentWidth wide, so
-				// long lines stay readable in a wider window.
 				if m.currentPane() == paneMenu {
 					ui.Column(c).Grow(1).Children(func() { m.menuPage(c) })
 					return
 				}
 				if m.currentPane() == paneTemplates {
 					ui.Column(c).Grow(1).Children(func() { m.newPane(c) })
-					m.showNotice(c)
 					return
 				}
 				ui.Scroll(c).Fill().Children(func() {
 					ui.Column(c).Gap(20).MaxWidth(m.contentWidth()).Children(func() {
 						m.paneContent(c)
-						m.showNotice(c)
 					})
 				})
 			})
@@ -190,7 +193,11 @@ func (m *app) view(c *ui.Context) {
 	m.creationDialog(c)
 	m.favoriteDialog(c)
 	m.menuNameDialog(c)
-	m.menuPreviewDialog(c)
+	if m.menuPreviewOpen {
+		if width, _ := c.Size(); width < 960 {
+			m.menuPreviewDialog(c)
+		}
+	}
 	if ui.AlertDialog(c, &m.confirmRestore, locales.RestoreDefaultsQuestion(), locales.RestoreDefaultsBody(), locales.Cancel(), locales.ConfirmRestore()) == 1 {
 		m.restoreDefaultMenu()
 	}
@@ -199,15 +206,30 @@ func (m *app) view(c *ui.Context) {
 	if ui.AlertDialog(c, &m.confirmRestart, locales.RestartFinderTitle(), locales.RestartFinderBody(), locales.Cancel(), locales.Restart()) == 1 {
 		m.restartFinder()
 	}
+	m.toastViewport(c)
 }
 
-// contentWidth is the widest the content of the chosen pane may be. The templates
-// pane takes more room, so its two lists can sit side by side.
+// toastViewport renders subtle bottom-right confirmation toasts.
+func (m *app) toastViewport(c *ui.Context) {
+	t := c.Theme()
+	ui.ToastViewportBase(c, func(viewport ui.Element, toasts []ui.Toast) {
+		viewport.Padding(18).AlignItems(ui.End).Gap(8)
+		for _, item := range toasts {
+			toast := ui.ToastBase(c, item)
+			toast.Root.Row().Gap(10).Padding(9, 14).Radius(9).
+				Background(t.Surface).Border(1, separatorColor(c)).
+				Shadow(0, 4, 16, 0, ui.RGBA(0, 0, 0, 0.14)).AlignItems(ui.Center).
+				Children(func() {
+					glyph(c, iconCheck, 14, t.Success)
+					ui.Text(c, item.Title).FontSize(sizeNote).FontWeight(500).TextColor(t.Text)
+				})
+		}
+	})
+}
+
+// contentWidth is the widest the content of scrolling panes may be.
 func (m *app) contentWidth() float32 {
-	if m.currentPane() == paneTemplates {
-		return 800
-	}
-	return 680
+	return 720
 }
 
 // currentPane returns the ID of the chosen pane.
@@ -300,10 +322,10 @@ func (m *app) report(what string, err error) {
 	}
 }
 
-// showNotice shows the error of the last action in the danger color, when there is one.
+// showNotice shows the error of the last action as a prominent banner when there is one.
 func (m *app) showNotice(c *ui.Context) {
 	if m.notice != "" {
-		ui.Text(c, m.notice).FontSize(sizeNote).TextColor(c.Theme().Danger)
+		banner(c, c.Theme().Danger, iconAlert, m.notice, "", "")
 	}
 }
 

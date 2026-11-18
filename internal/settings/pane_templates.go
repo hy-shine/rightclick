@@ -39,10 +39,11 @@ func (m *app) newPane(c *ui.Context) {
 			m.newFileType()
 		}
 	})
-	ui.Row(c).Gap(12).Margin(20, 0, 12, 0).AlignItems(ui.Center).Children(func() {
+	m.showNotice(c)
+	ui.Row(c).Gap(12).Margin(16, 0, 12, 0).AlignItems(ui.Center).Children(func() {
 		ui.Segmented(c.Key("creation-filter"), &m.newMode, locales.FilterAll(), locales.FilterDocuments(), locales.FilterCode(), locales.FilterMyTemplates()).Label(locales.FileCategory())
 		ui.Spacer(c)
-		ui.TextInput(c.Key("creation-search"), &m.creationSearch).Label(locales.SearchFileTypes()).Placeholder(locales.SearchPlaceholder()).Width(180)
+		searchInput(c.Key("creation-search"), &m.creationSearch, locales.SearchFileTypes(), locales.SearchPlaceholder()).Width(190)
 	})
 	m.creationRows = m.filteredCreationRows()
 	if len(m.creationRows) == 0 {
@@ -87,13 +88,13 @@ func (m *app) creationTable(c *ui.Context) {
 	}
 	tableTheme := *t
 	tableTheme.Accent, tableTheme.AccentText = selectionColors(t)
-	c.SetTheme(&tableTheme)
+	applyTheme(c, &tableTheme)
 	table := ui.Table(c.Key("creation-table"), &m.fileTypeList, columns, len(m.creationRows), func(row, column int) {
-		c.SetTheme(t)
+		applyTheme(c, t)
 		m.creationCell(c, m.creationRows[row], columns[column].ID, row == m.creationSel)
-		c.SetTheme(&tableTheme)
-	}).Grow(1).Border(1, separatorColor(c)).Radius(8).Label(locales.FileTypesList())
-	c.SetTheme(t)
+		applyTheme(c, &tableTheme)
+	}).Grow(1).Border(1, separatorColor(c)).Radius(10).Label(locales.FileTypesList())
+	applyTheme(c, t)
 	if table.Submitted() && m.creationSel >= 0 && m.creationSel < len(m.creationRows) {
 		m.openCreationEditor(m.creationRows[m.creationSel])
 	}
@@ -160,10 +161,17 @@ func locationSelect(c *ui.Context, value *string, key, label string, values, lab
 	if selected < 0 {
 		selected = 0
 	}
+	textColor, bgColor := t.Text, t.Surface
+	chevronColor := t.TextMuted
+	if !enabled {
+		textColor = t.TextMuted.Alpha(0.55)
+		chevronColor = t.TextMuted.Alpha(0.4)
+		bgColor = t.Background.Alpha(0.5)
+	}
 	parts := ui.SelectBase(c.Key("location:"+key), value)
-	parts.Trigger.MinWidth(100).Padding(6, 10).Gap(10).AlignItems(ui.Center).Radius(t.Radius).Background(t.Surface).Border(1, t.Border).Label(label).Value(labels[selected]).TextColor(t.Text).Disabled(!enabled).OnChange(save).Children(func() {
-		ui.Text(c, labels[selected]).FontSize(sizeBody).TextColor(t.Text).SingleLine().Grow(1).MinWidth(0)
-		glyph(c, iconChevronDown, 9, t.TextMuted)
+	parts.Trigger.MinWidth(100).Padding(6, 10).Gap(10).AlignItems(ui.Center).Radius(t.Radius).Background(bgColor).Border(1, separatorColor(c)).Label(label).Value(labels[selected]).TextColor(textColor).Disabled(!enabled).OnChange(save).Children(func() {
+		ui.Text(c, labels[selected]).FontSize(sizeBody).TextColor(textColor).SingleLine().Grow(1).MinWidth(0)
+		glyph(c, iconChevronDown, 9, chevronColor)
 	})
 	parts.Popup(func(panel ui.Element) {
 		panel.Padding(4).Radius(7).Background(t.Surface).Border(1, t.Border)
@@ -288,6 +296,9 @@ func (m *app) creationDialog(c *ui.Context) {
 				}
 				if !m.editCreationTemplate && !m.editCreationNew && strings.HasPrefix(m.editCreation.ID, "custom-") && ghostButton(c, locales.DeleteFileType(), true) {
 					m.confirmDeleteType = true
+				}
+				if !m.editCreationTemplate && !m.editCreationNew && !strings.HasPrefix(m.editCreation.ID, "custom-") && m.creationModifiedFromDefault() && ghostButton(c, locales.ResetToDefault(), false) {
+					m.resetCreationToDefault()
 				}
 				ui.Spacer(c)
 				if quietButton(c, nil, locales.Cancel()) {

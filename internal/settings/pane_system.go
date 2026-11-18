@@ -37,8 +37,13 @@ func (m *app) finderSection(c *ui.Context) {
 				if m.setupStep() == stepReady {
 					extensionTitle, extension = locales.ReadyInFinder(), locales.ReadyInFinderBody()
 				}
+			case finderOff:
+				if m.setupStep() == stepExtension {
+					// Top banner already provides the primary Turn On button; keep this row informative without duplicating CTA.
+					extension, extensionAction = locales.ExtensionWaitingHint(), ""
+				}
 			}
-			if m.setupStep() != stepExtension && diagnosticRow(c, extensionTitle, extension, extensionAction, extensionIcon, extensionTone) {
+			if diagnosticRow(c, extensionTitle, extension, extensionAction, extensionIcon, extensionTone) {
 				m.enableFinderExtension()
 			}
 			settingRow(c, nil, ui.Color{}, locales.RestartFinder(), locales.RestartFinderHint(), func() {
@@ -126,15 +131,23 @@ func (m *app) restartFinder() {
 
 // generalPane holds the application settings and product information.
 func (m *app) generalPane(c *ui.Context) {
-	paneHeader(c, locales.PaneGeneral(), "")
+	paneHeader(c, locales.PaneGeneral(), locales.GeneralIntro())
+	m.showNotice(c)
 	step := m.setupStep()
 	if step.blocked() {
 		title, note, action := locales.PaneDiagnostics(), step.summary(), ""
-		if step == stepExtension {
+		switch step {
+		case stepExtension:
 			title, note, action = locales.BannerExtensionOff(), locales.ExtensionOpenHint(), locales.GoEnable()
+		case stepItem:
+			title, note, action = locales.StatusNoItems(), locales.MenuIntro(), locales.GoToContextMenu()
 		}
 		if banner(c, c.Theme().Warning, iconAlert, title, note, action) {
-			m.enableFinderExtension()
+			if step == stepExtension {
+				m.enableFinderExtension()
+			} else if step == stepItem {
+				m.selectPane(paneMenu)
+			}
 		}
 	}
 	ledger(c, ui.Column(c)).Children(func() {

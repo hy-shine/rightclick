@@ -7,6 +7,7 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 
+	"github.com/hy-shine/rightclick/internal/config"
 	"github.com/hy-shine/rightclick/internal/locales"
 )
 
@@ -96,5 +97,23 @@ func TestEditorRowsNameTheirCheckBox(t *testing.T) {
 	}
 	if remove.X+remove.W > minWidth {
 		t.Errorf("the remove button ends at %.1f pt, past the window width %d", remove.X+remove.W, minWidth)
+	}
+}
+
+func TestAddAppEnablesMenuShortcutInSubmenu(t *testing.T) {
+	store := testStore(t)
+	model := readyApp(t)
+	model.store = store
+	if err := config.Save(store.ConfigPath, model.cfg); err != nil {
+		t.Fatal(err)
+	}
+	model.cfg.Programs = append(model.cfg.Programs, "Cursor")
+	model.ensureShortcutInSubmenu("app:Cursor")
+	model.saveConfig()
+	if !model.hasShortcut("app:Cursor") {
+		t.Fatal("added app shortcut was not enabled")
+	}
+	if !previewHas(model, ctxFile, locales.OpenWithShortcut("Cursor")) {
+		t.Fatal("added app did not appear in submenu preview")
 	}
 }

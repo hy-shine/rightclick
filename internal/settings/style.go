@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/egoist/mygo/ui"
@@ -24,21 +25,16 @@ func glyph(c *ui.Context, s *ui.SVG, size float32, color ui.Color) {
 	ui.Icon(c, s).Size(size, size).TextColor(color)
 }
 
-// appMark is the app's icon: a menu card, with the row of
-// this app lit, on a light blue square. It matches resources/icon.png.
-var appMark = ui.MustParseSVG([]byte(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 824 824">
-<defs><linearGradient id="blue" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a9cdfb"/><stop offset="1" stop-color="#5b93ee"/></linearGradient></defs>
-<rect width="824" height="824" rx="190" fill="url(#blue)"/>
-<g transform="translate(-100 -100)">
-<rect x="262" y="232" width="500" height="560" rx="44" fill="#ffffff"/>
-<rect x="326" y="309" width="200" height="22" rx="11" fill="#cbd5e1"/>
-<rect x="326" y="405" width="268" height="22" rx="11" fill="#cbd5e1"/>
-<rect x="290" y="470" width="444" height="84" rx="24" fill="#1d4ed8"/>
-<rect x="326" y="501" width="212" height="22" rx="11" fill="#ffffff"/>
-<path d="M676 490l26 22-26 22" fill="none" stroke="#ffffff" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
-<rect x="326" y="597" width="236" height="22" rx="11" fill="#cbd5e1"/>
-<rect x="326" y="693" width="172" height="22" rx="11" fill="#cbd5e1"/>
-</g></svg>`))
+// appMark is the app's icon: a tilted pointer triggering three floating menu pills,
+// on a blue gradient square. It matches resources/icon.png.
+var appMark = ui.MustParseSVG([]byte(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<defs><linearGradient id="blue" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7ab7ff"/><stop offset="1" stop-color="#2563eb"/></linearGradient></defs>
+<rect width="512" height="512" rx="116" fill="url(#blue)"/>
+<rect x="230" y="132" width="166" height="54" rx="27" fill="#ffffff" opacity="0.48"/>
+<rect x="218" y="222" width="212" height="68" rx="34" fill="#ffffff"/>
+<rect x="234" y="326" width="178" height="54" rx="27" fill="#ffffff" opacity="0.48"/>
+<path d="M 196.0 254.0 L 108.3 239.8 L 135.8 263.2 L 85.7 283.5 L 96.2 309.4 L 146.3 289.2 L 142.8 325.1 Z" fill="#ffffff" stroke="#ffffff" stroke-width="14" stroke-linejoin="round"/>
+</svg>`))
 
 // mark shows the app's icon, size points square. It heads the sidebar and the
 // general pane.
@@ -68,7 +64,50 @@ func sectionTitle(c *ui.Context, s string) {
 // one.
 func ledger(c *ui.Context, e ui.Element) ui.Element {
 	t := c.Theme()
-	return e.Background(t.Surface).Border(1, separatorColor(c)).Radius(t.Radius+2).Dividers(1, separatorColor(c))
+	return e.Background(t.Surface).Border(1, separatorColor(c)).Radius(t.Radius+4).Dividers(1, separatorColor(c))
+}
+
+// sectionHeader renders a compact section title with an optional count pill and subtitle.
+func sectionHeader(c *ui.Context, icon *ui.SVG, title, badge, hint string) {
+	t := c.Theme()
+	ui.Column(c).Gap(2).Children(func() {
+		ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
+			if icon != nil {
+				glyph(c, icon, 15, t.TextMuted)
+			}
+			ui.Text(c, title).FontSize(sizeSection).FontWeight(600)
+			if badge != "" {
+				pillBadge(c, badge, t.TextMuted, true)
+			}
+		})
+		if hint != "" {
+			ui.Text(c, hint).FontSize(sizeNote).TextColor(t.TextMuted)
+		}
+	})
+}
+
+// pillBadge draws a small rounded pill tag.
+func pillBadge(c *ui.Context, text string, tone ui.Color, subtle bool) {
+	t := c.Theme()
+	bg := tone.Alpha(0.14)
+	fg := tone
+	if subtle {
+		bg = t.Background
+		fg = t.TextMuted
+	}
+	ui.Row(c).Padding(2, 7).Radius(999).Background(bg).Shrink(0).AlignItems(ui.Center).Children(func() {
+		ui.Text(c, text).FontSize(sizeCaption).FontWeight(600).TextColor(fg).SingleLine()
+	})
+}
+
+// searchInput creates a consistent native search field with magnifying glass and clear affordance.
+func searchInput(c *ui.Context, query *string, label, placeholder string) ui.Element {
+	t := c.Theme()
+	return ui.SearchField(c, query).
+		Label(label).
+		Placeholder(placeholder).
+		Height(controlHeight).
+		Radius(t.Radius + 1)
 }
 
 // itemRowHeight is the height of every row in a list of items: a program, a
@@ -201,7 +240,7 @@ func actionButtonEnabled(c *ui.Context, kind buttonKind, enabled bool, s *ui.SVG
 		look = buttonLook{fill: t.Accent, hover: t.AccentHover, pressed: t.AccentPressed,
 			text: t.AccentText, icon: t.AccentText, padX: 14, weight: 600}
 	}
-	b := ui.ButtonBase(c).Gap(6).Padding(7, look.padX).Height(controlHeight).Radius(t.Radius).AlignSelf(align).Label(label).Disabled(!enabled)
+	b := ui.ButtonBase(c.Key(fmt.Sprintf("action:%d:%v:%s", kind, enabled, label))).Gap(6).Padding(7, look.padX).Height(controlHeight).Radius(t.Radius).AlignSelf(align).Label(label).Disabled(!enabled)
 	if look.bordered && enabled {
 		b.Border(1, separatorColor(c))
 	}
@@ -295,16 +334,16 @@ func banner(c *ui.Context, tone ui.Color, s *ui.SVG, title, note, action string)
 // emptyState keeps the explanation and its next action together in place of an empty list.
 func emptyState(c *ui.Context, s *ui.SVG, title, note string, action func()) {
 	t := c.Theme()
-	ui.Column(c).Gap(6).Padding(28, 20).AlignItems(ui.Center).Radius(t.Radius+6).
-		Border(1, t.Border).BorderStyle(ui.BorderDashed).Children(func() {
-		ui.Row(c).Size(40, 40).Radius(20).Background(t.Background).Margin(0, 0, 6).
+	ui.Column(c).Gap(6).Padding(28, 24).AlignItems(ui.Center).Radius(t.Radius+6).
+		Background(t.Surface.Alpha(0.75)).Border(1, separatorColor(c)).BorderStyle(ui.BorderDashed).Children(func() {
+		ui.Row(c).Size(44, 44).Radius(22).Background(t.Background).Margin(0, 0, 6).
 			AlignItems(ui.Center).Justify(ui.Center).Children(func() {
-			glyph(c, s, 19, t.TextMuted)
+			glyph(c, s, 20, t.TextMuted)
 		})
 		ui.Text(c, title).FontSize(sizeBody).FontWeight(600)
-		ui.Text(c, note).FontSize(sizeNote).LineHeight(1.5).TextColor(t.TextMuted).TextAlign(ui.Center).MaxWidth(320)
+		ui.Text(c, note).FontSize(sizeNote).LineHeight(1.5).TextColor(t.TextMuted).TextAlign(ui.Center).MaxWidth(340)
 		if action != nil {
-			ui.Row(c).Margin(8, 0, 0).Children(action)
+			ui.Row(c).Margin(10, 0, 0).Children(action)
 		}
 	})
 }
