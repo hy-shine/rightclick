@@ -3175,3 +3175,63 @@ func NotifyChmodFailed() string { return In(i18n.Locale()).NotifyChmodFailed() }
 func (msgs Messages) NotifyChmodFailed() string {
 	return Catalog.Format(msgs.locale, "notifyChmodFailed", nil)
 }
+
+// CompareWindowTitle says "Compare File Hashes"
+// in the language the app shows.
+func CompareWindowTitle() string { return In(i18n.Locale()).CompareWindowTitle() }
+
+// CompareWindowTitle says "Compare File Hashes"
+// in the language of msgs.
+func (msgs Messages) CompareWindowTitle() string {
+	return Catalog.Format(msgs.locale, "compareWindowTitle", nil)
+}
+
+// CompareMatch says "Identical"
+// in the language the app shows.
+func CompareMatch() string { return In(i18n.Locale()).CompareMatch() }
+
+// CompareMatch says "Identical"
+// in the language of msgs.
+func (msgs Messages) CompareMatch() string {
+	return Catalog.Format(msgs.locale, "compareMatch", nil)
+}
+
+// CompareMismatch says "Different"
+// in the language the app shows.
+func CompareMismatch() string { return In(i18n.Locale()).CompareMismatch() }
+
+// CompareMismatch says "Different"
+// in the language of msgs.
+func (msgs Messages) CompareMismatch() string {
+	return Catalog.Format(msgs.locale, "compareMismatch", nil)
+}
+
+// CompareFileFirst says "File A"
+// in the language the app shows.
+func CompareFileFirst() string { return In(i18n.Locale()).CompareFileFirst() }
+
+// CompareFileFirst says "File A"
+// in the language of msgs.
+func (msgs Messages) CompareFileFirst() string {
+	return Catalog.Format(msgs.locale, "compareFileFirst", nil)
+}
+
+// CompareFileSecond says "File B"
+// in the language the app shows.
+func CompareFileSecond() string { return In(i18n.Locale()).CompareFileSecond() }
+
+// CompareFileSecond says "File B"
+// in the language of msgs.
+func (msgs Messages) CompareFileSecond() string {
+	return Catalog.Format(msgs.locale, "compareFileSecond", nil)
+}
+
+// CompareCopyBoth says "Copy Summary"
+// in the language the app shows.
+func CompareCopyBoth() string { return In(i18n.Locale()).CompareCopyBoth() }
+
+// CompareCopyBoth says "Copy Summary"
+// in the language of msgs.
+func (msgs Messages) CompareCopyBoth() string {
+	return Catalog.Format(msgs.locale, "compareCopyBoth", nil)
+}

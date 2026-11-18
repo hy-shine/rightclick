@@ -310,5 +310,11 @@
   "notifyChmodPartial": "已為 {succeeded} 個檔案賦予執行權限；{failed} 個失敗：{cause}",
   "notifyChmodAlready": "所選檔案已具備執行權限",
   "notifyChmodNoFiles": "所選項目無需修改",
-  "notifyChmodFailed": "無法賦予執行權限"
+  "notifyChmodFailed": "無法賦予執行權限",
+  "compareWindowTitle": "比較檔案雜湊",
+  "compareMatch": "完全一致",
+  "compareMismatch": "內容不同",
+  "compareFileFirst": "檔案 A",
+  "compareFileSecond": "檔案 B",
+  "compareCopyBoth": "複製比較結果"
 }

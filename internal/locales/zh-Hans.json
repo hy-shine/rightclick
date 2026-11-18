@@ -310,5 +310,11 @@
   "notifyChmodPartial": "已为 {succeeded} 个文件赋予执行权限；{failed} 个失败：{cause}",
   "notifyChmodAlready": "所选文件已具备执行权限",
   "notifyChmodNoFiles": "所选项目无需修改",
-  "notifyChmodFailed": "无法赋予执行权限"
+  "notifyChmodFailed": "无法赋予执行权限",
+  "compareWindowTitle": "比较文件哈希",
+  "compareMatch": "完全一致",
+  "compareMismatch": "内容不同",
+  "compareFileFirst": "文件 A",
+  "compareFileSecond": "文件 B",
+  "compareCopyBoth": "复制比较结果"
 }

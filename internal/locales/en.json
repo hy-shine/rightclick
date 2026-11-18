@@ -310,5 +310,11 @@
   "notifyChmodPartial": "Made executable: {succeeded, plural, one {# file} other {# files}}; {failed, plural, one {# failed} other {# failed}}: {cause}",
   "notifyChmodAlready": "The selected files are already executable",
   "notifyChmodNoFiles": "No eligible files to update",
-  "notifyChmodFailed": "Could not make executable"
+  "notifyChmodFailed": "Could not make executable",
+  "compareWindowTitle": "Compare File Hashes",
+  "compareMatch": "Identical",
+  "compareMismatch": "Different",
+  "compareFileFirst": "File A",
+  "compareFileSecond": "File B",
+  "compareCopyBoth": "Copy Summary"
 }

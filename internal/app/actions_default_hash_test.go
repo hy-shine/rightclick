@@ -52,8 +52,8 @@ func TestHashActionUsesDefaultOrExplicitAlgorithm(t *testing.T) {
 }
 
 func TestComparisonActionHashesWithSavedDefault(t *testing.T) {
-	previous := notify
-	t.Cleanup(func() { notify = previous })
+	previous := compareWindow
+	t.Cleanup(func() { compareWindow = previous })
 	dir := t.TempDir()
 	paths := []string{filepath.Join(dir, "first.txt"), filepath.Join(dir, "second.txt")}
 	for _, path := range paths {
@@ -75,11 +75,22 @@ func TestComparisonActionHashesWithSavedDefault(t *testing.T) {
 		{"invalid default", "invalid", "", "SHA-256"},
 	} {
 		t.Run(sample.name, func(t *testing.T) {
-			var title, body string
-			notify = func(shownTitle, shownBody string) { title, body = shownTitle, shownBody }
+			var gotAlgorithm string
+			var gotPaths []string
+			compareWindow = func(algorithm string, selected []string) error {
+				gotAlgorithm, gotPaths = algorithm, selected
+				return nil
+			}
 			params := url.Values{"algo": {sample.explicit}}
 			cfg := config.Config{DefaultHashAlgorithm: sample.defaulted}
 			if err := runAction("compare-hash", params, paths, cfg); err != nil {
+				t.Fatal(err)
+			}
+			if gotAlgorithm != sample.want || len(gotPaths) != 2 || gotPaths[0] != paths[0] || gotPaths[1] != paths[1] {
+				t.Fatalf("compare window received %q, %q; want %q, %q", gotAlgorithm, gotPaths, sample.want, paths)
+			}
+			title, body, err := compareFiles(gotAlgorithm, paths)
+			if err != nil {
 				t.Fatal(err)
 			}
 			if title != locales.HashCompareTitle(sample.want, locales.VerdictSame()) || strings.Count(body, helloDigests[sample.want]) != 2 {
@@ -87,7 +98,7 @@ func TestComparisonActionHashesWithSavedDefault(t *testing.T) {
 			}
 		})
 	}
-	if err := runAction("compare-hash", url.Values{"algo": {"SHA-512"}}, paths, config.Config{DefaultHashAlgorithm: "MD5"}); err == nil {
+	if _, _, err := compareFiles("SHA-512", paths); err == nil {
 		t.Fatal("unsupported explicit comparison algorithm was accepted")
 	}
 }

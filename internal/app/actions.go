@@ -149,7 +149,7 @@ func actionHandlers() map[string]actionHandler {
 			return hashWindow(actionHashAlgorithm(params.Get("algo"), cfg), paths)
 		},
 		"compare-hash": func(params url.Values, paths []string, cfg config.Config) error {
-			return compareItems(actionHashAlgorithm(params.Get("algo"), cfg), paths)
+			return compareWindow(actionHashAlgorithm(params.Get("algo"), cfg), paths)
 		},
 		"chmod-x": func(_ url.Values, paths []string, _ config.Config) error {
 			return makeExecutableAction(paths)
@@ -599,6 +599,18 @@ var hashWindow = func(algoName string, paths []string) error {
 	return openErr
 }
 
+// compareWindow opens the window that compares the digests of two selected files.
+var compareWindow = func(algoName string, paths []string) error {
+	if len(paths) != 2 {
+		return errors.New(locales.CompareNeedsTwo())
+	}
+	var openErr error
+	mygo.RunOnMain(func() {
+		openErr = settings.OpenCompareWindow(paths[0], paths[1], algoName)
+	})
+	return openErr
+}
+
 // digestOf returns the algorithm, the path, and the digest of the one selected
 // file.
 func digestOf(algoName string, paths []string) (files.Algorithm, string, string, error) {
@@ -617,18 +629,8 @@ func digestOf(algoName string, paths []string) (files.Algorithm, string, string,
 	return algo, path, digest, nil
 }
 
-// compareItems compares the digests of the two selected files and shows the result.
-func compareItems(algoName string, paths []string) error {
-	title, body, err := compareFiles(algoName, paths)
-	if err != nil {
-		return err
-	}
-	notify(title, body)
-	return nil
-}
-
 // compareFiles compares the digests of the two selected files and returns the
-// notification title and body that report the result.
+// summary title and body for a hash comparison.
 func compareFiles(algoName string, paths []string) (title, body string, err error) {
 	algo, err := hashAlgorithm(algoName)
 	if err != nil {
