@@ -113,12 +113,48 @@ enum ProgramIcons {
         defer { lock.unlock() }
         if let known = cache[program] { return known }
         var found: NSImage?
-        if let path = NSWorkspace.shared.fullPath(forApplication: program) {
-            let icon = NSWorkspace.shared.icon(forFile: path)
+        if let appURL = applicationURL(for: program) {
+            let icon = NSWorkspace.shared.icon(forFile: appURL.path)
             icon.size = NSSize(width: 16, height: 16)
             found = icon
         }
         cache[program] = found
         return found
+    }
+
+    private static func applicationURL(for program: String) -> URL? {
+        if program == "Finder",
+           let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.finder") {
+            return url
+        }
+        let targetName = "\(program).app"
+        let fm = FileManager.default
+        var roots = [
+            URL(fileURLWithPath: "/Applications", isDirectory: true),
+            URL(fileURLWithPath: "/System/Applications", isDirectory: true),
+            URL(fileURLWithPath: "/System/Library/CoreServices", isDirectory: true),
+        ]
+        if let entry = getpwuid(getuid()) {
+            let home = String(cString: entry.pointee.pw_dir)
+            roots.append(URL(fileURLWithPath: home, isDirectory: true).appendingPathComponent("Applications", isDirectory: true))
+        }
+        for root in roots {
+            let direct = root.appendingPathComponent(targetName, isDirectory: true)
+            if fm.fileExists(atPath: direct.path) {
+                return direct
+            }
+            guard let children = try? fm.contentsOfDirectory(
+                at: root,
+                includingPropertiesForKeys: [.isDirectoryKey],
+                options: [.skipsHiddenFiles]
+            ) else { continue }
+            for child in children where child.pathExtension != "app" {
+                let nested = child.appendingPathComponent(targetName, isDirectory: true)
+                if fm.fileExists(atPath: nested.path) {
+                    return nested
+                }
+            }
+        }
+        return nil
     }
 }

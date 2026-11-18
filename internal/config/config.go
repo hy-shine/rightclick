@@ -116,10 +116,10 @@ var defaultMenuIDs = []string{
 }
 
 // defaultOffMenuIDs lists the menu entries that start switched off. Deleting for
-// good, Open with Terminal and the template entries stay out of the menu until the
-// user turns them on.
+// good, Open with Terminal, Add as Template, and developer actions stay out of the
+// menu until the user turns them on.
 var defaultOffMenuIDs = map[string]bool{
-	"delete-permanently": true, "open-terminal": true, "new-template": true, "add-template": true,
+	"delete-permanently": true, "open-terminal": true, "add-template": true,
 	"copy-terminal-path": true, "copy-relative-path": true, "copy-markdown-link": true,
 	"chmod-x": true,
 }
@@ -160,7 +160,7 @@ var defaultFileTypes = []FileType{
 	},
 	{
 		ID: "html", Label: "HTML", Extension: "html", DefaultName: "",
-		Content: "<!doctype html>\n<html lang=\"zh-CN\">\n<head>\n" +
+		Content: "<!doctype html>\n<html>\n<head>\n" +
 			"  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n" +
 			"  <title>Untitled</title>\n</head>\n<body>\n\n</body>\n</html>\n",
 		Location: FileTypeSubmenu,

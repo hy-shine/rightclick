@@ -80,6 +80,7 @@ final class FinderSyncExtension: FIFinderSync {
                 }
             }
         }
+        var lastSubmenuSection: Int?
         for id in enabled {
             let item: NSMenuItem
             if id.contains(":") {
@@ -128,8 +129,16 @@ final class FinderSyncExtension: FIFinderSync {
             }
             let location = setting?.location ??
                 (["new-file", "copy-path", "open-terminal"].contains(id) ? FileTypeLocation.main : FileTypeLocation.submenu)
-            if location == FileTypeLocation.main { menu.addItem(item) }
-            else { submenu.addItem(item) }
+            if location == FileTypeLocation.main {
+                menu.addItem(item)
+            } else {
+                let section = MenuActions.visualSection(for: id)
+                if let prev = lastSubmenuSection, prev != section {
+                    submenu.addItem(NSMenuItem.separator())
+                }
+                lastSubmenuSection = section
+                submenu.addItem(item)
+            }
         }
         if !submenu.items.isEmpty {
             let parent = NSMenuItem(title: Localized.text("finder.appName"), action: nil, keyEquivalent: "")
@@ -180,9 +189,7 @@ final class FinderSyncExtension: FIFinderSync {
             }
             return submenuItem(title: title(for: id), children: children, emptyTitle: Localized.text("finder.noTemplates"))
         case "open-terminal":
-            // Terminal opens folders. A selected file stands for the folder that holds it.
-            let folders = target.items.map { $0.isDirectory ? $0.url : $0.url.deletingLastPathComponent() }
-            return actionItem(title: title(for: id), urlAction: id, params: pathParams(folders))
+            return actionItem(title: title(for: id), urlAction: id, params: folderPaths)
         case "hash":
             // One entry: the window hashes with SHA-256 first and offers the other
             // two algorithms, so the menu does not ask for one.
@@ -228,20 +235,6 @@ final class FinderSyncExtension: FIFinderSync {
         let item = actionItem(title: title, urlAction: "new-file",
                               params: [("type", fileType.id)] + folderPaths)
         item.image = fileTypeImage(fileType.ext)
-        return item
-    }
-
-    /// The default collection of file types shown under New File.
-    private func newFileSubmenu(_ fileTypes: [FileTypeSetting],
-                                folderPaths: [(String, String)]) -> NSMenuItem {
-        let item = submenuItem(
-            title: Localized.text("finder.newFile"),
-            children: fileTypes.map {
-                fileTypeItem($0, title: $0.displayLabel, folderPaths: folderPaths)
-            },
-            emptyTitle: Localized.text("finder.noFileTypes")
-        )
-        item.image = fileTypeImage("new-file")
         return item
     }
 

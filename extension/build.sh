@@ -16,6 +16,12 @@ out="$here/../.build/$name.appex"
 rm -rf "$out"
 mkdir -p "$out/Contents/MacOS"
 cp "$here/$name/Info.plist" "$out/Contents/Info.plist"
+if [ -f "$here/../mygo.json" ] && command -v python3 >/dev/null 2>&1 && [ -x /usr/libexec/PlistBuddy ]; then
+  app_version=$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$here/../mygo.json" 2>/dev/null || true)
+  if [ -n "$app_version" ]; then
+    /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $app_version" "$out/Contents/Info.plist"
+  fi
+fi
 mkdir -p "$out/Contents/Resources/FileIcons"
 cp "$here/../internal/catalog/icons/"*.svg "$out/Contents/Resources/FileIcons/"
 # The menu text: one .lproj folder per language, read through Bundle.main.

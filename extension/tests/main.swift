@@ -171,6 +171,12 @@ func firstItem(_ menu: NSMenu?, title: String) -> NSMenuItem? {
 Localized.bundle = Bundle(url: stringsRoot.appendingPathComponent("en.lproj"))!
 precondition(!MenuActions.enabledIDs(from: nil).contains("delete-permanently"), "destructive action is on by default")
 precondition(!MenuActions.enabledIDs(from: nil).contains("open-terminal"), "open with Terminal is on by default")
+precondition(MenuActions.enabledIDs(from: nil).contains("new-template"), "new-template should be on by default so added templates appear")
+precondition(!MenuActions.enabledIDs(from: nil).contains("add-template"), "add-template is on by default")
+if let defaultSubmenu = provider.buildMenu(target: fileTarget, config: nil, templates: [])?.items.first(where: { $0.title == "RightClick" })?.submenu {
+    precondition(defaultSubmenu.items.contains(where: { $0.isSeparatorItem }), "RightClick submenu lacks group separators")
+    precondition(defaultSubmenu.items.first?.isSeparatorItem == false && defaultSubmenu.items.last?.isSeparatorItem == false, "RightClick submenu has leading or trailing separator")
+}
 let deleteOn = try JSONDecoder().decode(AppConfig.self, from: Data(#"{"menuItems":[{"id":"delete-permanently","enabled":true,"location":"submenu"}]}"#.utf8))
 let fileWithDelete = provider.buildMenu(target: fileTarget, config: deleteOn, templates: [])
 precondition(allTitles(fileWithDelete).contains("Delete Permanently"), "switched-on action is missing for a file")

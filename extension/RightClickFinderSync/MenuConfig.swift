@@ -196,7 +196,33 @@ enum MenuActions {
 
     /// Actions that start switched off. Like the Go side's defaultOffMenuIDs, they stay out of
     /// the menu until the user turns them on.
-    static let defaultOff: Set<String> = ["delete-permanently", "open-terminal", "copy-terminal-path", "copy-relative-path", "copy-markdown-link", "chmod-x"]
+    static let defaultOff: Set<String> = [
+        "delete-permanently", "open-terminal", "add-template",
+        "copy-terminal-path", "copy-relative-path", "copy-markdown-link", "chmod-x",
+    ]
+
+    /// Visual section index inside the RightClick submenu so related actions stay grouped by separators.
+    static func visualSection(for id: String) -> Int {
+        if id.hasPrefix("app:") { return 2 }
+        if id.hasPrefix("folder:") { return 1 }
+        switch id {
+        case "new-file", "new-folder", "new-template", "paste-as-file", "add-template":
+            return 0
+        case "copy-path", "copy-name", "copy-basename", "copy-content", "copy-to", "move-to",
+             "favorite-folders", "copy-terminal-path", "copy-relative-path", "copy-markdown-link":
+            return 1
+        case "open-terminal":
+            return 2
+        case "zip", "unzip", "unzip-to-folder", "hash", "compare-hash":
+            return 3
+        case "chmod-x", "toggle-hidden":
+            return 4
+        case "delete-permanently":
+            return 5
+        default:
+            return 4
+        }
+    }
 
     /// The IDs to show, in display order, from the menuItems array. Entries with enabled = false
     /// are dropped. An ID missing from the array (for example, one added in a later version)
