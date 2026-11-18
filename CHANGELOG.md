@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.6 - 2026-11-18
+
+### Changed
+
+- Refresh the app icon and redesign the Settings UI with a vibrant sidebar, sectioned menu layout, and docked live preview.
+- Open Compare File Hashes results in its own window with algorithm switching and digest copy.
+
+### Fixed
+
+- Enable New from Template by default, detect app icons inside nested Applications subfolders, and guard system top-level folders from deletion.
+
 ## 0.1.5 - 2026-11-17
 
 ### Changed
